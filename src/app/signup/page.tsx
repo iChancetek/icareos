@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -5,20 +6,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Stethoscope, Eye, EyeOff } from 'lucide-react';
+import { Stethoscope, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, type FormEvent } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { cn } from '@/lib/utils';
 
 export default function SignUpPage() {
-  const { login } = useAuth(); // Using login to simulate signup and auto-login
+  const { signup, isLoading: authIsLoading } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -38,16 +40,27 @@ export default function SignUpPage() {
       });
       return;
     }
+    setIsSubmitting(true);
     // Simulate API call
-    console.log('Signing up with:', email, password);
-    // In a real app, you would call your backend API here
-    // For demo purposes, we'll just simulate a successful signup and login
-    login('mock_auth_token'); 
-    toast({
-      title: "Signup Successful",
-      description: "Welcome to MediSummarize!",
-    });
+    const success = await signup(email, password);
+    setIsSubmitting(false);
+
+    if (success) {
+      toast({
+        title: "Signup Successful",
+        description: "Welcome to MediSummarize! You are now logged in.",
+      });
+    } else {
+      // This part might not be reached if signup always succeeds in the mock
+      toast({
+        title: "Signup Failed",
+        description: "An error occurred during signup. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
+
+  const isLoading = authIsLoading || isSubmitting;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-accent to-background p-4">
@@ -70,6 +83,7 @@ export default function SignUpPage() {
                 required 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
                 className="bg-background/70"
               />
             </div>
@@ -82,6 +96,7 @@ export default function SignUpPage() {
                   required 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
                   className="bg-background/70"
                 />
                 <Button
@@ -90,6 +105,7 @@ export default function SignUpPage() {
                   size="icon"
                   className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </Button>
@@ -104,6 +120,7 @@ export default function SignUpPage() {
                   required 
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={isLoading}
                   className="bg-background/70"
                 />
                 <Button
@@ -112,18 +129,19 @@ export default function SignUpPage() {
                   size="icon"
                   className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  disabled={isLoading}
                 >
                   {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </Button>
               </div>
             </div>
-            <Button type="submit" className="w-full text-lg py-6">
-              Sign Up
+            <Button type="submit" className="w-full text-lg py-6" disabled={isLoading}>
+              {isLoading ? <Loader2 className="animate-spin" /> : 'Sign Up'}
             </Button>
           </form>
           <div className="mt-6 text-center text-sm">
             Already have an account?{' '}
-            <Link href="/login" className="font-semibold text-primary hover:underline">
+            <Link href="/login" className={cn("font-semibold text-primary hover:underline", isLoading && "pointer-events-none opacity-50")}>
               Login
             </Link>
           </div>

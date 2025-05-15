@@ -6,18 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Stethoscope, Eye, EyeOff } from 'lucide-react';
+import { Stethoscope, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, type FormEvent } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, isLoading: authIsLoading } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -29,15 +30,22 @@ export default function LoginPage() {
       });
       return;
     }
-    // Simulate API call
-    console.log('Logging in with:', email, password);
-    // In a real app, you would call your backend API here
-    // For demo purposes, we'll just simulate a successful login
-    login('mock_auth_token'); 
-    toast({
-      title: "Login Successful",
-      description: "Welcome back!",
-    });
+    setIsSubmitting(true);
+    const success = await login(email, password);
+    setIsSubmitting(false);
+
+    if (success) {
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!",
+      });
+    } else {
+      toast({
+        title: "Login Failed",
+        description: "Invalid email or password. Please try again or sign up.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleForgotPassword = () => {
@@ -47,6 +55,8 @@ export default function LoginPage() {
       duration: 5000,
     });
   };
+
+  const isLoading = authIsLoading || isSubmitting;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/30 p-4 selection:bg-primary/20">
@@ -71,6 +81,7 @@ export default function LoginPage() {
                 required 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
                 className="bg-card/70 backdrop-blur-sm border-primary/20 focus:border-primary/40 placeholder:text-muted-foreground/80 transition-all duration-200"
               />
             </div>
@@ -82,6 +93,7 @@ export default function LoginPage() {
                   variant="link"
                   className="p-0 h-auto text-sm text-primary hover:text-primary/80 transition-colors duration-150 hover:underline"
                   onClick={handleForgotPassword}
+                  disabled={isLoading}
                 >
                   Forgot password?
                 </Button>
@@ -93,6 +105,7 @@ export default function LoginPage() {
                   required 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
                   className="bg-card/70 backdrop-blur-sm border-primary/20 focus:border-primary/40 placeholder:text-muted-foreground/80 transition-all duration-200"
                 />
                 <Button
@@ -101,6 +114,7 @@ export default function LoginPage() {
                   size="icon"
                   className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </Button>
@@ -109,13 +123,14 @@ export default function LoginPage() {
             <Button 
               type="submit" 
               className="w-full text-lg py-6 font-semibold tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 transform hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 ease-in-out focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:outline-none shadow-md hover:shadow-lg hover:shadow-primary/20"
+              disabled={isLoading}
             >
-              Login
+              {isLoading ? <Loader2 className="animate-spin" /> : 'Login'}
             </Button>
           </form>
           <div className="mt-6 text-center text-sm">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className="font-semibold text-primary hover:text-primary/80 transition-colors duration-150 hover:underline">
+            <Link href="/signup" className={cn("font-semibold text-primary hover:text-primary/80 transition-colors duration-150 hover:underline", isLoading && "pointer-events-none opacity-50")}>
               Sign up
             </Link>
           </div>
