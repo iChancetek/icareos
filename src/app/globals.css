@@ -10,57 +10,57 @@
     --card-foreground: 220 15% 25%;
     --popover: 0 0% 100%;
     --popover-foreground: 220 15% 25%;
-    --primary: 210 70% 50%; /* Professional Blue */
+    --primary: 220 80% 55%; /* Brighter, more modern blue */
     --primary-foreground: 0 0% 100%; /* White */
-    --secondary: 220 15% 94%; /* Light cool gray */
+    --secondary: 220 20% 95%; /* Lighter cool gray */
     --secondary-foreground: 220 15% 20%;
-    --muted: 220 15% 94%;
-    --muted-foreground: 220 10% 45%;
-    --accent: 210 80% 96%; /* Very light pastel blue */
-    --accent-foreground: 210 50% 35%; /* Darker blue text on accent */
+    --muted: 220 20% 95%; /* Consistent with secondary */
+    --muted-foreground: 220 10% 50%; /* Slightly lighter muted text */
+    --accent: 180 50% 50%; /* Modern teal */
+    --accent-foreground: 180 90% 95%; /* Very light text on teal accent */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 15% 88%; /* Softer border */
-    --input: 220 15% 88%;
-    --ring: 210 70% 50%; /* Match primary */
+    --border: 220 20% 92%; /* Softer border */
+    --input: 220 20% 92%; /* Consistent with border */
+    --ring: 220 80% 55%; /* Match new primary */
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+    --radius: 0.75rem; /* Increased for a more modern, rounded feel */
 
     /* Sidebar specific theme */
-    --sidebar-background: 220 20% 96%;
-    --sidebar-foreground: 220 15% 25%;
-    --sidebar-primary: 210 70% 50%;
+    --sidebar-background: 220 22% 97%; /* Slightly distinct light background */
+    --sidebar-foreground: 220 15% 25%; /* Match main foreground */
+    --sidebar-primary: 220 80% 55%; /* Match new main primary */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 70% 92%;
-    --sidebar-accent-foreground: 210 50% 30%;
-    --sidebar-border: 220 15% 88%;
-    --sidebar-ring: 210 70% 50%;
+    --sidebar-accent: 180 50% 94%; /* Light teal background for active/hover items */
+    --sidebar-accent-foreground: 180 50% 30%; /* Darker teal text on sidebar accent */
+    --sidebar-border: 220 20% 92%; /* Match main border */
+    --sidebar-ring: 220 80% 55%; /* Match new main ring */
   }
 
   .dark {
-    --background: 220 15% 12%; /* Dark cool gray */
+    --background: 220 20% 10%; /* Darker, cooler gray */
     --foreground: 220 15% 95%; /* Light cool gray for text */
-    --card: 220 15% 18%;
+    --card: 220 20% 15%; /* Dark card background */
     --card-foreground: 220 15% 95%;
-    --popover: 220 15% 18%;
+    --popover: 220 20% 15%;
     --popover-foreground: 220 15% 95%;
-    --primary: 210 70% 60%; /* Brighter blue for dark mode */
-    --primary-foreground: 220 15% 15%; /* Darker for text on primary */
-    --secondary: 220 10% 25%;
+    --primary: 220 80% 65%; /* Brighter blue for dark mode */
+    --primary-foreground: 220 15% 15%; /* Darker text on primary */
+    --secondary: 220 15% 22%; /* Dark secondary */
     --secondary-foreground: 220 15% 95%;
-    --muted: 220 10% 25%;
+    --muted: 220 15% 22%; /* Consistent with dark secondary */
     --muted-foreground: 220 10% 65%;
-    --accent: 210 50% 20%; /* Darker blue for accent */
-    --accent-foreground: 220 15% 90%;
+    --accent: 180 50% 60%; /* Brighter teal for dark mode accent */
+    --accent-foreground: 180 90% 10%; /* Dark text on dark teal accent */
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 10% 30%;
-    --input: 220 10% 30%;
-    --ring: 210 70% 60%;
+    --border: 220 15% 25%; /* Darker, softer border */
+    --input: 220 15% 25%; /* Consistent with dark border */
+    --ring: 220 80% 65%; /* Match new dark primary */
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -68,14 +68,14 @@
     --chart-5: 340 75% 55%;
 
     /* Dark Sidebar specific theme */
-    --sidebar-background: 220 15% 10%;
-    --sidebar-foreground: 220 15% 95%;
-    --sidebar-primary: 210 70% 60%;
+    --sidebar-background: 220 20% 12%; /* Slightly distinct dark background */
+    --sidebar-foreground: 220 15% 95%; /* Match main dark foreground */
+    --sidebar-primary: 220 80% 65%; /* Match new dark primary */
     --sidebar-primary-foreground: 220 15% 15%;
-    --sidebar-accent: 210 50% 25%;
-    --sidebar-accent-foreground: 220 15% 90%;
-    --sidebar-border: 220 15% 22%;
-    --sidebar-ring: 210 70% 60%;
+    --sidebar-accent: 180 50% 20%; /* Dark teal background for active/hover items */
+    --sidebar-accent-foreground: 180 50% 85%; /* Lighter teal text on dark sidebar accent */
+    --sidebar-border: 220 15% 25%; /* Match main dark border */
+    --sidebar-ring: 220 80% 65%; /* Match new dark ring */
   }
 }
 
