@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -110,6 +111,28 @@ export default function ConsultationDetailPage() {
     router.push('/dashboard/consultations');
   };
 
+  const handleDownloadConsultation = () => {
+    if (!consultation) return;
+
+    const { patientName, date, summary, transcript } = consultation;
+    const formattedDate = format(new Date(date), "yyyy-MM-dd_HH-mm");
+    const filename = `consultation_${patientName.replace(/\s+/g, '_')}_${formattedDate}.txt`;
+
+    const content = `Patient Name: ${patientName}\nConsultation Date: ${format(new Date(date), "PPP p")}\n\nAI Summary:\n--------------------------------------------------\n${summary || 'No summary available.'}\n\nFull Transcript:\n--------------------------------------------------\n${transcript || 'No transcript available.'}\n`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({ title: "Download Started", description: `Downloading ${filename}` });
+  };
+
 
   if (isLoading) {
     return <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -131,7 +154,7 @@ export default function ConsultationDetailPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <CardTitle className="text-3xl font-bold">{consultation.patientName}</CardTitle>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="shadow-sm">
+              <Button variant="outline" size="sm" className="shadow-sm" onClick={handleDownloadConsultation}>
                 <Download className="mr-2 h-4 w-4" />
                 Download
               </Button>
