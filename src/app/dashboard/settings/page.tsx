@@ -5,17 +5,22 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Settings as SettingsIcon, Moon, Sun } from 'lucide-react';
+import { Settings as SettingsIcon, Moon, Sun, Languages } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+type Theme = 'light' | 'dark';
+type Language = 'en' | 'es';
 
 export default function SettingsPage() {
   const [mounted, setMounted] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('light');
+  const [currentTheme, setCurrentTheme] = useState<Theme>('light');
+  const [currentLanguage, setCurrentLanguage] = useState<Language>('en');
 
-  // Effect to load and apply theme on initial mount
+  // Effect to load and apply theme and language on initial mount
   useEffect(() => {
-    const savedTheme = localStorage.getItem('app-theme') as 'light' | 'dark' | null;
-    // Determine initial theme: 1. Saved theme, 2. System preference, 3. Default to light
-    let initialTheme: 'light' | 'dark' = 'light';
+    // Theme loading
+    const savedTheme = localStorage.getItem('app-theme') as Theme | null;
+    let initialTheme: Theme = 'light';
     if (savedTheme) {
       initialTheme = savedTheme;
     } else if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -28,11 +33,20 @@ export default function SettingsPage() {
     } else {
       document.documentElement.classList.remove('dark');
     }
+
+    // Language loading
+    const savedLanguage = localStorage.getItem('app-language') as Language | null;
+    if (savedLanguage) {
+      setCurrentLanguage(savedLanguage);
+      // In a full i18n setup, you would trigger language change here
+      console.log(`App language loaded: ${savedLanguage}`);
+    }
+    
     setMounted(true);
   }, []);
 
   const handleThemeChange = (isDark: boolean) => {
-    if (!mounted) return; // Prevent changes until fully mounted and theme loaded
+    if (!mounted) return;
 
     const newTheme = isDark ? 'dark' : 'light';
     setCurrentTheme(newTheme);
@@ -42,6 +56,18 @@ export default function SettingsPage() {
     } else {
       document.documentElement.classList.remove('dark');
     }
+  };
+
+  const handleLanguageChange = (newLang: Language) => {
+    if (!mounted) return;
+
+    setCurrentLanguage(newLang);
+    localStorage.setItem('app-language', newLang);
+    // In a full i18n setup, you would call your i18n instance here to change the language
+    // e.g., i18n.changeLanguage(newLang);
+    console.log(`App language changed to: ${newLang}. UI update would occur with an i18n library.`);
+    // Potentially force a re-render or use context if components need to react immediately without full i18n
+    // For now, this just saves the preference.
   };
 
   return (
@@ -67,7 +93,7 @@ export default function SettingsPage() {
                     Theme
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Toggle between light and dark themes for the application.
+                    Toggle between light and dark themes.
                   </p>
                 </div>
                 {mounted ? (
@@ -82,7 +108,6 @@ export default function SettingsPage() {
                     <Moon className={`h-5 w-5 ${currentTheme === 'dark' ? 'text-primary' : 'text-muted-foreground'}`} />
                   </div>
                 ) : (
-                  // Skeleton for switch area while loading
                   <div className="flex items-center space-x-2">
                     <div className="h-5 w-5 rounded-full bg-muted-foreground/20 animate-pulse" />
                     <div className="h-6 w-11 rounded-full bg-muted-foreground/20 animate-pulse" />
@@ -92,21 +117,54 @@ export default function SettingsPage() {
               </div>
               {mounted && (
                  <p className="mt-3 text-xs text-muted-foreground">
-                    Current theme: <span className="font-semibold">{currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1)}</span>. Your preference is saved in your browser.
+                    Current theme: <span className="font-semibold">{currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1)}</span>.
                   </p>
               )}
             </div>
           </section>
 
-          {/* Placeholder for future settings sections */}
-          {/* 
+          {/* Language Section */}
           <section className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Notifications</h2>
+            <h2 className="text-xl font-semibold text-foreground">Language</h2>
             <div className="rounded-lg border bg-card p-6 shadow-sm">
-              <p className="text-muted-foreground">Notification settings will appear here.</p>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-0.5">
+                  <Label htmlFor="language-select" className="text-base font-medium flex items-center">
+                    <Languages className="mr-2 h-5 w-5 text-primary/80" />
+                    Display Language
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Choose your preferred language for the application.
+                  </p>
+                </div>
+                {mounted ? (
+                  <Select
+                    value={currentLanguage}
+                    onValueChange={(value: string) => handleLanguageChange(value as Language)}
+                  >
+                    <SelectTrigger className="w-full sm:w-[180px]" id="language-select">
+                      <SelectValue placeholder="Select language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Español (Spanish)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="h-10 w-full sm:w-[180px] rounded-md bg-muted-foreground/20 animate-pulse" />
+                )}
+              </div>
+              {mounted && (
+                 <p className="mt-3 text-xs text-muted-foreground">
+                    Current language: <span className="font-semibold">{currentLanguage === 'en' ? 'English' : 'Español'}</span>.
+                  </p>
+              )}
+              <p className="mt-3 text-xs text-muted-foreground italic">
+                Note: This is a UI placeholder. Actual content translation requires a full internationalization (i18n) setup.
+              </p>
             </div>
           </section>
-          */}
+
         </CardContent>
       </Card>
     </div>
