@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
@@ -47,6 +48,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
               {children}
             </main>
+            <footer className="border-t bg-background/80 p-4 text-center text-sm text-muted-foreground">
+              Powered by ChanceTEK LLC
+            </footer>
           </div>
         </div>
       </div>
