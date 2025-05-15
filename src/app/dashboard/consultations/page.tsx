@@ -14,12 +14,13 @@ import { format } from 'date-fns';
 // Initial mock data - used as a fallback
 const initialMockConsultations: Consultation[] = [
   {
-    id: 'mock-1', // Ensure mock IDs are distinct if merging later
+    id: 'mock-1',
     patientName: 'John Doe (Mock)',
     date: new Date(2023, 10, 15, 10, 30).toISOString(),
     status: 'Completed',
     summary: 'Patient presented with flu-like symptoms. Prescribed rest and fluids.',
-    transcript: 'Doctor: How are you feeling today, John? John: Not so great, doc...'
+    transcript: 'Doctor: How are you feeling today, John? John: Not so great, doc...',
+    audioDataUri: undefined,
   },
   {
     id: 'mock-2',
@@ -27,14 +28,16 @@ const initialMockConsultations: Consultation[] = [
     date: new Date(2023, 10, 16, 14, 0).toISOString(),
     status: 'Completed',
     summary: 'Routine check-up. All vitals normal. Discussed diet and exercise.',
-    transcript: 'Doctor: Hello Jane, welcome. Any concerns today? Jane: No, just here for my check-up...'
+    transcript: 'Doctor: Hello Jane, welcome. Any concerns today? Jane: No, just here for my check-up...',
+    audioDataUri: undefined,
   },
   {
     id: 'mock-3',
     patientName: 'Robert Brown (Mock)',
     date: new Date(Date.now() - 86400000).toISOString(), // Yesterday
-    status: 'Completed', // Changed from Summarizing for consistency
+    status: 'Completed',
     summary: 'Follow-up for hypertension. Blood pressure stable.',
+    audioDataUri: undefined,
   },
 ];
 
@@ -50,7 +53,6 @@ export default function ConsultationsPage() {
       const keys = Object.keys(localStorage);
       const consultationIds: string[] = [];
 
-      // First, gather all unique consultation IDs from localStorage
       keys.forEach(key => {
         if (key.startsWith('consultation-') && key.endsWith('-patientName')) {
           const id = key.replace('consultation-', '').replace('-patientName', '');
@@ -60,14 +62,12 @@ export default function ConsultationsPage() {
         }
       });
 
-      // Then, for each ID, reconstruct the consultation object
       consultationIds.forEach(id => {
         const patientName = localStorage.getItem(`consultation-${id}-patientName`);
         const transcript = localStorage.getItem(`consultation-${id}-transcript`);
         const summary = localStorage.getItem(`consultation-${id}-summary`);
         const date = localStorage.getItem(`consultation-${id}-date`);
-        // Assuming status is 'Completed' for items saved from 'new' page logic
-        // In a real app, status would be part of the saved data or API response
+        const audioDataUri = localStorage.getItem(`consultation-${id}-audioDataUri`);
         const status = 'Completed'; 
 
         if (patientName && date) { 
@@ -78,24 +78,21 @@ export default function ConsultationsPage() {
             status: status as Consultation['status'],
             transcript: transcript || undefined,
             summary: summary || undefined,
+            audioDataUri: audioDataUri || undefined,
           });
         }
       });
 
-      // Sort by date, newest first
       loaded.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       
       if (loaded.length > 0) {
         setConsultations(loaded);
       } else {
-        // Fallback to initial mock data if no consultations in localStorage
         setConsultations(initialMockConsultations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       }
       setIsLoading(false);
     };
-
-    // Simulate a short delay for loading perception if needed, otherwise load directly
-    // setTimeout(loadConsultationsFromStorage, 300); 
+    
     loadConsultationsFromStorage();
   }, []);
 
@@ -149,7 +146,7 @@ export default function ConsultationsPage() {
           </CardContent>
         </Card>
       ) : (
-        <ScrollArea className="h-[calc(100vh-16rem)]"> {/* Adjusted height */}
+        <ScrollArea className="h-[calc(100vh-16rem)]"> 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {consultations.map((consultation) => (
               <Card key={consultation.id} className="flex flex-col justify-between shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card">

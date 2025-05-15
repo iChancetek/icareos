@@ -4,7 +4,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, FileText, MessageSquare, Download, Edit3, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileText, MessageSquare, Download, Edit3, Trash2, Loader2, PlayCircle } from 'lucide-react';
 import type { Consultation } from '@/types';
 import { useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -34,6 +34,7 @@ const mockConsultations: Consultation[] = [
     status: 'Completed',
     transcript: `Doctor: Good morning, John. What brings you in today?\nJohn: Morning, Doctor. I've been having this persistent cough for about a week now, and I'm starting to feel quite fatigued.\nDoctor: I see. Any fever or body aches?\nJohn: Yes, a low-grade fever in the evenings, and my muscles feel a bit sore.\nDoctor: Alright, let's have a listen to your lungs... (Sound of stethoscope)... Lungs sound clear. It's likely a viral infection, common this time of year. I'd recommend plenty of rest, stay hydrated, and you can take some over-the-counter medication for the fever and aches. If it doesn't improve in 3-4 days, or if you feel worse, please come back.\nJohn: Okay, Doctor. Thank you.`,
     summary: 'Patient John Doe presented with a week-long persistent cough, fatigue, low-grade evening fevers, and muscle soreness. Lung examination was clear. Diagnosis points to a viral infection. Recommended treatment includes rest, hydration, and OTC medication for symptoms. Advised to return if no improvement in 3-4 days or if condition worsens.',
+    audioDataUri: undefined,
   },
   {
     id: '2',
@@ -42,6 +43,7 @@ const mockConsultations: Consultation[] = [
     status: 'Completed',
     transcript: `Doctor: Hello Jane, good to see you. Here for your annual check-up?\nJane: Yes, Doctor. Everything's been fine, just the usual.\nDoctor: Excellent. Let's go over your vitals... Blood pressure is 120/80, heart rate is 70. All good. Any changes in your diet or exercise routine?\nJane: I've been trying to eat more vegetables and walk for 30 minutes a day.\nDoctor: That's great to hear, Jane. Keep it up. Your lab results from last week also look perfect. Continue with your healthy habits, and I'll see you next year unless anything comes up.\nJane: Wonderful. Thanks, Doctor!`,
     summary: 'Patient Jane Smith attended for an annual check-up. Vitals (BP 120/80, HR 70) are normal. Patient reports positive lifestyle changes including increased vegetable intake and daily walks. Recent lab results are perfect. Advised to continue healthy habits and schedule next check-up in a year.',
+    audioDataUri: undefined,
   },
 ];
 
@@ -63,12 +65,13 @@ export default function ConsultationDetailPage() {
   useEffect(() => {
     if (id) {
       setIsLoading(true);
+      // Simulating API call delay
       setTimeout(() => {
-        // Try to get data from localStorage first (for newly created items)
         const storedPatientName = localStorage.getItem(`consultation-${id}-patientName`);
         const storedTranscript = localStorage.getItem(`consultation-${id}-transcript`);
         const storedSummary = localStorage.getItem(`consultation-${id}-summary`);
         const storedDate = localStorage.getItem(`consultation-${id}-date`);
+        const storedAudioDataUri = localStorage.getItem(`consultation-${id}-audioDataUri`);
 
         let foundConsultation: Consultation | undefined;
 
@@ -80,13 +83,12 @@ export default function ConsultationDetailPage() {
             status: 'Completed',
             transcript: storedTranscript,
             summary: storedSummary,
+            audioDataUri: storedAudioDataUri || undefined,
           };
         } else {
-          // Fallback to mock data if not in localStorage
-           foundConsultation = mockConsultations.find(c => c.id === id);
+          foundConsultation = mockConsultations.find(c => c.id === id);
         }
         
-        // Fallback for completely new/unknown ID not in localStorage or mocks
         if (!foundConsultation) {
             foundConsultation = {
                 id: id,
@@ -94,7 +96,8 @@ export default function ConsultationDetailPage() {
                 date: new Date().toISOString(),
                 status: 'Completed',
                 transcript: `This is a sample transcript for consultation ID ${id}. The patient discussed various symptoms with the doctor. The doctor provided advice and a potential treatment plan. This is a longer text to simulate a real transcript which can be quite extensive and cover multiple topics during the medical consultation. It's important for the AI to accurately capture all key details.`,
-                summary: `This is an AI-generated summary for consultation ID ${id}. Key points: symptom discussion, doctor's advice, treatment plan. This summary is concise and highlights the most critical information for quick review.`
+                summary: `This is an AI-generated summary for consultation ID ${id}. Key points: symptom discussion, doctor's advice, treatment plan. This summary is concise and highlights the most critical information for quick review.`,
+                audioDataUri: undefined,
             };
         }
         
@@ -113,7 +116,7 @@ export default function ConsultationDetailPage() {
     const updatedConsultation = { ...consultation, summary: editableSummary };
     setConsultation(updatedConsultation);
     setIsEditingSummary(false);
-    localStorage.setItem(`consultation-${consultation.id}-summary`, editableSummary); // Update localStorage
+    localStorage.setItem(`consultation-${consultation.id}-summary`, editableSummary);
     toast({ title: "Summary Updated", description: "Your changes have been saved." });
   };
 
@@ -123,7 +126,7 @@ export default function ConsultationDetailPage() {
     const updatedConsultation = { ...consultation, transcript: editableTranscript };
     setConsultation(updatedConsultation);
     setIsEditingTranscript(false);
-    localStorage.setItem(`consultation-${consultation.id}-transcript`, editableTranscript); // Update localStorage
+    localStorage.setItem(`consultation-${consultation.id}-transcript`, editableTranscript);
     toast({ title: "Transcript Updated", description: "Your changes have been saved." });
   };
 
@@ -134,6 +137,7 @@ export default function ConsultationDetailPage() {
     localStorage.removeItem(`consultation-${id}-transcript`);
     localStorage.removeItem(`consultation-${id}-summary`);
     localStorage.removeItem(`consultation-${id}-date`);
+    localStorage.removeItem(`consultation-${id}-audioDataUri`);
     toast({ title: "Consultation Deleted", description: `Consultation for ${consultation?.patientName} has been removed.` });
     router.push('/dashboard/consultations');
   };
@@ -290,11 +294,30 @@ export default function ConsultationDetailPage() {
                 />
               </div>
             ) : (
-              <ScrollArea className="h-[26.5rem] rounded-md border p-4 bg-background/50 shadow-inner"> {/* h-96 + h-8 for edit button height approx */}
+              <ScrollArea className="h-[26.5rem] rounded-md border p-4 bg-background/50 shadow-inner">
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
                   {consultation.transcript || 'No transcript available.'}
                 </p>
               </ScrollArea>
+            )}
+          </div>
+          
+          {/* Audio Player Section */}
+          <div className="space-y-4 md:col-span-2 pt-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-semibold flex items-center">
+                <PlayCircle className="mr-3 h-7 w-7 text-primary" />
+                Audio Recording
+              </h2>
+            </div>
+            {consultation.audioDataUri ? (
+              <audio controls src={consultation.audioDataUri} className="w-full rounded-md shadow-inner bg-accent/10 p-2">
+                Your browser does not support the audio element.
+              </audio>
+            ) : (
+              <div className="rounded-md border p-4 bg-accent/30 shadow-inner">
+                <p className="text-muted-foreground">No audio recording available for this consultation.</p>
+              </div>
             )}
           </div>
         </CardContent>

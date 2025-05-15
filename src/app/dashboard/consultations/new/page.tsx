@@ -49,7 +49,7 @@ export default function NewConsultationPage() {
         toast({
           variant: 'destructive',
           title: 'Microphone Access Denied',
-          description: 'Please enable microphone permissions to record.',
+          description: 'Please enable microphone permissions in your browser settings and refresh the page.',
           duration: 7000,
         });
       } finally {
@@ -252,11 +252,11 @@ export default function NewConsultationPage() {
         status: 'Completed', 
         transcript: transcript,
         summary: summary,
-        // audioUrl would be set here if audio was uploaded to persistent storage
+        audioDataUri: audioDataUri, // Save audioDataUri for playback
       };
       
       console.log("Attempting to send data to HubSpot placeholder:", consultationToSave);
-      await sendDataToHubSpot(consultationToSave, audioDataUri); // Pass audioDataUri for context
+      await sendDataToHubSpot(consultationToSave, audioDataUri); 
 
       await new Promise(resolve => setTimeout(resolve, 1000)); 
       setProgress(100);
@@ -266,13 +266,14 @@ export default function NewConsultationPage() {
       toast({ title: "Success", description: "Consultation processed and saved." });
 
       console.log("New consultation ID generated:", newConsultationId, "Navigating...");
-      // In a real app, transcript/summary would be persisted along with the new ID
-      // For this demo, we navigate to a detail page that will use mock data for the ID.
-      // Persist patientName, transcript, summary in localStorage for demo purposes
+      
       localStorage.setItem(`consultation-${newConsultationId}-patientName`, patientName);
       localStorage.setItem(`consultation-${newConsultationId}-transcript`, transcript);
       localStorage.setItem(`consultation-${newConsultationId}-summary`, summary);
       localStorage.setItem(`consultation-${newConsultationId}-date`, consultationToSave.date);
+      if (audioDataUri) {
+        localStorage.setItem(`consultation-${newConsultationId}-audioDataUri`, audioDataUri);
+      }
 
 
       setTimeout(() => router.push(`/dashboard/consultations/${newConsultationId}`), 1500);
