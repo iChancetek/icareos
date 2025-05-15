@@ -40,6 +40,14 @@ export default function LoginPage() {
     });
   };
 
+  const handleForgotPassword = () => {
+    toast({
+      title: "Password Reset",
+      description: "If this account exists, a password reset link has been sent to your email address. (This is a demo feature).",
+      duration: 5000,
+    });
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/30 p-4 selection:bg-primary/20">
       <Card className="w-full max-w-md shadow-xl rounded-xl border border-primary/20 bg-card/95 backdrop-blur-sm hover:shadow-2xl hover:shadow-primary/25 transition-all duration-300 ease-in-out">
@@ -69,9 +77,14 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link href="#" className="text-sm text-primary hover:text-primary/80 transition-colors duration-150 hover:underline">
+                <Button
+                  type="button"
+                  variant="link"
+                  className="p-0 h-auto text-sm text-primary hover:text-primary/80 transition-colors duration-150 hover:underline"
+                  onClick={handleForgotPassword}
+                >
                   Forgot password?
-                </Link>
+                </Button>
               </div>
               <div className="relative">
                 <Input 
