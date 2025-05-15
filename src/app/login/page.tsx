@@ -69,7 +69,7 @@ export default function LoginPage() {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold tracking-tight">MediSummarize</CardTitle>
-          <CardDescription>A voice recording and transcription application specifically designed for healthcare professionals to streamline communication and significantly enhance the patient experience.</CardDescription>
+          <CardDescription>A Generative AI-powered voice recording and transcription application, specifically designed for healthcare professionals to streamline communication and significantly enhance the patient experience.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
