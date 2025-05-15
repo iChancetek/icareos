@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -18,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { SheetTitle } from '@/components/ui/sheet';
 
 interface NavItem {
   href: string;
@@ -47,12 +49,16 @@ export default function AppSidebar() {
   return (
     <Sidebar side="left" variant="sidebar" collapsible={isMobile ? "offcanvas" : "icon"}>
       <SidebarHeader className="p-4">
+        {/* Add accessible title for mobile sheet/dialog */}
+        {isMobile && <SheetTitle className="sr-only">Menu</SheetTitle>}
         <div className="flex items-center gap-2">
           <Stethoscope className="h-8 w-8 text-primary" />
+          {/* Visual title for expanded desktop sidebar */}
           {sidebarState === 'expanded' && !isMobile && (
              <h1 className="text-xl font-semibold text-foreground">MediSummarize</h1>
           )}
         </div>
+         {/* Desktop-only trigger for collapsing/expanding */}
          {!isMobile && <SidebarTrigger className="absolute right-2 top-3 data-[state=open]:hidden data-[state=closed]:block group-data-[collapsible=offcanvas]:hidden" />}
       </SidebarHeader>
       
@@ -88,3 +94,4 @@ export default function AppSidebar() {
     </Sidebar>
   );
 }
+
