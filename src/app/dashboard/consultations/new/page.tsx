@@ -32,9 +32,11 @@ export default function NewConsultationPage() {
 
   useEffect(() => {
     const getMicPermission = async () => {
+      console.log("Attempting to get microphone permission...");
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         setHasMicPermission(true);
+        console.log("Microphone permission granted.");
         stream.getTracks().forEach(track => track.stop()); // Release mic immediately after permission check
       } catch (error) {
         console.error('Error accessing microphone:', error);
@@ -47,46 +49,62 @@ export default function NewConsultationPage() {
         });
       } finally {
         setIsPermissionChecked(true);
+        console.log("Microphone permission check complete. Has permission:", hasMicPermission);
       }
     };
 
     if (typeof navigator !== "undefined" && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       getMicPermission();
     } else {
+      console.error("Audio recording not supported or permissions blocked by browser settings.");
       setHasMicPermission(false);
       setIsPermissionChecked(true);
       toast({
         variant: 'destructive',
-        title: 'Unsupported Browser',
-        description: 'Audio recording is not supported or permissions are blocked.',
+        title: 'Unsupported Browser or Settings',
+        description: 'Audio recording is not supported or microphone permissions are blocked in your browser.',
         duration: 7000,
       });
     }
-  }, [toast]);
+  }, [toast]); // hasMicPermission removed from dependency array to prevent re-triggering on its own change
 
 
   const handleStartRecording = async () => {
+    console.log("handleStartRecording called. Has mic permission:", hasMicPermission, "Permission checked:", isPermissionChecked);
     if (!hasMicPermission || !isPermissionChecked) {
       toast({ title: "Microphone Access Required", description: "Please enable microphone permissions and try again.", variant: "destructive" });
       return;
     }
     let stream: MediaStream | null = null;
     try {
+      console.log("Requesting media stream for recording...");
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      audioChunksRef.current = [];
-      setAudioDataUri(null);
+      console.log("Media stream obtained for recording:", stream);
 
-      mediaRecorderRef.current.ondataavailable = (event) => {
+      // Ensure audioChunksRef is reset before starting a new recording
+      audioChunksRef.current = [];
+      setAudioDataUri(null); // Clear any previous audio data URI
+
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      console.log("MediaRecorder instance created:", mediaRecorderRef.current);
+
+
+      mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
+          console.log("MediaRecorder ondataavailable: chunk received, size:", event.data.size, "total chunks:", audioChunksRef.current.length);
+        } else {
+          console.log("MediaRecorder ondataavailable: received empty chunk.");
         }
       };
 
-      mediaRecorderRef.current.onerror = (event) => {
-        console.error("MediaRecorder error:", event);
-        const mediaRecorderError = event instanceof ErrorEvent ? event.error : (event as any)?.error;
-        const errorMessage = mediaRecorderError?.name || mediaRecorderError?.message || 'Unknown recording error';
+      mediaRecorderRef.current.onerror = (event: Event) => {
+        // The event is a MediaRecorderErrorEvent, which has an `error` property (DOMException)
+        const mediaRecorderErrorEvent = event as MediaRecorderErrorEvent;
+        const errorDetails = mediaRecorderErrorEvent.error;
+        console.error("MediaRecorder error event:", event, "DOMException:", errorDetails);
+        
+        const errorMessage = errorDetails?.name || errorDetails?.message || 'Unknown recording error';
         
         toast({
           title: "Recording Error",
@@ -97,11 +115,14 @@ export default function NewConsultationPage() {
         setCurrentStepMessage(`Recording failed: ${errorMessage}`);
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
+            console.log("Recording stream tracks stopped due to MediaRecorder error.");
         }
       };
 
       mediaRecorderRef.current.onstop = () => {
+        console.log("MediaRecorder onstop event fired. Total chunks recorded:", audioChunksRef.current.length);
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        console.log("Audio blob created, size:", audioBlob.size, "type:", audioBlob.type);
         
         if (audioBlob.size === 0) {
           toast({
@@ -109,12 +130,13 @@ export default function NewConsultationPage() {
             description: "No audio was recorded. Please try again and ensure your microphone is working and you speak for a few seconds.",
             variant: "destructive",
           });
-          setRecordingState('idle'); // Or 'error' if preferred
+          setRecordingState('idle');
           setCurrentStepMessage("No audio data recorded.");
           setAudioDataUri(null);
           setProgress(0);
            if (stream) {
             stream.getTracks().forEach(track => track.stop());
+            console.log("Recording stream tracks stopped. No audio data recorded.");
           }
           return;
         }
@@ -124,45 +146,54 @@ export default function NewConsultationPage() {
         reader.onloadend = () => {
           const base64Audio = reader.result as string;
           setAudioDataUri(base64Audio);
+          console.log("Audio converted to Data URI, length:", base64Audio.length);
           setRecordingState('idle');
           setProgress(100); 
           setCurrentStepMessage("Recording complete. Ready to save.");
           toast({ title: "Recording Stopped", description: `Recorded ${Math.round(audioBlob.size / 1024)} KB` });
         };
-        reader.onerror = () => {
-            console.error("FileReader error");
+        reader.onerror = (error) => {
+            console.error("FileReader error when converting blob to Data URI:", error);
             toast({ title: "Processing Error", description: "Could not process recorded audio data.", variant: "destructive" });
             setRecordingState('error');
             setCurrentStepMessage("Error processing audio.");
         }
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
+            console.log("Recording stream tracks stopped after successful recording stop.");
         }
       };
 
       mediaRecorderRef.current.start();
+      console.log("MediaRecorder started.");
       setRecordingState('recording');
       setProgress(0); 
       setCurrentStepMessage("Recording in progress... Speak clearly.");
       toast({ title: "Recording Started" });
     } catch (err: any) {
-      console.error("Error starting recording:", err);
-      toast({ title: "Recording Error", description: `Could not start recording: ${err.message || 'Unknown error'}. Please ensure microphone is connected and permissions are granted.`, variant: "destructive" });
+      console.error("Error in handleStartRecording (getUserMedia or MediaRecorder.start):", err);
+      toast({ title: "Recording Setup Error", description: `Could not start recording: ${err.message || 'Unknown error'}. Please ensure microphone is connected and permissions are granted.`, variant: "destructive" });
       setRecordingState('error');
       setCurrentStepMessage(`Failed to start recording: ${err.message || 'Unknown error'}`);
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
+        console.log("Recording stream tracks stopped due to error in handleStartRecording.");
       }
     }
   };
 
   const handleStopRecording = () => {
+    console.log("handleStopRecording called.");
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
+      console.log("MediaRecorder.stop() called.");
+    } else {
+      console.log("MediaRecorder not active or not available to stop.");
     }
   };
 
   const handleSaveConsultation = async () => {
+    console.log("handleSaveConsultation called. audioDataUri present:", !!audioDataUri);
     if (!audioDataUri) {
       toast({ title: "No Audio", description: "Please record audio before saving.", variant: "destructive" });
       return;
@@ -172,14 +203,15 @@ export default function NewConsultationPage() {
     
     try {
       setCurrentStepMessage(processingSteps[0]); // Transcribing
-      console.log("Sending audio for transcription, size:", audioDataUri.length);
+      console.log("Sending audio for transcription, Data URI length:", audioDataUri.length);
       const transcriptionResult = await transcribeAudio({ audioDataUri });
-      if (!transcriptionResult || typeof transcriptionResult.transcription !== 'string') { // Check for string specifically
+      if (!transcriptionResult || typeof transcriptionResult.transcription !== 'string') {
+        console.error("Transcription service did not return a valid transcript object or transcription string.", transcriptionResult);
         throw new Error("Transcription service did not return a valid transcript.");
       }
        if (transcriptionResult.transcription.trim() === "") {
+        console.log("Transcription result is an empty string.");
         toast({ title: "Transcription Result", description: "Transcription is empty. The audio might have been silent or too short.", variant: "default" });
-        // Consider if this is an error state or just an outcome
       }
       setProgress(33);
       const transcript = transcriptionResult.transcription;
@@ -189,7 +221,8 @@ export default function NewConsultationPage() {
       setCurrentStepMessage(processingSteps[1]); // Summarizing
       console.log("Sending transcript for summarization.");
       const summaryResult = await summarizeConsultation({ transcript });
-      if (!summaryResult || typeof summaryResult.summary !== 'string') { // Check for string
+      if (!summaryResult || typeof summaryResult.summary !== 'string') { 
+        console.error("Summarization service did not return a valid summary object or summary string.", summaryResult);
         throw new Error("Summarization service did not return a valid summary.");
       }
       setProgress(66);
@@ -198,6 +231,7 @@ export default function NewConsultationPage() {
 
 
       setCurrentStepMessage(processingSteps[2]); // Finalizing
+      console.log("Finalizing consultation save...");
       await new Promise(resolve => setTimeout(resolve, 1000)); 
       setProgress(100);
 
@@ -206,13 +240,13 @@ export default function NewConsultationPage() {
       toast({ title: "Success", description: "Consultation processed and saved." });
 
       const newConsultationId = Math.random().toString(36).substring(7); 
+      console.log("New consultation ID generated:", newConsultationId, "Navigating...");
       // In a real app, transcript/summary would be persisted along with the new ID
       // For this demo, we navigate to a detail page that will use mock data for the ID.
-      // You would pass the actual transcript and summary to the new page or a data store.
       setTimeout(() => router.push(`/dashboard/consultations/${newConsultationId}`), 1500);
 
     } catch (error) {
-      console.error("Processing error details:", error);
+      console.error("Processing error details during save/AI calls:", error);
       setRecordingState('error');
       let description = "An unknown error occurred during AI processing.";
       if (error instanceof Error) {
@@ -257,7 +291,7 @@ export default function NewConsultationPage() {
           <CardDescription>Record audio for transcription and summarization.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center space-y-8 py-10">
-          <div className="p-6 bg-accent rounded-full animate-pulse-slow-shadow">
+          <div className="p-6 bg-accent/30 rounded-full animate-pulse-slow-shadow">
             {renderIcon()}
           </div>
           
@@ -331,16 +365,24 @@ export default function NewConsultationPage() {
              <Button 
                 size="lg" 
                 onClick={() => { 
+                    console.log("Try Again button clicked. Resetting state.");
                     setRecordingState('idle'); 
                     setProgress(0); 
                     setCurrentStepMessage(''); 
                     setAudioDataUri(null);
+                    audioChunksRef.current = []; // Also reset audio chunks
                     if (!hasMicPermission && isPermissionChecked) {
                        toast({
                           variant: 'destructive',
                           title: 'Microphone Access Still Denied',
-                          description: 'Please enable microphone permissions.',
+                          description: 'Please enable microphone permissions in your browser settings and refresh if necessary.',
                           duration: 7000,
+                        });
+                    } else if (hasMicPermission && isPermissionChecked) {
+                        toast({
+                            title: 'Ready to Record',
+                            description: 'You can now try recording again.',
+                            variant: 'default'
                         });
                     }
                 }} 
@@ -364,3 +406,13 @@ export default function NewConsultationPage() {
   );
 }
 
+// Define MediaRecorderErrorEvent if not available globally (e.g., in older TS lib versions)
+interface MediaRecorderErrorEvent extends Event {
+  readonly error: DOMException;
+}
+
+// Define BlobEvent if not available globally
+interface BlobEvent extends Event {
+  readonly data: Blob;
+  readonly timecode: number;
+}
