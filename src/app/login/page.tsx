@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -40,14 +41,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-accent to-background p-4">
-      <Card className="w-full max-w-md shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/30 p-4 selection:bg-primary/20">
+      <Card className="w-full max-w-md shadow-xl rounded-xl border border-primary/20 bg-card/95 backdrop-blur-sm hover:shadow-2xl hover:shadow-primary/25 transition-all duration-300 ease-in-out">
         <CardHeader className="text-center">
-          <div className="mb-4 flex justify-center">
-            <Stethoscope className="h-16 w-16 text-primary" />
+          <div className="mb-6 flex justify-center">
+            <div className="rounded-full p-5 bg-primary/10 shadow-lg shadow-primary/20">
+              <Stethoscope className="h-16 w-16 text-primary" />
+            </div>
           </div>
-          <CardTitle className="text-3xl font-bold">MediSummarize</CardTitle>
-          <CardDescription>Welcome back! Please login to your account.</CardDescription>
+          <CardTitle className="text-3xl font-bold tracking-tight">MediSummarize</CardTitle>
+          <CardDescription>Login to access your MediSummarize dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -60,13 +63,13 @@ export default function LoginPage() {
                 required 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-background/70"
+                className="bg-card/70 backdrop-blur-sm border-primary/20 focus:border-primary/40 placeholder:text-muted-foreground/80 transition-all duration-200"
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link href="#" className="text-sm text-primary hover:underline">
+                <Link href="#" className="text-sm text-primary hover:text-primary/80 transition-colors duration-150 hover:underline">
                   Forgot password?
                 </Link>
               </div>
@@ -77,7 +80,7 @@ export default function LoginPage() {
                   required 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="bg-background/70"
+                  className="bg-card/70 backdrop-blur-sm border-primary/20 focus:border-primary/40 placeholder:text-muted-foreground/80 transition-all duration-200"
                 />
                 <Button
                   type="button"
@@ -90,13 +93,16 @@ export default function LoginPage() {
                 </Button>
               </div>
             </div>
-            <Button type="submit" className="w-full text-lg py-6">
+            <Button 
+              type="submit" 
+              className="w-full text-lg py-6 font-semibold tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 transform hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 ease-in-out focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:outline-none shadow-md hover:shadow-lg hover:shadow-primary/20"
+            >
               Login
             </Button>
           </form>
           <div className="mt-6 text-center text-sm">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className="font-semibold text-primary hover:underline">
+            <Link href="/signup" className="font-semibold text-primary hover:text-primary/80 transition-colors duration-150 hover:underline">
               Sign up
             </Link>
           </div>
