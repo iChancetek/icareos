@@ -5,12 +5,16 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Mic, StopCircle, Save, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from "@/hooks/use-toast";
 import { transcribeAudio } from '@/ai/flows/transcribe-audio';
 import { summarizeConsultation } from '@/ai/flows/summarize-consultation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { sendDataToHubSpot } from '@/services/hubspotService';
+import type { Consultation } from '@/types';
 
 type RecordingState = 'idle' | 'recording' | 'processing' | 'success' | 'error';
 
@@ -19,6 +23,7 @@ export default function NewConsultationPage() {
   const { toast } = useToast();
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [progress, setProgress] = useState(0);
+  const [patientName, setPatientName] = useState('');
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -66,11 +71,16 @@ export default function NewConsultationPage() {
         duration: 7000,
       });
     }
-  }, [toast]); // hasMicPermission removed from dependency array to prevent re-triggering on its own change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast]); // hasMicPermission removed, toast is stable
 
 
   const handleStartRecording = async () => {
     console.log("handleStartRecording called. Has mic permission:", hasMicPermission, "Permission checked:", isPermissionChecked);
+    if (!patientName.trim()) {
+      toast({ title: "Patient Name Required", description: "Please enter the patient's name before recording.", variant: "destructive" });
+      return;
+    }
     if (!hasMicPermission || !isPermissionChecked) {
       toast({ title: "Microphone Access Required", description: "Please enable microphone permissions and try again.", variant: "destructive" });
       return;
@@ -81,9 +91,8 @@ export default function NewConsultationPage() {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       console.log("Media stream obtained for recording:", stream);
 
-      // Ensure audioChunksRef is reset before starting a new recording
       audioChunksRef.current = [];
-      setAudioDataUri(null); // Clear any previous audio data URI
+      setAudioDataUri(null); 
 
       mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       console.log("MediaRecorder instance created:", mediaRecorderRef.current);
@@ -99,7 +108,6 @@ export default function NewConsultationPage() {
       };
 
       mediaRecorderRef.current.onerror = (event: Event) => {
-        // The event is a MediaRecorderErrorEvent, which has an `error` property (DOMException)
         const mediaRecorderErrorEvent = event as MediaRecorderErrorEvent;
         const errorDetails = mediaRecorderErrorEvent.error;
         console.error("MediaRecorder error event:", event, "DOMException:", errorDetails);
@@ -194,6 +202,10 @@ export default function NewConsultationPage() {
 
   const handleSaveConsultation = async () => {
     console.log("handleSaveConsultation called. audioDataUri present:", !!audioDataUri);
+     if (!patientName.trim()) {
+      toast({ title: "Patient Name Required", description: "Please enter the patient's name before saving.", variant: "destructive" });
+      return;
+    }
     if (!audioDataUri) {
       toast({ title: "No Audio", description: "Please record audio before saving.", variant: "destructive" });
       return;
@@ -229,9 +241,23 @@ export default function NewConsultationPage() {
       const summary = summaryResult.summary;
       console.log("Summary received:", summary.substring(0,100) + "...");
 
-
       setCurrentStepMessage(processingSteps[2]); // Finalizing
       console.log("Finalizing consultation save...");
+      
+      const newConsultationId = Math.random().toString(36).substring(2, 9); // Slightly longer ID
+      const consultationToSave: Consultation = {
+        id: newConsultationId,
+        patientName: patientName,
+        date: new Date().toISOString(),
+        status: 'Completed', 
+        transcript: transcript,
+        summary: summary,
+        // audioUrl would be set here if audio was uploaded to persistent storage
+      };
+      
+      console.log("Attempting to send data to HubSpot placeholder:", consultationToSave);
+      await sendDataToHubSpot(consultationToSave, audioDataUri); // Pass audioDataUri for context
+
       await new Promise(resolve => setTimeout(resolve, 1000)); 
       setProgress(100);
 
@@ -239,10 +265,16 @@ export default function NewConsultationPage() {
       setCurrentStepMessage("Consultation processed successfully!");
       toast({ title: "Success", description: "Consultation processed and saved." });
 
-      const newConsultationId = Math.random().toString(36).substring(7); 
       console.log("New consultation ID generated:", newConsultationId, "Navigating...");
       // In a real app, transcript/summary would be persisted along with the new ID
       // For this demo, we navigate to a detail page that will use mock data for the ID.
+      // Persist patientName, transcript, summary in localStorage for demo purposes
+      localStorage.setItem(`consultation-${newConsultationId}-patientName`, patientName);
+      localStorage.setItem(`consultation-${newConsultationId}-transcript`, transcript);
+      localStorage.setItem(`consultation-${newConsultationId}-summary`, summary);
+      localStorage.setItem(`consultation-${newConsultationId}-date`, consultationToSave.date);
+
+
       setTimeout(() => router.push(`/dashboard/consultations/${newConsultationId}`), 1500);
 
     } catch (error) {
@@ -291,6 +323,18 @@ export default function NewConsultationPage() {
           <CardDescription>Record audio for transcription and summarization.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center space-y-8 py-10">
+          <div className="w-full max-w-md space-y-2">
+            <Label htmlFor="patientName">Patient Name</Label>
+            <Input 
+              id="patientName" 
+              placeholder="Enter patient's full name" 
+              value={patientName}
+              onChange={(e) => setPatientName(e.target.value)}
+              disabled={recordingState === 'recording' || recordingState === 'processing'}
+              className="text-base"
+            />
+          </div>
+
           <div className="p-6 bg-accent/30 rounded-full animate-pulse-slow-shadow">
             {renderIcon()}
           </div>
@@ -298,7 +342,7 @@ export default function NewConsultationPage() {
           {(!isPermissionChecked && recordingState === 'idle') && (
             <div className="flex items-center space-x-2 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Checking microphone permissions... Please wait.</span>
+              <span>Checking microphone permissions...</span>
             </div>
           )}
 
@@ -307,7 +351,7 @@ export default function NewConsultationPage() {
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Microphone Access Denied</AlertTitle>
               <AlertDescription>
-                MediSummarize needs microphone access to record audio. Please enable it in your browser settings and refresh the page.
+                MediSummarize needs microphone access. Please enable it in your browser settings and refresh.
               </AlertDescription>
             </Alert>
           )}
@@ -333,7 +377,7 @@ export default function NewConsultationPage() {
               size="lg" 
               onClick={handleStartRecording} 
               className="w-full sm:w-auto shadow-md"
-              disabled={!isPermissionChecked || !hasMicPermission || recordingState === 'recording'}
+              disabled={!isPermissionChecked || !hasMicPermission || recordingState === 'recording' || !patientName.trim()}
             >
               <Mic className="mr-2 h-5 w-5" />
               Start Recording
@@ -355,13 +399,13 @@ export default function NewConsultationPage() {
               size="lg" 
               onClick={handleSaveConsultation} 
               className="w-full sm:w-auto shadow-md"
-              disabled={recordingState === 'processing' || recordingState === 'recording'}
+              disabled={recordingState === 'processing' || recordingState === 'recording' || !patientName.trim()}
             >
               <Save className="mr-2 h-5 w-5" />
               Save Consultation
             </Button>
           )}
-          {(recordingState === 'error') && (
+          {(recordingState === 'error' || (recordingState === 'idle' && audioDataUri && !patientName.trim())) && ( // Show Try Again if error OR if audio recorded but no patient name
              <Button 
                 size="lg" 
                 onClick={() => { 
@@ -370,7 +414,8 @@ export default function NewConsultationPage() {
                     setProgress(0); 
                     setCurrentStepMessage(''); 
                     setAudioDataUri(null);
-                    audioChunksRef.current = []; // Also reset audio chunks
+                    audioChunksRef.current = [];
+                    // Don't reset patientName here, user might want to keep it
                     if (!hasMicPermission && isPermissionChecked) {
                        toast({
                           variant: 'destructive',
@@ -378,12 +423,14 @@ export default function NewConsultationPage() {
                           description: 'Please enable microphone permissions in your browser settings and refresh if necessary.',
                           duration: 7000,
                         });
-                    } else if (hasMicPermission && isPermissionChecked) {
+                    } else if (hasMicPermission && isPermissionChecked && patientName.trim()) {
                         toast({
                             title: 'Ready to Record',
                             description: 'You can now try recording again.',
                             variant: 'default'
                         });
+                    } else if (!patientName.trim()) {
+                       toast({ title: "Patient Name Required", description: "Please enter the patient's name.", variant: "destructive" });
                     }
                 }} 
                 className="w-full sm:w-auto shadow-md"

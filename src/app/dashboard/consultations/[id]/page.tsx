@@ -62,51 +62,78 @@ export default function ConsultationDetailPage() {
 
   useEffect(() => {
     if (id) {
-      // Simulate fetching data
       setIsLoading(true);
       setTimeout(() => {
-        const foundConsultation = mockConsultations.find(c => c.id === id) || 
-          { // Fallback for dynamically generated ID from 'new' page
+        // Try to get data from localStorage first (for newly created items)
+        const storedPatientName = localStorage.getItem(`consultation-${id}-patientName`);
+        const storedTranscript = localStorage.getItem(`consultation-${id}-transcript`);
+        const storedSummary = localStorage.getItem(`consultation-${id}-summary`);
+        const storedDate = localStorage.getItem(`consultation-${id}-date`);
+
+        let foundConsultation: Consultation | undefined;
+
+        if (storedPatientName && storedTranscript && storedSummary && storedDate) {
+          foundConsultation = {
             id: id,
-            patientName: `Patient ${id.substring(0,4)}`,
-            date: new Date().toISOString(),
+            patientName: storedPatientName,
+            date: storedDate,
             status: 'Completed',
-            transcript: `This is a sample transcript for consultation ID ${id}. The patient discussed various symptoms with the doctor. The doctor provided advice and a potential treatment plan. This is a longer text to simulate a real transcript which can be quite extensive and cover multiple topics during the medical consultation. It's important for the AI to accurately capture all key details.`,
-            summary: `This is an AI-generated summary for consultation ID ${id}. Key points: symptom discussion, doctor's advice, treatment plan. This summary is concise and highlights the most critical information for quick review.`
+            transcript: storedTranscript,
+            summary: storedSummary,
           };
-        
-        if (foundConsultation) {
-          setConsultation(foundConsultation);
-          setEditableSummary(foundConsultation.summary || '');
-          setEditableTranscript(foundConsultation.transcript || '');
         } else {
-          toast({ title: "Error", description: "Consultation not found.", variant: "destructive" });
-          router.push('/dashboard/consultations');
+          // Fallback to mock data if not in localStorage
+           foundConsultation = mockConsultations.find(c => c.id === id);
         }
+        
+        // Fallback for completely new/unknown ID not in localStorage or mocks
+        if (!foundConsultation) {
+            foundConsultation = {
+                id: id,
+                patientName: `Patient ${id.substring(0,4)}`,
+                date: new Date().toISOString(),
+                status: 'Completed',
+                transcript: `This is a sample transcript for consultation ID ${id}. The patient discussed various symptoms with the doctor. The doctor provided advice and a potential treatment plan. This is a longer text to simulate a real transcript which can be quite extensive and cover multiple topics during the medical consultation. It's important for the AI to accurately capture all key details.`,
+                summary: `This is an AI-generated summary for consultation ID ${id}. Key points: symptom discussion, doctor's advice, treatment plan. This summary is concise and highlights the most critical information for quick review.`
+            };
+        }
+        
+        setConsultation(foundConsultation);
+        setEditableSummary(foundConsultation.summary || '');
+        setEditableTranscript(foundConsultation.transcript || '');
+        
         setIsLoading(false);
       }, 500);
     }
   }, [id, router, toast]);
 
   const handleSaveSummary = () => {
-    // Simulate API call to save summary
+    if (!consultation) return;
     console.log("Saving summary:", editableSummary);
-    setConsultation(prev => prev ? { ...prev, summary: editableSummary } : null);
+    const updatedConsultation = { ...consultation, summary: editableSummary };
+    setConsultation(updatedConsultation);
     setIsEditingSummary(false);
+    localStorage.setItem(`consultation-${consultation.id}-summary`, editableSummary); // Update localStorage
     toast({ title: "Summary Updated", description: "Your changes have been saved." });
   };
 
   const handleSaveTranscript = () => {
-    // Simulate API call to save transcript
+     if (!consultation) return;
     console.log("Saving transcript:", editableTranscript);
-    setConsultation(prev => prev ? { ...prev, transcript: editableTranscript } : null);
+    const updatedConsultation = { ...consultation, transcript: editableTranscript };
+    setConsultation(updatedConsultation);
     setIsEditingTranscript(false);
+    localStorage.setItem(`consultation-${consultation.id}-transcript`, editableTranscript); // Update localStorage
     toast({ title: "Transcript Updated", description: "Your changes have been saved." });
   };
 
   const handleDeleteConsultation = () => {
-    // Simulate API call to delete
+    if (!consultation) return;
     console.log("Deleting consultation:", id);
+    localStorage.removeItem(`consultation-${id}-patientName`);
+    localStorage.removeItem(`consultation-${id}-transcript`);
+    localStorage.removeItem(`consultation-${id}-summary`);
+    localStorage.removeItem(`consultation-${id}-date`);
     toast({ title: "Consultation Deleted", description: `Consultation for ${consultation?.patientName} has been removed.` });
     router.push('/dashboard/consultations');
   };
@@ -139,12 +166,12 @@ export default function ConsultationDetailPage() {
   }
 
   if (!consultation) {
-    return <div className="text-center py-10">Consultation not found.</div>;
+    return <div className="text-center py-10">Consultation not found. Please go back and create one.</div>;
   }
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-0">
-      <Button variant="outline" onClick={() => router.back()} className="mb-6 shadow hover:shadow-md">
+      <Button variant="outline" onClick={() => router.push('/dashboard/consultations')} className="mb-6 shadow hover:shadow-md">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Consultations
       </Button>

@@ -1,3 +1,4 @@
+
 export interface Consultation {
   id: string;
   patientName: string;
@@ -5,5 +6,9 @@ export interface Consultation {
   status: 'Recorded' | 'Transcribing' | 'Summarizing' | 'Completed' | 'Failed';
   transcript?: string;
   summary?: string;
-  audioUrl?: string; // Optional: if storing audio URLs
+  audioUrl?: string; // Optional: URL if audio is stored persistently
+  // Potential future fields for HubSpot integration:
+  // hubspotContactId?: string;
+  // hubspotDealId?: string;
+  // hubspotNoteId?: string;
 }
