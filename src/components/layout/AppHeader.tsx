@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -13,11 +14,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
-import { useSidebar } from '@/components/ui/sidebar'; // Assuming sidebar exposes a toggle for mobile
+import { useSidebar } from '@/components/ui/sidebar'; 
 
 export default function AppHeader() {
   const { user, logout } = useAuth();
-  const { toggleSidebar, isMobile } = useSidebar(); // Get toggleSidebar from useSidebar
+  const { toggleSidebar, isMobile } = useSidebar(); 
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur md:px-6">
@@ -51,14 +52,18 @@ export default function AppHeader() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <UserCircle className="mr-2 h-4 w-4" />
-              <span>Profile</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
-            </DropdownMenuItem>
+            <Link href="/dashboard/profile" passHref>
+              <DropdownMenuItem asChild>
+                <a><UserCircle className="mr-2 h-4 w-4" />
+                <span>Profile</span></a>
+              </DropdownMenuItem>
+            </Link>
+            <Link href="/dashboard/settings" passHref>
+              <DropdownMenuItem asChild>
+                <a><Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span></a>
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" />

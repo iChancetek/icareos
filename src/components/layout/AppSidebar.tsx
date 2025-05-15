@@ -30,8 +30,8 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/dashboard/consultations', label: 'Consultations', icon: LayoutDashboard, matchStartsWith: true },
-  // { href: '/dashboard/profile', label: 'Profile', icon: User }, // Example, if needed later
-  // { href: '/dashboard/settings', label: 'Settings', icon: Settings }, // Example
+  { href: '/dashboard/profile', label: 'Profile', icon: User },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function AppSidebar() {
@@ -41,6 +41,10 @@ export default function AppSidebar() {
 
   const isActive = (item: NavItem) => {
     if (item.matchStartsWith) {
+      // For /dashboard/consultations, also match /dashboard/consultations/new and /dashboard/consultations/[id]
+      if (item.href === '/dashboard/consultations') {
+        return pathname.startsWith('/dashboard/consultations');
+      }
       return pathname.startsWith(item.href);
     }
     return pathname === item.href;
@@ -49,16 +53,13 @@ export default function AppSidebar() {
   return (
     <Sidebar side="left" variant="sidebar" collapsible={isMobile ? "offcanvas" : "icon"}>
       <SidebarHeader className="p-4">
-        {/* Add accessible title for mobile sheet/dialog */}
         {isMobile && <SheetTitle className="sr-only">Menu</SheetTitle>}
         <div className="flex items-center gap-2">
           <Stethoscope className="h-8 w-8 text-primary" />
-          {/* Visual title for expanded desktop sidebar */}
           {sidebarState === 'expanded' && !isMobile && (
              <h1 className="text-xl font-semibold text-foreground">MediSummarize</h1>
           )}
         </div>
-         {/* Desktop-only trigger for collapsing/expanding */}
          {!isMobile && <SidebarTrigger className="absolute right-2 top-3 data-[state=open]:hidden data-[state=closed]:block group-data-[collapsible=offcanvas]:hidden" />}
       </SidebarHeader>
       
@@ -94,4 +95,3 @@ export default function AppSidebar() {
     </Sidebar>
   );
 }
-

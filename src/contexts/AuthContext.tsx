@@ -10,16 +10,19 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (emailIn: string, passwordIn: string) => Promise<boolean>;
-  signup: (emailIn: string, passwordIn: string) => Promise<boolean>;
+  signup: (emailIn: string, passwordIn: string, displayNameIn?: string) => Promise<boolean>;
   logout: () => void;
   user: { email?: string; displayName?: string } | null;
+  updateUserDisplayName: (newDisplayName: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_TOKEN_KEY = 'medisummarize_auth_token';
-const MOCK_USER_EMAIL_KEY = 'medisummarize_mock_user_email';
-const MOCK_USER_PASSWORD_KEY = 'medisummarize_mock_user_password'; // INSECURE: For demo only
+const MOCK_USER_EMAIL_KEY = 'medisummarize_mock_user_email'; // Used to track the "active" mock user for demo
+const MOCK_USER_PASSWORD_KEY_PREFIX = 'medisummarize_mock_user_password_'; // Stores password per email
+const MOCK_USER_DISPLAY_NAME_KEY_PREFIX = 'medisummarize_mock_user_display_name_'; // Stores display name per email
+
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -30,10 +33,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
-    const storedEmail = localStorage.getItem(MOCK_USER_EMAIL_KEY);
-    if (token && storedEmail) {
+    const activeUserEmail = localStorage.getItem(MOCK_USER_EMAIL_KEY); // Get current "logged in" user email
+
+    if (token && activeUserEmail) {
+      const displayName = localStorage.getItem(`${MOCK_USER_DISPLAY_NAME_KEY_PREFIX}${activeUserEmail}`) || 'User';
       setIsAuthenticated(true);
-      setUser({ email: storedEmail, displayName: 'Dr. Demo' });
+      setUser({ email: activeUserEmail, displayName });
     }
     setIsLoading(false);
   }, []);
@@ -49,19 +54,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (emailIn: string, passwordIn: string): Promise<boolean> => {
     setIsLoading(true);
-    // Simulate API call / check
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const storedEmail = localStorage.getItem(MOCK_USER_EMAIL_KEY);
-    const storedPassword = localStorage.getItem(MOCK_USER_PASSWORD_KEY);
+    const storedPassword = localStorage.getItem(`${MOCK_USER_PASSWORD_KEY_PREFIX}${emailIn}`);
+    
+    // Check if user exists (by checking if password is set for that email)
+    if (localStorage.getItem(`${MOCK_USER_PASSWORD_KEY_PREFIX}${emailIn}`) === null) {
+        setIsLoading(false);
+        return false; // User does not exist
+    }
 
-    if (storedEmail === emailIn && storedPassword === passwordIn) {
+
+    if (storedPassword === passwordIn) {
       const mockToken = `mock_token_${Date.now()}`;
       localStorage.setItem(AUTH_TOKEN_KEY, mockToken);
-      setIsAuthenticated(true);
-      setUser({ email: emailIn, displayName: 'Dr. Demo' });
+      localStorage.setItem(MOCK_USER_EMAIL_KEY, emailIn); // Set this email as the "active" logged-in user
       
-      // Track login event (placeholder)
+      const displayName = localStorage.getItem(`${MOCK_USER_DISPLAY_NAME_KEY_PREFIX}${emailIn}`) || 'Dr. Demo';
+      
+      setIsAuthenticated(true);
+      setUser({ email: emailIn, displayName });
+      
       await trackLoginEventInHubSpot(emailIn);
       
       router.push('/dashboard/consultations');
@@ -73,29 +86,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signup = async (emailIn: string, passwordIn: string): Promise<boolean> => {
+  const signup = async (emailIn: string, passwordIn: string, displayNameIn: string = 'New User'): Promise<boolean> => {
     setIsLoading(true);
-    // Simulate API call / check
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // In a real app, you'd check if the email already exists on the backend.
-    // For demo, we just overwrite.
-    localStorage.setItem(MOCK_USER_EMAIL_KEY, emailIn);
-    localStorage.setItem(MOCK_USER_PASSWORD_KEY, passwordIn); // INSECURE: Storing plain text password
+    // For demo, check if email "exists" by seeing if password is set.
+    // In a real app, this check is against a DB and more robust.
+    if (localStorage.getItem(`${MOCK_USER_PASSWORD_KEY_PREFIX}${emailIn}`)) {
+      setIsLoading(false);
+      // console.log("User already exists placeholder"); // Replace with toast if desired
+      return false; // User "already exists" for demo
+    }
 
-    // Automatically log in after signup
+    localStorage.setItem(`${MOCK_USER_PASSWORD_KEY_PREFIX}${emailIn}`, passwordIn);
+    localStorage.setItem(`${MOCK_USER_DISPLAY_NAME_KEY_PREFIX}${emailIn}`, displayNameIn);
+
     const mockToken = `mock_token_${Date.now()}`;
     localStorage.setItem(AUTH_TOKEN_KEY, mockToken);
-    setIsAuthenticated(true);
-    const newUser = { email: emailIn, displayName: 'Dr. Demo' };
-    setUser(newUser);
-
-    // Placeholder: In a real app, you would sync this new user to HubSpot here.
-    // For example: await syncUserToHubSpot(newUser);
-    // This function would be defined in hubspotService.ts
-    console.log(`[AuthContext Placeholder] User signed up: ${emailIn}. Would sync to HubSpot here.`);
+    localStorage.setItem(MOCK_USER_EMAIL_KEY, emailIn); // Set as active user
     
-    // Track initial login event after signup
+    setIsAuthenticated(true);
+    setUser({ email: emailIn, displayName: displayNameIn });
+
+    console.log(`[AuthContext Placeholder] User signed up: ${emailIn}. Would sync to HubSpot here.`);
     await trackLoginEventInHubSpot(emailIn);
 
     router.push('/dashboard/consultations');
@@ -105,15 +118,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(MOCK_USER_EMAIL_KEY);
-    localStorage.removeItem(MOCK_USER_PASSWORD_KEY);
+    localStorage.removeItem(MOCK_USER_EMAIL_KEY); // Clear the active user email
+    // Passwords and display names per email remain in localStorage for demo persistence
     setIsAuthenticated(false);
     setUser(null);
     router.push('/login');
   };
 
+  const updateUserDisplayName = async (newDisplayName: string): Promise<boolean> => {
+    if (user && user.email) {
+      setUser(currentUser => currentUser ? { ...currentUser, displayName: newDisplayName } : null);
+      localStorage.setItem(`${MOCK_USER_DISPLAY_NAME_KEY_PREFIX}${user.email}`, newDisplayName);
+      return true;
+    }
+    return false;
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, signup, logout, user }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, signup, logout, user, updateUserDisplayName }}>
       {children}
     </AuthContext.Provider>
   );
