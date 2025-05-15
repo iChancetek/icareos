@@ -4,6 +4,7 @@
 import type { ReactNode } from 'react';
 import React, { createContext, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { trackLoginEventInHubSpot } from '@/services/hubspotService'; // Import the new function
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -32,7 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const storedEmail = localStorage.getItem(MOCK_USER_EMAIL_KEY);
     if (token && storedEmail) {
       setIsAuthenticated(true);
-      setUser({ email: storedEmail, displayName: 'Dr. Demo' }); 
+      setUser({ email: storedEmail, displayName: 'Dr. Demo' });
     }
     setIsLoading(false);
   }, []);
@@ -59,6 +60,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem(AUTH_TOKEN_KEY, mockToken);
       setIsAuthenticated(true);
       setUser({ email: emailIn, displayName: 'Dr. Demo' });
+      
+      // Track login event (placeholder)
+      await trackLoginEventInHubSpot(emailIn);
+      
       router.push('/dashboard/consultations');
       setIsLoading(false);
       return true;
@@ -82,7 +87,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const mockToken = `mock_token_${Date.now()}`;
     localStorage.setItem(AUTH_TOKEN_KEY, mockToken);
     setIsAuthenticated(true);
-    setUser({ email: emailIn, displayName: 'Dr. Demo' });
+    const newUser = { email: emailIn, displayName: 'Dr. Demo' };
+    setUser(newUser);
+
+    // Placeholder: In a real app, you would sync this new user to HubSpot here.
+    // For example: await syncUserToHubSpot(newUser);
+    // This function would be defined in hubspotService.ts
+    console.log(`[AuthContext Placeholder] User signed up: ${emailIn}. Would sync to HubSpot here.`);
+    
+    // Track initial login event after signup
+    await trackLoginEventInHubSpot(emailIn);
+
     router.push('/dashboard/consultations');
     setIsLoading(false);
     return true;
