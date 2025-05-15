@@ -51,9 +51,9 @@ export default function LoginPage() {
 
   const handleForgotPassword = () => {
     toast({
-      title: "Password Reset (Demo)",
-      description: "In a full application, an email with a reset link would be sent. This functionality is a placeholder here.",
-      duration: 7000, // Increased duration for better visibility
+      title: "Forgot Password (Demo Feature)",
+      description: "This is a demo. A real password reset requires backend email functionality which is not implemented. No email will be sent.",
+      duration: 7000,
     });
   };
 
