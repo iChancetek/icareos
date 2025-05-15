@@ -21,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} antialiased`}>
+    <html lang="en" suppressHydrationWarning={true}>
+      <body className={`${inter.variable} antialiased`} suppressHydrationWarning={true}>
         <AuthProvider>
           {children}
           <Toaster />
