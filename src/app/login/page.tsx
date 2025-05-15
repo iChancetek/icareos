@@ -10,6 +10,7 @@ import { Stethoscope, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, type FormEvent } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { cn } from '@/lib/utils';
 
 
 export default function LoginPage() {
