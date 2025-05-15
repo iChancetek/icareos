@@ -69,7 +69,7 @@ export default function LoginPage() {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold tracking-tight">MediSummarize</CardTitle>
-          <CardDescription>Login to access your MediSummarize dashboard.</CardDescription>
+          <CardDescription>A voice recording and translation application designed for doctors and nurses to enhance communication and significantly improve the overall patient experience.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
