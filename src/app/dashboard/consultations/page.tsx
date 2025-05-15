@@ -1,48 +1,107 @@
+
 "use client";
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { PlusCircle, FileText, ExternalLink } from 'lucide-react';
+import { PlusCircle, FileText, ExternalLink, Loader2 } from 'lucide-react';
 import type { Consultation } from '@/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
-// Mock data - replace with API call in a real app
-const mockConsultations: Consultation[] = [
+// Initial mock data - used as a fallback
+const initialMockConsultations: Consultation[] = [
   {
-    id: '1',
-    patientName: 'John Doe',
+    id: 'mock-1', // Ensure mock IDs are distinct if merging later
+    patientName: 'John Doe (Mock)',
     date: new Date(2023, 10, 15, 10, 30).toISOString(),
     status: 'Completed',
     summary: 'Patient presented with flu-like symptoms. Prescribed rest and fluids.',
     transcript: 'Doctor: How are you feeling today, John? John: Not so great, doc...'
   },
   {
-    id: '2',
-    patientName: 'Jane Smith',
+    id: 'mock-2',
+    patientName: 'Jane Smith (Mock)',
     date: new Date(2023, 10, 16, 14, 0).toISOString(),
     status: 'Completed',
     summary: 'Routine check-up. All vitals normal. Discussed diet and exercise.',
     transcript: 'Doctor: Hello Jane, welcome. Any concerns today? Jane: No, just here for my check-up...'
   },
   {
-    id: '3',
-    patientName: 'Robert Brown',
-    date: new Date().toISOString(), // Today
-    status: 'Summarizing',
+    id: 'mock-3',
+    patientName: 'Robert Brown (Mock)',
+    date: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+    status: 'Completed', // Changed from Summarizing for consistency
+    summary: 'Follow-up for hypertension. Blood pressure stable.',
   },
 ];
 
 
 export default function ConsultationsPage() {
-  // In a real app, fetch consultations from Firestore
-  const consultations = mockConsultations;
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadConsultationsFromStorage = () => {
+      setIsLoading(true);
+      const loaded: Consultation[] = [];
+      const keys = Object.keys(localStorage);
+      const consultationIds: string[] = [];
+
+      // First, gather all unique consultation IDs from localStorage
+      keys.forEach(key => {
+        if (key.startsWith('consultation-') && key.endsWith('-patientName')) {
+          const id = key.replace('consultation-', '').replace('-patientName', '');
+          if (!consultationIds.includes(id)) {
+            consultationIds.push(id);
+          }
+        }
+      });
+
+      // Then, for each ID, reconstruct the consultation object
+      consultationIds.forEach(id => {
+        const patientName = localStorage.getItem(`consultation-${id}-patientName`);
+        const transcript = localStorage.getItem(`consultation-${id}-transcript`);
+        const summary = localStorage.getItem(`consultation-${id}-summary`);
+        const date = localStorage.getItem(`consultation-${id}-date`);
+        // Assuming status is 'Completed' for items saved from 'new' page logic
+        // In a real app, status would be part of the saved data or API response
+        const status = 'Completed'; 
+
+        if (patientName && date) { 
+          loaded.push({
+            id,
+            patientName,
+            date,
+            status: status as Consultation['status'],
+            transcript: transcript || undefined,
+            summary: summary || undefined,
+          });
+        }
+      });
+
+      // Sort by date, newest first
+      loaded.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      if (loaded.length > 0) {
+        setConsultations(loaded);
+      } else {
+        // Fallback to initial mock data if no consultations in localStorage
+        setConsultations(initialMockConsultations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      }
+      setIsLoading(false);
+    };
+
+    // Simulate a short delay for loading perception if needed, otherwise load directly
+    // setTimeout(loadConsultationsFromStorage, 300); 
+    loadConsultationsFromStorage();
+  }, []);
 
   const getStatusBadgeVariant = (status: Consultation['status']) => {
     switch (status) {
-      case 'Completed': return 'default'; // default will use primary color
+      case 'Completed': return 'default';
       case 'Transcribing':
       case 'Summarizing': return 'secondary';
       case 'Failed': return 'destructive';
@@ -50,6 +109,9 @@ export default function ConsultationsPage() {
     }
   };
 
+  if (isLoading) {
+    return <div className="flex min-h-[calc(100vh-15rem)] items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-0">
@@ -69,17 +131,17 @@ export default function ConsultationsPage() {
       {consultations.length === 0 ? (
         <Card className="text-center py-12 shadow-lg">
           <CardHeader>
-            <div className="mx-auto bg-accent rounded-full p-4 w-fit mb-4">
+            <div className="mx-auto bg-accent/10 rounded-full p-4 w-fit mb-4 shadow-inner">
               <FileText className="h-12 w-12 text-primary" />
             </div>
             <CardTitle className="text-2xl">No Consultations Yet</CardTitle>
-            <CardDescription className="text-lg">
+            <CardDescription className="text-lg text-muted-foreground">
               Start a new consultation to see your summaries here.
             </CardDescription>
           </CardHeader>
           <CardContent>
              <Link href="/dashboard/consultations/new" passHref>
-              <Button size="lg">
+              <Button size="lg" className="shadow-md hover:shadow-lg">
                 <PlusCircle className="mr-2 h-5 w-5" />
                 Record First Consultation
               </Button>
@@ -87,17 +149,17 @@ export default function ConsultationsPage() {
           </CardContent>
         </Card>
       ) : (
-        <ScrollArea className="h-[calc(100vh-200px)]"> {/* Adjust height as needed */}
+        <ScrollArea className="h-[calc(100vh-16rem)]"> {/* Adjusted height */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {consultations.map((consultation) => (
-              <Card key={consultation.id} className="flex flex-col justify-between shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <Card key={consultation.id} className="flex flex-col justify-between shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl">{consultation.patientName}</CardTitle>
-                     <Badge variant={getStatusBadgeVariant(consultation.status)}>{consultation.status}</Badge>
+                     <Badge variant={getStatusBadgeVariant(consultation.status)} className="capitalize">{consultation.status}</Badge>
                   </div>
                   <CardDescription>
-                    {format(new Date(consultation.date), "PPP p")} {/* Format: Oct 15, 2023 10:30 AM */}
+                    {format(new Date(consultation.date), "PPP p")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">
@@ -116,8 +178,8 @@ export default function ConsultationsPage() {
                 </CardContent>
                 <CardFooter>
                   <Link href={`/dashboard/consultations/${consultation.id}`} passHref className="w-full">
-                    <Button variant="outline" className="w-full" disabled={consultation.status !== 'Completed'}>
-                      View Summary
+                    <Button variant="outline" className="w-full shadow-sm hover:shadow-md" disabled={consultation.status !== 'Completed'}>
+                      View Details
                       <ExternalLink className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
