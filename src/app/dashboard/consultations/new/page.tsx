@@ -42,7 +42,7 @@ export default function NewConsultationPage() {
         toast({
           variant: 'destructive',
           title: 'Microphone Access Denied',
-          description: 'Please enable microphone permissions in your browser settings to use this feature.',
+          description: 'Please enable microphone permissions to record.',
           duration: 7000,
         });
       } finally {
@@ -58,7 +58,7 @@ export default function NewConsultationPage() {
       toast({
         variant: 'destructive',
         title: 'Unsupported Browser',
-        description: 'Audio recording is not supported in this browser or permissions are blocked.',
+        description: 'Audio recording is not supported or permissions are blocked.',
         duration: 7000,
       });
     }
@@ -264,7 +264,7 @@ export default function NewConsultationPage() {
           {(!isPermissionChecked && recordingState === 'idle') && (
             <div className="flex items-center space-x-2 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Checking microphone permissions...</span>
+              <span>Checking microphone permissions... Please wait.</span>
             </div>
           )}
 
@@ -335,12 +335,11 @@ export default function NewConsultationPage() {
                     setProgress(0); 
                     setCurrentStepMessage(''); 
                     setAudioDataUri(null);
-                    // Re-check permissions or prompt user if needed, though initial check should persist
                     if (!hasMicPermission && isPermissionChecked) {
                        toast({
                           variant: 'destructive',
                           title: 'Microphone Access Still Denied',
-                          description: 'Please enable microphone permissions in your browser settings.',
+                          description: 'Please enable microphone permissions.',
                           duration: 7000,
                         });
                     }
