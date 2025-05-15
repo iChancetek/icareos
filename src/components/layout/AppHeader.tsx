@@ -52,18 +52,18 @@ export default function AppHeader() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <Link href="/dashboard/profile" passHref>
-              <DropdownMenuItem asChild>
-                <a><UserCircle className="mr-2 h-4 w-4" />
-                <span>Profile</span></a>
-              </DropdownMenuItem>
-            </Link>
-            <Link href="/dashboard/settings" passHref>
-              <DropdownMenuItem asChild>
-                <a><Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span></a>
-              </DropdownMenuItem>
-            </Link>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/profile">
+                <UserCircle className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" />
@@ -75,3 +75,4 @@ export default function AppHeader() {
     </header>
   );
 }
+
