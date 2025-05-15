@@ -3,7 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, FileText, MessageSquare, Download, Edit3, Trash2 } from 'lucide-react';
+import { ArrowLeft, FileText, MessageSquare, Download, Edit3, Trash2, Loader2 } from 'lucide-react';
 import type { Consultation } from '@/types';
 import { useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
