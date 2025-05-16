@@ -15,14 +15,22 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useSidebar } from '@/components/ui/sidebar'; 
+import { useState, useEffect } from 'react'; // Added for mounted state
 
 export default function AppHeader() {
   const { user, logout } = useAuth();
-  const { toggleSidebar, isMobile } = useSidebar(); 
+  const { toggleSidebar, isMobile: headerIsMobileFromHook } = useSidebar(); // Renamed to avoid conflict
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isEffectivelyMobile = mounted && headerIsMobileFromHook;
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur md:px-6">
-      {isMobile && (
+      {isEffectivelyMobile && (
          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
            <Menu className="h-6 w-6" />
            <span className="sr-only">Toggle Menu</span>

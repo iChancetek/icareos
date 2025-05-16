@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Stethoscope, LayoutDashboard, User, Settings, Bot, LogOut } from 'lucide-react'; // Added Bot
+import { Stethoscope, LayoutDashboard, User, Settings, Bot, LogOut } from 'lucide-react';
 import { 
   Sidebar, 
   SidebarHeader, 
@@ -20,23 +20,27 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { SheetTitle } from '@/components/ui/sheet';
-import ISkylarAssistantDialog from '@/components/features/ISkylarAssistantDialog'; // Added iSkylar Dialog
-import { useState } from 'react'; // Added useState
+import ISkylarAssistantDialog from '@/components/features/ISkylarAssistantDialog';
+import { useState, useEffect } from 'react';
 
 interface NavItem {
-  href?: string; // Optional for items that open dialogs
+  href?: string;
   label: string;
   icon: React.ElementType;
   matchStartsWith?: boolean;
-  action?: () => void; // For items that trigger actions like opening dialog
+  action?: () => void;
 }
 
 export default function AppSidebar() {
   const pathname = usePathname();
-  const { logout, user } = useAuth();
-  const { state: sidebarState, isMobile } = useSidebar();
+  const { logout } = useAuth(); // Removed 'user' as it's not used here
+  const { state: sidebarState, isMobile: sidebarIsMobileFromHook } = useSidebar(); // Renamed to avoid conflict
   const [isISkylarDialogOpen, setIsISkylarDialogOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navItems: NavItem[] = [
     { href: '/dashboard/consultations', label: 'Consultations', icon: LayoutDashboard, matchStartsWith: true },
@@ -50,9 +54,8 @@ export default function AppSidebar() {
   ];
 
   const isActive = (item: NavItem) => {
-    if (!item.href) return false; // Items with actions aren't "active" in the traditional sense
+    if (!item.href) return false;
     if (item.matchStartsWith) {
-      // For /dashboard/consultations, also match /dashboard/consultations/new and /dashboard/consultations/[id]
       if (item.href === '/dashboard/consultations') {
         return pathname.startsWith('/dashboard/consultations');
       }
@@ -61,18 +64,23 @@ export default function AppSidebar() {
     return pathname === item.href;
   };
 
+  // Determine collapsible prop safely after mount
+  const collapsibleProp = mounted ? (sidebarIsMobileFromHook ? "offcanvas" : "icon") : "icon";
+  const isEffectivelyMobile = mounted && sidebarIsMobileFromHook;
+  const sidebarDisplayState = mounted ? sidebarState : "collapsed"; // Default to collapsed for SSR and initial client render if not mounted
+
   return (
     <>
-      <Sidebar side="left" variant="sidebar" collapsible={isMobile ? "offcanvas" : "icon"}>
+      <Sidebar side="left" variant="sidebar" collapsible={collapsibleProp}>
         <SidebarHeader className="p-4">
-          {isMobile && <SheetTitle className="sr-only">Menu</SheetTitle>}
+          {isEffectivelyMobile && <SheetTitle className="sr-only">Menu</SheetTitle>}
           <div className="flex items-center gap-2">
             <Stethoscope className="h-8 w-8 text-primary" />
-            {sidebarState === 'expanded' && !isMobile && (
+            {(sidebarDisplayState === 'expanded' || (sidebarDisplayState === 'collapsed' && isEffectivelyMobile)) &&  (
               <h1 className="text-xl font-semibold text-foreground">MediSummarize</h1>
             )}
           </div>
-          {!isMobile && <SidebarTrigger className="absolute right-2 top-3 data-[state=open]:hidden data-[state=closed]:block group-data-[collapsible=offcanvas]:hidden" />}
+          {mounted && !sidebarIsMobileFromHook && <SidebarTrigger className="absolute right-2 top-3 data-[state=open]:hidden data-[state=closed]:block group-data-[collapsible=offcanvas]:hidden" />}
         </SidebarHeader>
         
         <Separator className="my-0" />
@@ -89,7 +97,7 @@ export default function AppSidebar() {
                       tooltip={item.label}
                     >
                       <item.icon className="h-5 w-5" />
-                      <span className={cn(sidebarState === 'collapsed' && !isMobile ? "hidden" : "inline-block")}>{item.label}</span>
+                      <span className={cn((sidebarDisplayState === 'collapsed' && !isEffectivelyMobile) ? "hidden" : "inline-block")}>{item.label}</span>
                     </SidebarMenuButton>
                   </Link>
                 ) : (
@@ -99,7 +107,7 @@ export default function AppSidebar() {
                     tooltip={item.label}
                   >
                     <item.icon className="h-5 w-5" />
-                    <span className={cn(sidebarState === 'collapsed' && !isMobile ? "hidden" : "inline-block")}>{item.label}</span>
+                     <span className={cn((sidebarDisplayState === 'collapsed' && !isEffectivelyMobile) ? "hidden" : "inline-block")}>{item.label}</span>
                   </SidebarMenuButton>
                 )}
               </SidebarMenuItem>
@@ -112,7 +120,7 @@ export default function AppSidebar() {
         <SidebarFooter className="p-2">
           <Button variant="outline" className="w-full justify-start gap-2" onClick={logout}>
             <LogOut className="h-5 w-5" />
-            <span className={cn(sidebarState === 'collapsed' && !isMobile ? "hidden" : "inline-block")}>Logout</span>
+            <span className={cn((sidebarDisplayState === 'collapsed' && !isEffectivelyMobile) ? "hidden" : "inline-block")}>Logout</span>
           </Button>
         </SidebarFooter>
       </Sidebar>
