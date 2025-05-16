@@ -4,7 +4,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, FileText, MessageSquare, Download, Edit3, Trash2, Loader2, PlayCircle } from 'lucide-react';
+import { ArrowLeft, FileText, MessageSquare, Download, Edit3, Trash2, Loader2, PlayCircle, Languages } from 'lucide-react';
 import type { Consultation } from '@/types';
 import { useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -24,6 +24,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { translateText } from '@/ai/flows/translate-text-flow';
 
 // Mock data - replace with API call in a real app
 const mockConsultations: Consultation[] = [
@@ -60,6 +62,14 @@ export default function ConsultationDetailPage() {
   const [editableSummary, setEditableSummary] = useState('');
   const [isEditingTranscript, setIsEditingTranscript] = useState(false);
   const [editableTranscript, setEditableTranscript] = useState('');
+
+  const [translatedSummary, setTranslatedSummary] = useState<string | null>(null);
+  const [isTranslatingSummary, setIsTranslatingSummary] = useState(false);
+  const [summaryDisplayLanguage, setSummaryDisplayLanguage] = useState('original'); // 'original', 'Spanish', 'English'
+
+  const [translatedTranscript, setTranslatedTranscript] = useState<string | null>(null);
+  const [isTranslatingTranscript, setIsTranslatingTranscript] = useState(false);
+  const [transcriptDisplayLanguage, setTranscriptDisplayLanguage] = useState('original'); // 'original', 'Spanish', 'English'
 
 
   useEffect(() => {
@@ -117,6 +127,9 @@ export default function ConsultationDetailPage() {
     setConsultation(updatedConsultation);
     setIsEditingSummary(false);
     localStorage.setItem(`consultation-${consultation.id}-summary`, editableSummary);
+    // If summary is edited, reset any translation
+    setTranslatedSummary(null);
+    setSummaryDisplayLanguage("original");
     toast({ title: "Summary Updated", description: "Your changes have been saved." });
   };
 
@@ -127,6 +140,9 @@ export default function ConsultationDetailPage() {
     setConsultation(updatedConsultation);
     setIsEditingTranscript(false);
     localStorage.setItem(`consultation-${consultation.id}-transcript`, editableTranscript);
+    // If transcript is edited, reset any translation
+    setTranslatedTranscript(null);
+    setTranscriptDisplayLanguage("original");
     toast({ title: "Transcript Updated", description: "Your changes have been saved." });
   };
 
@@ -145,11 +161,14 @@ export default function ConsultationDetailPage() {
   const handleDownloadConsultation = () => {
     if (!consultation) return;
 
-    const { patientName, date, summary, transcript } = consultation;
+    const { patientName, date } = consultation;
+    const summaryToDownload = summaryDisplayLanguage !== 'original' && translatedSummary ? translatedSummary : consultation.summary;
+    const transcriptToDownload = transcriptDisplayLanguage !== 'original' && translatedTranscript ? translatedTranscript : consultation.transcript;
+
     const formattedDate = format(new Date(date), "yyyy-MM-dd_HH-mm");
     const filename = `consultation_${patientName.replace(/\s+/g, '_')}_${formattedDate}.txt`;
 
-    const content = `Patient Name: ${patientName}\nConsultation Date: ${format(new Date(date), "PPP p")}\n\nAI Summary:\n--------------------------------------------------\n${summary || 'No summary available.'}\n\nFull Transcript:\n--------------------------------------------------\n${transcript || 'No transcript available.'}\n`;
+    const content = `Patient Name: ${patientName}\nConsultation Date: ${format(new Date(date), "PPP p")}\n\nAI Summary (${summaryDisplayLanguage}):\n--------------------------------------------------\n${summaryToDownload || 'No summary available.'}\n\nFull Transcript (${transcriptDisplayLanguage}):\n--------------------------------------------------\n${transcriptToDownload || 'No transcript available.'}\n`;
 
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -164,6 +183,65 @@ export default function ConsultationDetailPage() {
     toast({ title: "Download Started", description: `Downloading ${filename}` });
   };
 
+  const handleTranslate = async (
+    textType: 'summary' | 'transcript',
+    targetLanguage: string
+  ) => {
+    if (!consultation) return;
+
+    const originalText = textType === 'summary' ? consultation.summary : consultation.transcript;
+
+    if (!originalText?.trim()) {
+      toast({ title: "Nothing to Translate", description: `The ${textType} is empty.`, variant: "default" });
+      if (textType === 'summary') {
+        setSummaryDisplayLanguage(targetLanguage);
+        setTranslatedSummary("");
+      } else {
+        setTranscriptDisplayLanguage(targetLanguage);
+        setTranslatedTranscript("");
+      }
+      return;
+    }
+
+    if (targetLanguage === 'original') {
+      if (textType === 'summary') {
+        setSummaryDisplayLanguage('original');
+        setTranslatedSummary(null);
+      } else {
+        setTranscriptDisplayLanguage('original');
+        setTranslatedTranscript(null);
+      }
+      return;
+    }
+
+    if (textType === 'summary') {
+      setIsTranslatingSummary(true);
+    } else {
+      setIsTranslatingTranscript(true);
+    }
+
+    try {
+      const result = await translateText({ text: originalText, targetLanguage });
+      if (textType === 'summary') {
+        setTranslatedSummary(result.translatedText);
+        setSummaryDisplayLanguage(targetLanguage);
+      } else {
+        setTranslatedTranscript(result.translatedText);
+        setTranscriptDisplayLanguage(targetLanguage);
+      }
+      toast({ title: `${textType.charAt(0).toUpperCase() + textType.slice(1)} Translated`, description: `Successfully translated to ${targetLanguage}.` });
+    } catch (error) {
+      console.error(`Error translating ${textType}:`, error);
+      toast({ title: "Translation Failed", description: `Could not translate the ${textType}. Please try again.`, variant: "destructive" });
+    } finally {
+      if (textType === 'summary') {
+        setIsTranslatingSummary(false);
+      } else {
+        setIsTranslatingTranscript(false);
+      }
+    }
+  };
+
 
   if (isLoading) {
     return <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -172,6 +250,9 @@ export default function ConsultationDetailPage() {
   if (!consultation) {
     return <div className="text-center py-10">Consultation not found. Please go back and create one.</div>;
   }
+
+  const summaryTextToDisplay = summaryDisplayLanguage !== 'original' && translatedSummary !== null ? translatedSummary : consultation.summary;
+  const transcriptTextToDisplay = transcriptDisplayLanguage !== 'original' && translatedTranscript !== null ? translatedTranscript : consultation.transcript;
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-0">
@@ -222,24 +303,42 @@ export default function ConsultationDetailPage() {
         <CardContent className="pt-6 grid md:grid-cols-2 gap-8">
           {/* Summary Section */}
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-2 flex-wrap">
               <h2 className="text-2xl font-semibold flex items-center">
                 <FileText className="mr-3 h-7 w-7 text-primary" />
                 AI Summary
               </h2>
-              {!isEditingSummary ? (
-                <Button variant="ghost" size="sm" onClick={() => setIsEditingSummary(true)}>
-                  <Edit3 className="mr-2 h-4 w-4" /> Edit
-                </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <Button variant="default" size="sm" onClick={handleSaveSummary}>Save</Button>
-                  <Button variant="outline" size="sm" onClick={() => {
-                    setIsEditingSummary(false);
-                    setEditableSummary(consultation.summary || '');
-                  }}>Cancel</Button>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                {isTranslatingSummary && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+                <Select
+                  value={summaryDisplayLanguage}
+                  onValueChange={(value) => handleTranslate('summary', value)}
+                  disabled={isEditingSummary || isTranslatingSummary}
+                >
+                  <SelectTrigger className="w-[180px] text-xs h-8" disabled={isEditingSummary}>
+                     <Languages className="mr-1 h-3.5 w-3.5 opacity-70" />
+                    <SelectValue placeholder="Translate" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="original">Show Original</SelectItem>
+                    <SelectItem value="Spanish">Translate to Spanish</SelectItem>
+                    <SelectItem value="English">Translate to English</SelectItem>
+                  </SelectContent>
+                </Select>
+                {!isEditingSummary ? (
+                  <Button variant="ghost" size="sm" onClick={() => setIsEditingSummary(true)}>
+                    <Edit3 className="mr-2 h-4 w-4" /> Edit
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button variant="default" size="sm" onClick={handleSaveSummary}>Save</Button>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setIsEditingSummary(false);
+                      setEditableSummary(consultation.summary || '');
+                    }}>Cancel</Button>
+                  </div>
+                )}
+              </div>
             </div>
             {isEditingSummary ? (
               <div className="space-y-2">
@@ -255,7 +354,7 @@ export default function ConsultationDetailPage() {
             ) : (
               <ScrollArea className="h-64 rounded-md border p-4 bg-accent/30 shadow-inner">
                 <p className="text-base leading-relaxed whitespace-pre-wrap">
-                  {consultation.summary || 'No summary available.'}
+                  {summaryTextToDisplay || 'No summary available.'}
                 </p>
               </ScrollArea>
             )}
@@ -263,11 +362,28 @@ export default function ConsultationDetailPage() {
 
           {/* Transcript Section */}
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-2 flex-wrap">
               <h2 className="text-2xl font-semibold flex items-center">
                 <MessageSquare className="mr-3 h-7 w-7 text-primary" />
                 Full Transcript
               </h2>
+              <div className="flex items-center gap-2">
+                 {isTranslatingTranscript && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+                <Select
+                  value={transcriptDisplayLanguage}
+                  onValueChange={(value) => handleTranslate('transcript', value)}
+                  disabled={isEditingTranscript || isTranslatingTranscript}
+                >
+                  <SelectTrigger className="w-[180px] text-xs h-8" disabled={isEditingTranscript}>
+                    <Languages className="mr-1 h-3.5 w-3.5 opacity-70" />
+                    <SelectValue placeholder="Translate" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="original">Show Original</SelectItem>
+                    <SelectItem value="Spanish">Translate to Spanish</SelectItem>
+                    <SelectItem value="English">Translate to English</SelectItem>
+                  </SelectContent>
+                </Select>
                {!isEditingTranscript ? (
                 <Button variant="ghost" size="sm" onClick={() => setIsEditingTranscript(true)}>
                   <Edit3 className="mr-2 h-4 w-4" /> Edit
@@ -281,6 +397,7 @@ export default function ConsultationDetailPage() {
                   }}>Cancel</Button>
                 </div>
               )}
+              </div>
             </div>
              {isEditingTranscript ? (
               <div className="space-y-2">
@@ -296,7 +413,7 @@ export default function ConsultationDetailPage() {
             ) : (
               <ScrollArea className="h-[26.5rem] rounded-md border p-4 bg-background/50 shadow-inner">
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {consultation.transcript || 'No transcript available.'}
+                  {transcriptTextToDisplay || 'No transcript available.'}
                 </p>
               </ScrollArea>
             )}
