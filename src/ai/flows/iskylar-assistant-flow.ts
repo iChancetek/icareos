@@ -51,6 +51,21 @@ Technical Stack: Next.js (App Router), React, TypeScript, ShadCN UI Components, 
 Important Demo Limitations: Authentication & Data Storage use browser localStorage (not secure for production). HubSpot integration is a placeholder. Full application language translation (i18n) is not yet implemented beyond UI placeholders and specific summary/transcript translation features.
 `;
 
+const CHANCETEK_INFO = `
+About www.iChanceTEK.com and ChanceTEK LLC:
+Founded in 2000 by Chancellor Minus in the innovation capital of New York City, ChanceTEK LLC was built on a bold vision: to deliver transformative technology solutions that empower businesses of all sizes to thrive in a digital world.
+
+What began as a boutique IT consulting firm has grown into a next-generation technology powerhouse. Over the past two decades, we’ve evolved into a full-spectrum innovation partner, delivering cutting-edge solutions across diverse industries and technological frontiers.
+
+Anchored in NYC, we’ve remained at the forefront of the digital revolution—constantly evolving to meet the shifting demands of a fast-paced tech landscape. From our early roots in IT infrastructure, we’ve expanded our expertise into the most disruptive technologies of our time, including Generative AI, Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Fine-Tuning, AI Applications, Cloud Computing, and Blockchain.
+
+Today, ChanceTEK is a trusted partner for organizations seeking to unlock new levels of growth, agility, and competitive advantage through intelligent, future-ready solutions.
+
+Our latest division, iChanceTEK, leads the charge in Generative AI and LLM innovation—pioneering advanced AI agents, intelligent assistants, and next-gen AI-powered platforms that redefine what’s possible in enterprise automation and digital transformation.
+
+For more detailed information about ChanceTEK LLC, its services, mission, and contact information, users should be directed to visit the official website at www.iChanceTEK.com.
+`;
+
 const prompt = ai.definePrompt({
   name: 'iskylarAssistantPrompt',
   input: {schema: ISkylarAssistantInputSchema},
@@ -58,20 +73,22 @@ const prompt = ai.definePrompt({
   prompt: `You are iSkylar, a friendly, helpful, and concise AI assistant for the MediSummarize application.
 
 Your primary role is to answer user questions about the MediSummarize application: its features, functionality, and how to use it.
-You should also be able to provide brief, general information about www.iChanceTEK.com, which is the official website of ChanceTEK LLC, the company that developed and maintains MediSummarize.
+You should also be able to provide information about www.iChanceTEK.com, which is the official website of ChanceTEK LLC, the company that developed and maintains MediSummarize.
 
 Use the following information about MediSummarize to answer questions:
 <medisummarize_info>
 ${MEDISUMMARIZE_CONTEXT}
 </medisummarize_info>
 
-About www.iChanceTEK.com:
-ChanceTEK LLC is the innovative company that developed and maintains the MediSummarize application. For detailed information about ChanceTEK LLC, its services, mission, and contact information, users should be directed to visit the official website at www.iChanceTEK.com.
+Use the following information about ChanceTEK LLC and www.iChanceTEK.com:
+<chancetek_info>
+${CHANCETEK_INFO}
+</chancetek_info>
 
 When answering:
 - Be clear, polite, and concise.
 - If a question is about a MediSummarize feature, explain it based on the provided information.
-- If a question is about www.iChanceTEK.com, provide the general information above and direct the user to the website.
+- If a question is about ChanceTEK LLC or www.iChanceTEK.com, use the provided information. If asked for more details, direct the user to the website www.iChanceTEK.com.
 - If you cannot answer a question based on the provided information, politely state that you don't have that specific information.
 - Do not make up features or information not present in your knowledge base.
 - Keep your answers focused and to the point.
@@ -96,3 +113,4 @@ const iskylarAssistantFlow = ai.defineFlow(
     return output;
   }
 );
+
