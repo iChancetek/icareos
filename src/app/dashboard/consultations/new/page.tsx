@@ -7,14 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mic, StopCircle, Save, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Mic, StopCircle, Save, Loader2, AlertTriangle, CheckCircle, LanguagesIcon } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from "@/hooks/use-toast";
 import { transcribeAudio } from '@/ai/flows/transcribe-audio';
 import { summarizeConsultation } from '@/ai/flows/summarize-consultation';
+import { translateText } from '@/ai/flows/translate-text-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { sendDataToHubSpot } from '@/services/hubspotService';
 import type { Consultation } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type RecordingState = 'idle' | 'recording' | 'processing' | 'success' | 'error';
 
@@ -32,8 +34,10 @@ export default function NewConsultationPage() {
   const [isPermissionChecked, setIsPermissionChecked] = useState(false);
   const [hasMicPermission, setHasMicPermission] = useState(false);
 
-  const processingSteps = ["Transcribing Audio...", "Generating Summary...", "Finalizing..."];
+  const processingSteps = ["Transcribing Audio...", "Translating Transcript (Optional)...", "Generating Summary...", "Finalizing..."];
   const [currentStepMessage, setCurrentStepMessage] = useState("");
+  const [targetTranslationLanguage, setTargetTranslationLanguage] = useState<string>('none');
+
 
   useEffect(() => {
     const getMicPermission = async () => {
@@ -213,38 +217,63 @@ export default function NewConsultationPage() {
     setRecordingState('processing');
     setProgress(0);
     
+    let transcript = "";
+    let summary = "";
+    let translatedTranscript: string | undefined = undefined;
+    let finalTranslationLanguage: string | undefined = undefined;
+
     try {
-      setCurrentStepMessage(processingSteps[0]); // Transcribing
+      // Step 1: Transcribe Audio
+      setCurrentStepMessage(processingSteps[0]); 
       console.log("Sending audio for transcription, Data URI length:", audioDataUri.length);
       const transcriptionResult = await transcribeAudio({ audioDataUri });
       if (!transcriptionResult || typeof transcriptionResult.transcription !== 'string') {
         console.error("Transcription service did not return a valid transcript object or transcription string.", transcriptionResult);
         throw new Error("Transcription service did not return a valid transcript.");
       }
-       if (transcriptionResult.transcription.trim() === "") {
+      if (transcriptionResult.transcription.trim() === "") {
         console.log("Transcription result is an empty string.");
         toast({ title: "Transcription Result", description: "Transcription is empty. The audio might have been silent or too short.", variant: "default" });
       }
-      setProgress(33);
-      const transcript = transcriptionResult.transcription;
+      transcript = transcriptionResult.transcription;
       console.log("Transcription received:", transcript.substring(0,100) + "...");
+      setProgress(25);
 
+      // Step 2: Translate Transcript (Optional)
+      if (targetTranslationLanguage !== 'none' && transcript.trim()) {
+        setCurrentStepMessage(processingSteps[1]); 
+        console.log(`Translating transcript to ${targetTranslationLanguage}.`);
+        const translationResult = await translateText({ text: transcript, targetLanguage: targetTranslationLanguage });
+        if (!translationResult || typeof translationResult.translatedText !== 'string') {
+          console.error("Translation service did not return a valid translated text.", translationResult);
+          toast({ title: "Translation Warning", description: `Could not translate transcript to ${targetTranslationLanguage}. Proceeding without it.`, variant: "default" });
+        } else {
+          translatedTranscript = translationResult.translatedText;
+          finalTranslationLanguage = targetTranslationLanguage;
+          console.log(`Translated transcript to ${targetTranslationLanguage}:`, (translatedTranscript || "").substring(0,100) + "...");
+        }
+      } else {
+        console.log("Skipping transcript translation step.");
+      }
+      setProgress(50);
 
-      setCurrentStepMessage(processingSteps[1]); // Summarizing
-      console.log("Sending transcript for summarization.");
-      const summaryResult = await summarizeConsultation({ transcript });
+      // Step 3: Generate Summary (from original transcript)
+      setCurrentStepMessage(processingSteps[2]); 
+      console.log("Sending original transcript for summarization.");
+      const summaryResult = await summarizeConsultation({ transcript }); // Summarize original transcript
       if (!summaryResult || typeof summaryResult.summary !== 'string') { 
         console.error("Summarization service did not return a valid summary object or summary string.", summaryResult);
         throw new Error("Summarization service did not return a valid summary.");
       }
-      setProgress(66);
-      const summary = summaryResult.summary;
+      summary = summaryResult.summary;
       console.log("Summary received:", summary.substring(0,100) + "...");
+      setProgress(75);
 
-      setCurrentStepMessage(processingSteps[2]); // Finalizing
+      // Step 4: Finalize
+      setCurrentStepMessage(processingSteps[3]); 
       console.log("Finalizing consultation save...");
       
-      const newConsultationId = Math.random().toString(36).substring(2, 9); // Slightly longer ID
+      const newConsultationId = Math.random().toString(36).substring(2, 9); 
       const consultationToSave: Consultation = {
         id: newConsultationId,
         patientName: patientName,
@@ -252,13 +281,15 @@ export default function NewConsultationPage() {
         status: 'Completed', 
         transcript: transcript,
         summary: summary,
-        audioDataUri: audioDataUri, // Save audioDataUri for playback
+        audioDataUri: audioDataUri,
+        translatedTranscript: translatedTranscript,
+        translatedTranscriptLanguage: finalTranslationLanguage,
       };
       
       console.log("Attempting to send data to HubSpot placeholder:", consultationToSave);
       await sendDataToHubSpot(consultationToSave, audioDataUri); 
 
-      await new Promise(resolve => setTimeout(resolve, 1000)); 
+      await new Promise(resolve => setTimeout(resolve, 500)); 
       setProgress(100);
 
       setRecordingState('success');
@@ -273,6 +304,10 @@ export default function NewConsultationPage() {
       localStorage.setItem(`consultation-${newConsultationId}-date`, consultationToSave.date);
       if (audioDataUri) {
         localStorage.setItem(`consultation-${newConsultationId}-audioDataUri`, audioDataUri);
+      }
+      if (translatedTranscript && finalTranslationLanguage) {
+        localStorage.setItem(`consultation-${newConsultationId}-translatedTranscript`, translatedTranscript);
+        localStorage.setItem(`consultation-${newConsultationId}-translatedTranscriptLanguage`, finalTranslationLanguage);
       }
 
 
@@ -371,6 +406,29 @@ export default function NewConsultationPage() {
              <p className="text-center text-lg text-destructive font-medium">{currentStepMessage}</p>
           )}
 
+          {(recordingState === 'idle' && audioDataUri) && (
+            <div className="w-full max-w-md space-y-2 mt-4">
+              <Label htmlFor="translate-language">Translate Transcript to (Optional)</Label>
+              <Select 
+                value={targetTranslationLanguage} 
+                onValueChange={setTargetTranslationLanguage}
+                disabled={recordingState !== 'idle'}
+              >
+                <SelectTrigger id="translate-language" className="w-full">
+                  <LanguagesIcon className="mr-2 h-4 w-4 opacity-70" />
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None (Keep Original)</SelectItem>
+                  <SelectItem value="English">English</SelectItem>
+                  <SelectItem value="Spanish">Spanish</SelectItem>
+                  <SelectItem value="French">French</SelectItem>
+                  <SelectItem value="German">German</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
         </CardContent>
         <CardFooter className="flex flex-col sm:flex-row justify-center gap-4 pt-6 border-t">
           {recordingState === 'idle' && !audioDataUri && (
@@ -406,7 +464,7 @@ export default function NewConsultationPage() {
               Save Consultation
             </Button>
           )}
-          {(recordingState === 'error' || (recordingState === 'idle' && audioDataUri && !patientName.trim())) && ( // Show Try Again if error OR if audio recorded but no patient name
+          {(recordingState === 'error' || (recordingState === 'idle' && audioDataUri && !patientName.trim())) && ( 
              <Button 
                 size="lg" 
                 onClick={() => { 
@@ -416,7 +474,7 @@ export default function NewConsultationPage() {
                     setCurrentStepMessage(''); 
                     setAudioDataUri(null);
                     audioChunksRef.current = [];
-                    // Don't reset patientName here, user might want to keep it
+                    setTargetTranslationLanguage('none');
                     if (!hasMicPermission && isPermissionChecked) {
                        toast({
                           variant: 'destructive',

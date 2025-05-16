@@ -4,7 +4,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, FileText, MessageSquare, Download, Edit3, Trash2, Loader2, PlayCircle, Languages } from 'lucide-react';
+import { ArrowLeft, FileText, MessageSquare, Download, Edit3, Trash2, Loader2, PlayCircle, Languages, MessageCircle } from 'lucide-react';
 import type { Consultation } from '@/types';
 import { useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -65,11 +65,11 @@ export default function ConsultationDetailPage() {
 
   const [translatedSummary, setTranslatedSummary] = useState<string | null>(null);
   const [isTranslatingSummary, setIsTranslatingSummary] = useState(false);
-  const [summaryDisplayLanguage, setSummaryDisplayLanguage] = useState('original'); // 'original', 'Spanish', 'English'
+  const [summaryDisplayLanguage, setSummaryDisplayLanguage] = useState('original'); 
 
-  const [translatedTranscript, setTranslatedTranscript] = useState<string | null>(null);
-  const [isTranslatingTranscript, setIsTranslatingTranscript] = useState(false);
-  const [transcriptDisplayLanguage, setTranscriptDisplayLanguage] = useState('original'); // 'original', 'Spanish', 'English'
+  const [translatedOriginalTranscript, setTranslatedOriginalTranscript] = useState<string | null>(null);
+  const [isTranslatingOriginalTranscript, setIsTranslatingOriginalTranscript] = useState(false);
+  const [originalTranscriptDisplayLanguage, setOriginalTranscriptDisplayLanguage] = useState('original'); 
 
 
   useEffect(() => {
@@ -82,24 +82,36 @@ export default function ConsultationDetailPage() {
         const storedSummary = localStorage.getItem(`consultation-${id}-summary`);
         const storedDate = localStorage.getItem(`consultation-${id}-date`);
         const storedAudioDataUri = localStorage.getItem(`consultation-${id}-audioDataUri`);
+        const storedTranslatedTranscript = localStorage.getItem(`consultation-${id}-translatedTranscript`);
+        const storedTranslatedTranscriptLanguage = localStorage.getItem(`consultation-${id}-translatedTranscriptLanguage`);
 
         let foundConsultation: Consultation | undefined;
 
-        if (storedPatientName && storedTranscript && storedSummary && storedDate) {
+        if (storedPatientName && storedDate) { // Transcript and summary can be empty initially
           foundConsultation = {
             id: id,
             patientName: storedPatientName,
             date: storedDate,
             status: 'Completed',
-            transcript: storedTranscript,
-            summary: storedSummary,
+            transcript: storedTranscript || '',
+            summary: storedSummary || '',
             audioDataUri: storedAudioDataUri || undefined,
+            translatedTranscript: storedTranslatedTranscript || undefined,
+            translatedTranscriptLanguage: storedTranslatedTranscriptLanguage || undefined,
           };
         } else {
           foundConsultation = mockConsultations.find(c => c.id === id);
+           if (foundConsultation) { // Store mock data if loaded
+            localStorage.setItem(`consultation-${id}-patientName`, foundConsultation.patientName);
+            localStorage.setItem(`consultation-${id}-transcript`, foundConsultation.transcript || '');
+            localStorage.setItem(`consultation-${id}-summary`, foundConsultation.summary || '');
+            localStorage.setItem(`consultation-${id}-date`, foundConsultation.date);
+            if (foundConsultation.audioDataUri) localStorage.setItem(`consultation-${id}-audioDataUri`, foundConsultation.audioDataUri);
+          }
         }
         
         if (!foundConsultation) {
+            // Fallback for directly accessing a non-existent ID or if localStorage is cleared
             foundConsultation = {
                 id: id,
                 patientName: `Patient ${id.substring(0,4)}`,
@@ -118,7 +130,7 @@ export default function ConsultationDetailPage() {
         setIsLoading(false);
       }, 500);
     }
-  }, [id, router, toast]);
+  }, [id]);
 
   const handleSaveSummary = () => {
     if (!consultation) return;
@@ -127,7 +139,6 @@ export default function ConsultationDetailPage() {
     setConsultation(updatedConsultation);
     setIsEditingSummary(false);
     localStorage.setItem(`consultation-${consultation.id}-summary`, editableSummary);
-    // If summary is edited, reset any translation
     setTranslatedSummary(null);
     setSummaryDisplayLanguage("original");
     toast({ title: "Summary Updated", description: "Your changes have been saved." });
@@ -140,9 +151,8 @@ export default function ConsultationDetailPage() {
     setConsultation(updatedConsultation);
     setIsEditingTranscript(false);
     localStorage.setItem(`consultation-${consultation.id}-transcript`, editableTranscript);
-    // If transcript is edited, reset any translation
-    setTranslatedTranscript(null);
-    setTranscriptDisplayLanguage("original");
+    setTranslatedOriginalTranscript(null);
+    setOriginalTranscriptDisplayLanguage("original");
     toast({ title: "Transcript Updated", description: "Your changes have been saved." });
   };
 
@@ -154,6 +164,8 @@ export default function ConsultationDetailPage() {
     localStorage.removeItem(`consultation-${id}-summary`);
     localStorage.removeItem(`consultation-${id}-date`);
     localStorage.removeItem(`consultation-${id}-audioDataUri`);
+    localStorage.removeItem(`consultation-${id}-translatedTranscript`);
+    localStorage.removeItem(`consultation-${id}-translatedTranscriptLanguage`);
     toast({ title: "Consultation Deleted", description: `Consultation for ${consultation?.patientName} has been removed.` });
     router.push('/dashboard/consultations');
   };
@@ -163,12 +175,16 @@ export default function ConsultationDetailPage() {
 
     const { patientName, date } = consultation;
     const summaryToDownload = summaryDisplayLanguage !== 'original' && translatedSummary ? translatedSummary : consultation.summary;
-    const transcriptToDownload = transcriptDisplayLanguage !== 'original' && translatedTranscript ? translatedTranscript : consultation.transcript;
+    const originalTranscriptToDownload = originalTranscriptDisplayLanguage !== 'original' && translatedOriginalTranscript ? translatedOriginalTranscript : consultation.transcript;
 
     const formattedDate = format(new Date(date), "yyyy-MM-dd_HH-mm");
     const filename = `consultation_${patientName.replace(/\s+/g, '_')}_${formattedDate}.txt`;
 
-    const content = `Patient Name: ${patientName}\nConsultation Date: ${format(new Date(date), "PPP p")}\n\nAI Summary (${summaryDisplayLanguage}):\n--------------------------------------------------\n${summaryToDownload || 'No summary available.'}\n\nFull Transcript (${transcriptDisplayLanguage}):\n--------------------------------------------------\n${transcriptToDownload || 'No transcript available.'}\n`;
+    let content = `Patient Name: ${patientName}\nConsultation Date: ${format(new Date(date), "PPP p")}\n\nAI Summary (${summaryDisplayLanguage}):\n--------------------------------------------------\n${summaryToDownload || 'No summary available.'}\n\nFull Transcript (${originalTranscriptDisplayLanguage}):\n--------------------------------------------------\n${originalTranscriptToDownload || 'No transcript available.'}\n`;
+
+    if (consultation.translatedTranscript && consultation.translatedTranscriptLanguage) {
+      content += `\nInitial Translation (${consultation.translatedTranscriptLanguage}):\n--------------------------------------------------\n${consultation.translatedTranscript}\n`;
+    }
 
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -184,7 +200,7 @@ export default function ConsultationDetailPage() {
   };
 
   const handleTranslate = async (
-    textType: 'summary' | 'transcript',
+    textType: 'summary' | 'originalTranscript',
     targetLanguage: string
   ) => {
     if (!consultation) return;
@@ -192,13 +208,13 @@ export default function ConsultationDetailPage() {
     const originalText = textType === 'summary' ? consultation.summary : consultation.transcript;
 
     if (!originalText?.trim()) {
-      toast({ title: "Nothing to Translate", description: `The ${textType} is empty.`, variant: "default" });
+      toast({ title: "Nothing to Translate", description: `The ${textType === 'summary' ? 'summary' : 'original transcript'} is empty.`, variant: "default" });
       if (textType === 'summary') {
         setSummaryDisplayLanguage(targetLanguage);
         setTranslatedSummary("");
       } else {
-        setTranscriptDisplayLanguage(targetLanguage);
-        setTranslatedTranscript("");
+        setOriginalTranscriptDisplayLanguage(targetLanguage);
+        setTranslatedOriginalTranscript("");
       }
       return;
     }
@@ -208,8 +224,8 @@ export default function ConsultationDetailPage() {
         setSummaryDisplayLanguage('original');
         setTranslatedSummary(null);
       } else {
-        setTranscriptDisplayLanguage('original');
-        setTranslatedTranscript(null);
+        setOriginalTranscriptDisplayLanguage('original');
+        setTranslatedOriginalTranscript(null);
       }
       return;
     }
@@ -217,7 +233,7 @@ export default function ConsultationDetailPage() {
     if (textType === 'summary') {
       setIsTranslatingSummary(true);
     } else {
-      setIsTranslatingTranscript(true);
+      setIsTranslatingOriginalTranscript(true);
     }
 
     try {
@@ -226,18 +242,18 @@ export default function ConsultationDetailPage() {
         setTranslatedSummary(result.translatedText);
         setSummaryDisplayLanguage(targetLanguage);
       } else {
-        setTranslatedTranscript(result.translatedText);
-        setTranscriptDisplayLanguage(targetLanguage);
+        setTranslatedOriginalTranscript(result.translatedText);
+        setOriginalTranscriptDisplayLanguage(targetLanguage);
       }
-      toast({ title: `${textType.charAt(0).toUpperCase() + textType.slice(1)} Translated`, description: `Successfully translated to ${targetLanguage}.` });
+      toast({ title: `${textType === 'summary' ? 'Summary' : 'Original Transcript'} Translated`, description: `Successfully translated to ${targetLanguage}.` });
     } catch (error) {
       console.error(`Error translating ${textType}:`, error);
-      toast({ title: "Translation Failed", description: `Could not translate the ${textType}. Please try again.`, variant: "destructive" });
+      toast({ title: "Translation Failed", description: `Could not translate the ${textType === 'summary' ? 'summary' : 'original transcript'}. Please try again.`, variant: "destructive" });
     } finally {
       if (textType === 'summary') {
         setIsTranslatingSummary(false);
       } else {
-        setIsTranslatingTranscript(false);
+        setIsTranslatingOriginalTranscript(false);
       }
     }
   };
@@ -252,7 +268,7 @@ export default function ConsultationDetailPage() {
   }
 
   const summaryTextToDisplay = summaryDisplayLanguage !== 'original' && translatedSummary !== null ? translatedSummary : consultation.summary;
-  const transcriptTextToDisplay = transcriptDisplayLanguage !== 'original' && translatedTranscript !== null ? translatedTranscript : consultation.transcript;
+  const originalTranscriptTextToDisplay = originalTranscriptDisplayLanguage !== 'original' && translatedOriginalTranscript !== null ? translatedOriginalTranscript : consultation.transcript;
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-0">
@@ -261,7 +277,7 @@ export default function ConsultationDetailPage() {
         Back to Consultations
       </Button>
 
-      <Card className="shadow-xl">
+      <Card className="shadow-xl mb-8">
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <CardTitle className="text-3xl font-bold">{consultation.patientName}</CardTitle>
@@ -360,7 +376,7 @@ export default function ConsultationDetailPage() {
             )}
           </div>
 
-          {/* Transcript Section */}
+          {/* Original Transcript Section */}
           <div className="space-y-4">
             <div className="flex justify-between items-center gap-2 flex-wrap">
               <h2 className="text-2xl font-semibold flex items-center">
@@ -368,11 +384,11 @@ export default function ConsultationDetailPage() {
                 Full Transcript
               </h2>
               <div className="flex items-center gap-2">
-                 {isTranslatingTranscript && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+                 {isTranslatingOriginalTranscript && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
                 <Select
-                  value={transcriptDisplayLanguage}
-                  onValueChange={(value) => handleTranslate('transcript', value)}
-                  disabled={isEditingTranscript || isTranslatingTranscript}
+                  value={originalTranscriptDisplayLanguage}
+                  onValueChange={(value) => handleTranslate('originalTranscript', value)}
+                  disabled={isEditingTranscript || isTranslatingOriginalTranscript}
                 >
                   <SelectTrigger className="w-[180px] text-xs h-8" disabled={isEditingTranscript}>
                     <Languages className="mr-1 h-3.5 w-3.5 opacity-70" />
@@ -413,14 +429,29 @@ export default function ConsultationDetailPage() {
             ) : (
               <ScrollArea className="h-[26.5rem] rounded-md border p-4 bg-background/50 shadow-inner">
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {transcriptTextToDisplay || 'No transcript available.'}
+                  {originalTranscriptTextToDisplay || 'No transcript available.'}
                 </p>
               </ScrollArea>
             )}
           </div>
           
+          {/* Initial Translation Section */}
+          {consultation.translatedTranscript && consultation.translatedTranscriptLanguage && (
+            <div className="space-y-4 md:col-span-2 pt-4 border-t mt-8">
+              <h2 className="text-2xl font-semibold flex items-center">
+                <MessageCircle className="mr-3 h-7 w-7 text-primary" />
+                Initial Translation ({consultation.translatedTranscriptLanguage})
+              </h2>
+              <ScrollArea className="h-64 rounded-md border p-4 bg-background/40 shadow-inner">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {consultation.translatedTranscript}
+                </p>
+              </ScrollArea>
+            </div>
+          )}
+
           {/* Audio Player Section */}
-          <div className="space-y-4 md:col-span-2 pt-4">
+          <div className="space-y-4 md:col-span-2 pt-4 border-t mt-8">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold flex items-center">
                 <PlayCircle className="mr-3 h-7 w-7 text-primary" />

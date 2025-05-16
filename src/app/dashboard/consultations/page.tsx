@@ -68,6 +68,8 @@ export default function ConsultationsPage() {
         const summary = localStorage.getItem(`consultation-${id}-summary`);
         const date = localStorage.getItem(`consultation-${id}-date`);
         const audioDataUri = localStorage.getItem(`consultation-${id}-audioDataUri`);
+        const translatedTranscript = localStorage.getItem(`consultation-${id}-translatedTranscript`);
+        const translatedTranscriptLanguage = localStorage.getItem(`consultation-${id}-translatedTranscriptLanguage`);
         const status = 'Completed'; 
 
         if (patientName && date) { 
@@ -79,6 +81,8 @@ export default function ConsultationsPage() {
             transcript: transcript || undefined,
             summary: summary || undefined,
             audioDataUri: audioDataUri || undefined,
+            translatedTranscript: translatedTranscript || undefined,
+            translatedTranscriptLanguage: translatedTranscriptLanguage || undefined,
           });
         }
       });
@@ -88,7 +92,18 @@ export default function ConsultationsPage() {
       if (loaded.length > 0) {
         setConsultations(loaded);
       } else {
-        setConsultations(initialMockConsultations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        // If no consultations in localStorage, use initial mock data and store it for consistency in demo
+        const sortedMocks = initialMockConsultations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setConsultations(sortedMocks);
+        sortedMocks.forEach(mock => {
+            if (!localStorage.getItem(`consultation-${mock.id}-patientName`)) { // Avoid overwriting if some mock data was partially interacted with
+                 localStorage.setItem(`consultation-${mock.id}-patientName`, mock.patientName);
+                 localStorage.setItem(`consultation-${mock.id}-transcript`, mock.transcript || '');
+                 localStorage.setItem(`consultation-${mock.id}-summary`, mock.summary || '');
+                 localStorage.setItem(`consultation-${mock.id}-date`, mock.date);
+                 if (mock.audioDataUri) localStorage.setItem(`consultation-${mock.id}-audioDataUri`, mock.audioDataUri);
+            }
+        });
       }
       setIsLoading(false);
     };
