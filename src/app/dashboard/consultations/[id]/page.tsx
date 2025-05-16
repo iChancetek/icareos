@@ -4,7 +4,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, FileText, MessageSquare, Download, Edit3, Trash2, Loader2, PlayCircle, Languages, MessageCircle } from 'lucide-react';
+import { ArrowLeft, FileText, MessageSquare, Download, Edit3, Trash2, Loader2, PlayCircle, Languages, MessageCircle, Play, StopCircle, Volume2 } from 'lucide-react';
 import type { Consultation } from '@/types';
 import { useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -71,6 +71,9 @@ export default function ConsultationDetailPage() {
   const [isTranslatingOriginalTranscript, setIsTranslatingOriginalTranscript] = useState(false);
   const [originalTranscriptDisplayLanguage, setOriginalTranscriptDisplayLanguage] = useState('original'); 
 
+  const [isSpeakingSummary, setIsSpeakingSummary] = useState(false);
+  const [ttsSummaryLanguage, setTtsSummaryLanguage] = useState('en-US');
+
 
   useEffect(() => {
     if (id) {
@@ -130,6 +133,13 @@ export default function ConsultationDetailPage() {
         setIsLoading(false);
       }, 500);
     }
+    // Cleanup TTS when component unmounts or id changes
+    return () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        setIsSpeakingSummary(false);
+      }
+    };
   }, [id]);
 
   const handleSaveSummary = () => {
@@ -159,6 +169,11 @@ export default function ConsultationDetailPage() {
   const handleDeleteConsultation = () => {
     if (!consultation) return;
     console.log("Deleting consultation:", id);
+    // Stop any active speech before deleting
+    if (typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        setIsSpeakingSummary(false);
+    }
     localStorage.removeItem(`consultation-${id}-patientName`);
     localStorage.removeItem(`consultation-${id}-transcript`);
     localStorage.removeItem(`consultation-${id}-summary`);
@@ -199,7 +214,7 @@ export default function ConsultationDetailPage() {
     toast({ title: "Download Started", description: `Downloading ${filename}` });
   };
 
-  const handleTranslate = async (
+  const handleTextTranslate = async (
     textType: 'summary' | 'originalTranscript',
     targetLanguage: string
   ) => {
@@ -232,6 +247,11 @@ export default function ConsultationDetailPage() {
 
     if (textType === 'summary') {
       setIsTranslatingSummary(true);
+      // If summary is currently being spoken, stop it before translating
+      if (isSpeakingSummary) {
+        window.speechSynthesis.cancel();
+        setIsSpeakingSummary(false);
+      }
     } else {
       setIsTranslatingOriginalTranscript(true);
     }
@@ -258,6 +278,50 @@ export default function ConsultationDetailPage() {
     }
   };
 
+  const handleTogglePlayStopSummary = () => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      toast({ title: "TTS Not Supported", description: "Your browser does not support text-to-speech.", variant: "destructive" });
+      return;
+    }
+
+    if (isSpeakingSummary) {
+      window.speechSynthesis.cancel();
+      setIsSpeakingSummary(false);
+    } else {
+      const textToSpeak = summaryTextToDisplay;
+      if (!textToSpeak || textToSpeak.trim() === 'No summary available.') {
+        toast({ title: "Nothing to Play", description: "The summary is empty or unavailable.", variant: "default" });
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utterance.lang = ttsSummaryLanguage;
+      utterance.onend = () => {
+        setIsSpeakingSummary(false);
+      };
+      utterance.onerror = (event) => {
+        console.error("Speech synthesis error", event);
+        toast({ title: "TTS Error", description: "Could not play the summary.", variant: "destructive" });
+        setIsSpeakingSummary(false);
+      };
+      
+      // Cancel any previous speech before starting new
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+      setIsSpeakingSummary(true);
+    }
+  };
+
+  const handleTtsLanguageChange = (lang: string) => {
+    setTtsSummaryLanguage(lang);
+    if (isSpeakingSummary) {
+      window.speechSynthesis.cancel();
+      setIsSpeakingSummary(false);
+      // Optionally, you could auto-play with new language, but for now, user needs to press play again.
+      toast({ title: "Speech Language Changed", description: `Next playback will be in ${lang === 'en-US' ? 'English' : 'Spanish'}. Press play to start.`});
+    }
+  };
+
 
   if (isLoading) {
     return <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -267,7 +331,7 @@ export default function ConsultationDetailPage() {
     return <div className="text-center py-10">Consultation not found. Please go back and create one.</div>;
   }
 
-  const summaryTextToDisplay = summaryDisplayLanguage !== 'original' && translatedSummary !== null ? translatedSummary : consultation.summary;
+  const summaryTextToDisplay = summaryDisplayLanguage !== 'original' && translatedSummary !== null ? translatedSummary : (consultation.summary || '');
   const originalTranscriptTextToDisplay = originalTranscriptDisplayLanguage !== 'original' && translatedOriginalTranscript !== null ? translatedOriginalTranscript : consultation.transcript;
 
   return (
@@ -325,24 +389,8 @@ export default function ConsultationDetailPage() {
                 AI Summary
               </h2>
               <div className="flex items-center gap-2">
-                {isTranslatingSummary && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
-                <Select
-                  value={summaryDisplayLanguage}
-                  onValueChange={(value) => handleTranslate('summary', value)}
-                  disabled={isEditingSummary || isTranslatingSummary}
-                >
-                  <SelectTrigger className="w-[180px] text-xs h-8" disabled={isEditingSummary}>
-                     <Languages className="mr-1 h-3.5 w-3.5 opacity-70" />
-                    <SelectValue placeholder="Translate" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="original">Show Original</SelectItem>
-                    <SelectItem value="Spanish">Translate to Spanish</SelectItem>
-                    <SelectItem value="English">Translate to English</SelectItem>
-                  </SelectContent>
-                </Select>
                 {!isEditingSummary ? (
-                  <Button variant="ghost" size="sm" onClick={() => setIsEditingSummary(true)}>
+                  <Button variant="ghost" size="sm" onClick={() => setIsEditingSummary(true)} disabled={isSpeakingSummary || isTranslatingSummary}>
                     <Edit3 className="mr-2 h-4 w-4" /> Edit
                   </Button>
                 ) : (
@@ -356,6 +404,55 @@ export default function ConsultationDetailPage() {
                 )}
               </div>
             </div>
+            
+            {/* TTS and Text Translation Controls for Summary */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={handleTogglePlayStopSummary} 
+                    variant="outline" 
+                    size="sm" 
+                    disabled={isEditingSummary || isTranslatingSummary}
+                    className="shadow-sm"
+                  >
+                    {isSpeakingSummary ? <StopCircle className="mr-2 h-4 w-4" /> : <Volume2 className="mr-2 h-4 w-4" />}
+                    {isSpeakingSummary ? 'Stop' : 'Listen'}
+                  </Button>
+                  <Select
+                    value={ttsSummaryLanguage}
+                    onValueChange={handleTtsLanguageChange}
+                    disabled={isEditingSummary || isTranslatingSummary || isSpeakingSummary}
+                  >
+                    <SelectTrigger className="w-auto sm:w-[120px] text-xs h-9" aria-label="Select speech language for summary">
+                       <Languages className="mr-1 h-3.5 w-3.5 opacity-70" />
+                      <SelectValue placeholder="Speech" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en-US">English</SelectItem>
+                      <SelectItem value="es-ES">Spanish</SelectItem>
+                    </SelectContent>
+                  </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                 {isTranslatingSummary && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+                  <Select
+                    value={summaryDisplayLanguage}
+                    onValueChange={(value) => handleTextTranslate('summary', value)}
+                    disabled={isEditingSummary || isTranslatingSummary || isSpeakingSummary}
+                  >
+                    <SelectTrigger className="w-auto sm:w-[160px] text-xs h-9" aria-label="Select display language for summary">
+                       <Languages className="mr-1 h-3.5 w-3.5 opacity-70" />
+                      <SelectValue placeholder="Translate Text" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="original">Show Original</SelectItem>
+                      <SelectItem value="Spanish">To Spanish</SelectItem>
+                      <SelectItem value="English">To English</SelectItem>
+                    </SelectContent>
+                  </Select>
+              </div>
+            </div>
+
             {isEditingSummary ? (
               <div className="space-y-2">
                 <Label htmlFor="summary-edit" className="sr-only">Edit Summary</Label>
@@ -387,17 +484,17 @@ export default function ConsultationDetailPage() {
                  {isTranslatingOriginalTranscript && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
                 <Select
                   value={originalTranscriptDisplayLanguage}
-                  onValueChange={(value) => handleTranslate('originalTranscript', value)}
+                  onValueChange={(value) => handleTextTranslate('originalTranscript', value)}
                   disabled={isEditingTranscript || isTranslatingOriginalTranscript}
                 >
-                  <SelectTrigger className="w-[180px] text-xs h-8" disabled={isEditingTranscript}>
+                  <SelectTrigger className="w-[180px] text-xs h-9" disabled={isEditingTranscript}>
                     <Languages className="mr-1 h-3.5 w-3.5 opacity-70" />
-                    <SelectValue placeholder="Translate" />
+                    <SelectValue placeholder="Translate Text" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="original">Show Original</SelectItem>
-                    <SelectItem value="Spanish">Translate to Spanish</SelectItem>
-                    <SelectItem value="English">Translate to English</SelectItem>
+                    <SelectItem value="Spanish">To Spanish</SelectItem>
+                    <SelectItem value="English">To English</SelectItem>
                   </SelectContent>
                 </Select>
                {!isEditingTranscript ? (
@@ -478,3 +575,4 @@ export default function ConsultationDetailPage() {
     </div>
   );
 }
+
