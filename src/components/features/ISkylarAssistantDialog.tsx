@@ -14,10 +14,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, Send, User, Loader2, AlertTriangle, Sparkles } from 'lucide-react'; // Added Sparkles
+import { Bot, Send, User, Loader2, AlertTriangle } from 'lucide-react'; 
 import { askISkylar } from '@/ai/flows/iskylar-assistant-flow';
 import { useToast } from '@/hooks/use-toast';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'; // Removed AvatarImage as it's not used for Sparkles
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 
 interface Message {
@@ -122,7 +122,7 @@ export default function ISkylarAssistantDialog({ isOpen, onOpenChange }: ISkylar
                 {msg.type === 'assistant' && (
                   <Avatar className="h-8 w-8 self-start border border-primary/30">
                     <AvatarFallback className="flex items-center justify-center bg-primary/10">
-                      <Sparkles className="h-5 w-5 text-primary" />
+                      <Bot className="h-5 w-5 text-primary" />
                     </AvatarFallback>
                   </Avatar>
                 )}
@@ -150,7 +150,7 @@ export default function ISkylarAssistantDialog({ isOpen, onOpenChange }: ISkylar
               <div className="flex items-center justify-start gap-2">
                 <Avatar className="h-8 w-8 self-start border border-primary/30">
                   <AvatarFallback className="flex items-center justify-center bg-primary/10">
-                    <Sparkles className="h-5 w-5 text-primary" />
+                    <Bot className="h-5 w-5 text-primary" />
                   </AvatarFallback>
                 </Avatar>
                 <div className="max-w-[75%] rounded-xl px-4 py-3 shadow-sm bg-muted text-muted-foreground rounded-bl-none">
