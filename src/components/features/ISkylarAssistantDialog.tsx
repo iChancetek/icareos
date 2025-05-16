@@ -14,10 +14,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, Send, User, Loader2, AlertTriangle } from 'lucide-react';
+import { Bot, Send, User, Loader2, AlertTriangle, Sparkles } from 'lucide-react'; // Added Sparkles
 import { askISkylar } from '@/ai/flows/iskylar-assistant-flow';
 import { useToast } from '@/hooks/use-toast';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'; // Removed AvatarImage as it's not used for Sparkles
 
 
 interface Message {
@@ -121,8 +121,9 @@ export default function ISkylarAssistantDialog({ isOpen, onOpenChange }: ISkylar
               >
                 {msg.type === 'assistant' && (
                   <Avatar className="h-8 w-8 self-start border border-primary/30">
-                    <AvatarImage src="https://placehold.co/40x40/7c3aed/ffffff.png?text=iS" alt="iSkylar" data-ai-hint="bot avatar" />
-                    <AvatarFallback>iS</AvatarFallback>
+                    <AvatarFallback className="flex items-center justify-center bg-primary/10">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                    </AvatarFallback>
                   </Avatar>
                 )}
                 <div
@@ -139,7 +140,7 @@ export default function ISkylarAssistantDialog({ isOpen, onOpenChange }: ISkylar
                 </div>
                  {msg.type === 'user' && (
                   <Avatar className="h-8 w-8 self-start border">
-                    <AvatarImage src="" alt="User" data-ai-hint="user icon" />
+                    {/* Intentionally leaving AvatarImage out so Fallback with User icon shows */}
                     <AvatarFallback><User size={18}/></AvatarFallback>
                   </Avatar>
                 )}
@@ -148,8 +149,9 @@ export default function ISkylarAssistantDialog({ isOpen, onOpenChange }: ISkylar
             {isLoadingResponse && (
               <div className="flex items-center justify-start gap-2">
                 <Avatar className="h-8 w-8 self-start border border-primary/30">
-                    <AvatarImage src="https://placehold.co/40x40/7c3aed/ffffff.png?text=iS" alt="iSkylar" data-ai-hint="bot avatar" />
-                    <AvatarFallback>iS</AvatarFallback>
+                  <AvatarFallback className="flex items-center justify-center bg-primary/10">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </AvatarFallback>
                 </Avatar>
                 <div className="max-w-[75%] rounded-xl px-4 py-3 shadow-sm bg-muted text-muted-foreground rounded-bl-none">
                   <Loader2 className="h-5 w-5 animate-spin" />
