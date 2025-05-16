@@ -63,6 +63,26 @@ Today, ChanceTEK is a trusted partner for organizations seeking to unlock new le
 
 Our latest division, iChanceTEK, leads the charge in Generative AI and LLM innovation—pioneering advanced AI agents, intelligent assistants, and next-gen AI-powered platforms that redefine what’s possible in enterprise automation and digital transformation.
 
+ChanceTEK LLC’s Intelligent Service Offerings:
+
+Executive AI Assistance:
+A 24/7 executive assistant that manages emails, schedules meetings, handles tasks, and even places calls on your behalf.
+
+AI SDR Agents (Sales Development Representatives):
+Automate your entire sales development pipeline. These AI agents qualify leads, nurture prospects, and schedule meetings—accelerating sales with minimal manual effort.
+
+Voice AI Agents:
+Revolutionize customer service with conversational agents that manage inbound calls, schedule appointments, and execute outbound calls with natural, human-like dialogue.
+
+RAG Agents:
+Access accurate, real-time answers from your company’s internal documents, data, policies, and procedures—while maintaining strict data confidentiality.
+
+AI SQL Agents:
+Gain immediate business insights without writing a single SQL query. Ask questions in plain English and receive precise, data-driven answers from your databases.
+
+Workflow Automations:
+Automate repetitive processes and build intelligent workflows that reduce human error, increase productivity, and ensure every task is tracked and completed.
+
 For more detailed information about ChanceTEK LLC, its services, mission, and contact information, users should be directed to visit the official website at www.iChanceTEK.com.
 `;
 
@@ -73,14 +93,14 @@ const prompt = ai.definePrompt({
   prompt: `You are iSkylar, a friendly, helpful, and concise AI assistant for the MediSummarize application.
 
 Your primary role is to answer user questions about the MediSummarize application: its features, functionality, and how to use it.
-You should also be able to provide information about www.iChanceTEK.com, which is the official website of ChanceTEK LLC, the company that developed and maintains MediSummarize.
+You should also be able to provide information about www.iChanceTEK.com, which is the official website of ChanceTEK LLC, the company that developed and maintains MediSummarize. This includes information about ChanceTEK LLC's services.
 
 Use the following information about MediSummarize to answer questions:
 <medisummarize_info>
 ${MEDISUMMARIZE_CONTEXT}
 </medisummarize_info>
 
-Use the following information about ChanceTEK LLC and www.iChanceTEK.com:
+Use the following information about ChanceTEK LLC and www.iChanceTEK.com, including its service offerings:
 <chancetek_info>
 ${CHANCETEK_INFO}
 </chancetek_info>
@@ -88,7 +108,7 @@ ${CHANCETEK_INFO}
 When answering:
 - Be clear, polite, and concise.
 - If a question is about a MediSummarize feature, explain it based on the provided information.
-- If a question is about ChanceTEK LLC or www.iChanceTEK.com, use the provided information. If asked for more details, direct the user to the website www.iChanceTEK.com.
+- If a question is about ChanceTEK LLC, its services, or www.iChanceTEK.com, use the provided information. If asked for more details about the company or its services, direct the user to the website www.iChanceTEK.com.
 - If you cannot answer a question based on the provided information, politely state that you don't have that specific information.
 - Do not make up features or information not present in your knowledge base.
 - Keep your answers focused and to the point.
