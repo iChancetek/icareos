@@ -60,7 +60,7 @@ export default function LoginPage() {
   const isLoading = authIsLoading || isSubmitting;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/30 p-4 selection:bg-primary/20">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/30 p-4 selection:bg-primary/20">
       <Card className="w-full max-w-md shadow-xl rounded-xl border border-primary/20 bg-card/95 backdrop-blur-sm hover:shadow-2xl hover:shadow-primary/25 transition-all duration-300 ease-in-out">
         <CardHeader className="text-center">
           <div className="mb-6 flex justify-center">
@@ -137,6 +137,9 @@ export default function LoginPage() {
           </div>
         </CardContent>
       </Card>
+      <footer className="mt-8 text-center text-sm text-muted-foreground">
+        Powered by ChanceTEK LLC
+      </footer>
     </div>
   );
 }
