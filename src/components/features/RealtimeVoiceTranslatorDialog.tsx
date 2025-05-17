@@ -18,7 +18,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { transcribeAudio } from '@/ai/flows/transcribe-audio';
 import { translateText } from '@/ai/flows/translate-text-flow';
 import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
 
 interface RealtimeVoiceTranslatorDialogProps {
   isOpen: boolean;
@@ -91,6 +90,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
     if (isRecording) { // Stop recording
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
         mediaRecorderRef.current.stop();
+        console.log("MediaRecorder.stop() called.");
       }
       setIsRecording(false);
       // onstop will handle processing
@@ -111,43 +111,70 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       let stream: MediaStream | null = null;
 
       try {
+        console.log("Requesting media stream for recording...");
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log("Media stream obtained.");
 
         const MimeTypes = [
-          'audio/mp4', // Often preferred by Safari/iOS for AAC
-          'audio/webm;codecs=opus', // Good quality, widely supported
-          'audio/ogg;codecs=opus',  // Opus in Ogg
-          'audio/webm',             // WebM with browser default codec
+          'audio/mp4',
+          'audio/webm;codecs=opus',
+          'audio/ogg;codecs=opus',
+          'audio/webm',
           'audio/aac',
         ];
         let selectedMimeType = '';
         for (const type of MimeTypes) {
           if (MediaRecorder.isTypeSupported(type)) {
             selectedMimeType = type;
+            console.log("Selected MediaRecorder mimeType will be:", selectedMimeType);
             break;
           }
         }
-        console.log("Selected MediaRecorder mimeType:", selectedMimeType || "Browser Default");
+        if (!selectedMimeType) {
+            console.log("No preferred mimeType supported, trying browser default for MediaRecorder.");
+        }
+        
+        try {
+            mediaRecorderRef.current = selectedMimeType
+            ? new MediaRecorder(stream, { mimeType: selectedMimeType })
+            : new MediaRecorder(stream);
+            console.log("MediaRecorder instance created with effective mimeType:", mediaRecorderRef.current.mimeType);
+        } catch (recorderError) {
+            console.error("Error instantiating MediaRecorder:", recorderError);
+            toast({ title: "Recording Error", description: `Could not initialize audio recorder: ${(recorderError as Error).message}. Your browser might not support the required audio formats.`, variant: "destructive", duration: 7000 });
+            setIsRecording(false);
+            if (stream) stream.getTracks().forEach(track => track.stop());
+            return;
+        }
 
-        mediaRecorderRef.current = selectedMimeType
-          ? new MediaRecorder(stream, { mimeType: selectedMimeType })
-          : new MediaRecorder(stream); // Let browser choose default if none specified are supported
 
         mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
-          if (event.data.size > 0) audioChunksRef.current.push(event.data);
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+            console.log("MediaRecorder ondataavailable: chunk received, size:", event.data.size, "total chunks:", audioChunksRef.current.length);
+          }
         };
 
         mediaRecorderRef.current.onstop = async () => {
+          console.log("MediaRecorder onstop event. Stream tracks:", stream?.getTracks());
           if (stream) stream.getTracks().forEach(track => track.stop());
+          console.log("Stream tracks stopped in onstop.");
           
-          // Use the actual mimeType from the recorder instance, or a sensible fallback
           const actualMimeType = mediaRecorderRef.current?.mimeType || (selectedMimeType || 'audio/webm');
           console.log("Creating Blob with mimeType:", actualMimeType, "Number of chunks:", audioChunksRef.current.length);
 
+          if (audioChunksRef.current.length === 0) {
+            toast({ title: "No Audio Recorded", description: "No audio data chunks were captured. Please try speaking again.", variant: "default" });
+            setIsRecording(false); // Ensure isRecording is false
+            setCurrentRecordingLang(null);
+            return;
+          }
           const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
           
           if (audioBlob.size === 0) {
-            toast({ title: "No Audio Recorded", description: "Please try speaking again.", variant: "default" });
+            toast({ title: "No Audio Recorded", description: "Recorded audio is empty. Please try speaking again.", variant: "default" });
+            setIsRecording(false); // Ensure isRecording is false
+            setCurrentRecordingLang(null);
             return;
           }
           const audioDataUri = await new Promise<string>(resolve => {
@@ -159,21 +186,27 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
         };
         
         mediaRecorderRef.current.onerror = (event: Event) => {
-            console.error("MediaRecorder error:", event);
-            toast({ title: "Recording Error", description: `An error occurred during recording.`, variant: "destructive" });
+            const mediaRecorderErrorEvent = event as MediaRecorderErrorEvent;
+            const errorDetails = mediaRecorderErrorEvent.error;
+            console.error("MediaRecorder error event:", event, "DOMException:", errorDetails);
+            const errorMessage = errorDetails?.name || errorDetails?.message || 'Unknown recording error';
+            toast({ title: "Recording Error", description: `An error occurred during recording: ${errorMessage}. Please ensure microphone is working.`, variant: "destructive", duration: 7000 });
             setIsRecording(false);
             if (stream) stream.getTracks().forEach(track => track.stop());
+            setCurrentRecordingLang(null);
         };
 
         mediaRecorderRef.current.start();
+        console.log("MediaRecorder started.");
         setIsRecording(true);
         toast({ title: `Recording in ${inputLang}...`, description: "Click the button again to stop." });
 
       } catch (err) {
-        console.error("Error starting recording:", err);
-        toast({ title: "Could Not Start Recording", description: `Please check microphone permissions. ${(err as Error).message}`, variant: "destructive" });
+        console.error("Error starting recording (getUserMedia or MediaRecorder setup):", err);
+        toast({ title: "Could Not Start Recording", description: `Please check microphone permissions. Error: ${(err as Error).message}`, variant: "destructive" });
         setIsRecording(false);
         if (stream) stream.getTracks().forEach(track => track.stop());
+        setCurrentRecordingLang(null);
       }
     }
   };
@@ -185,9 +218,10 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
     try {
       // 1. Transcribe
       setProcessingStep("transcribing");
+      console.log("Sending audio for transcription. Source lang hint:", sourceLang);
       const transcriptionResult = await transcribeAudio({ audioDataUri });
-      if (!transcriptionResult?.transcription && transcriptionResult?.transcription !== "") { // Allow empty transcription string
-         throw new Error("Transcription service returned invalid data.");
+      if (!transcriptionResult || typeof transcriptionResult.transcription !== 'string') {
+         throw new Error("Transcription service returned invalid or no data.");
       }
       const originalTranscript = transcriptionResult.transcription;
       setTranscribedText(originalTranscript);
@@ -197,14 +231,16 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
          toast({ title: "Empty Transcription", description: "No speech detected in the audio."});
          setIsProcessing(false);
          setProcessingStep("idle");
+         setCurrentRecordingLang(null);
          return;
       }
 
       // 2. Translate
       setProcessingStep("translating");
+      console.log(`Translating from ${sourceLang} to ${targetLang}. Text: "${originalTranscript.substring(0, 50)}..."`);
       const translationResult = await translateText({ text: originalTranscript, targetLanguage: targetLang });
-      if (!translationResult?.translatedText && translationResult?.translatedText !== "") { // Allow empty translation
-        throw new Error("Translation failed or returned empty.");
+      if (!translationResult || typeof translationResult.translatedText !== 'string') {
+        throw new Error("Translation service returned invalid or no data.");
       }
       const finalText = translationResult.translatedText;
       setTranslatedText(finalText);
@@ -217,12 +253,12 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
     } catch (error) {
       console.error("Error in processing chain:", error);
       toast({ title: "Processing Error", description: (error as Error).message || "An unknown error occurred.", variant: "destructive" });
-      setTranscribedText("");
+      setTranscribedText(""); // Clear texts on error
       setTranslatedText("");
     } finally {
       setIsProcessing(false);
       setProcessingStep("idle");
-      setCurrentRecordingLang(null);
+      setCurrentRecordingLang(null); // Reset current recording language after processing
     }
   };
 
@@ -232,29 +268,30 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       return;
     }
     if (!text.trim()) {
-      // Don't toast here if text is empty, as it might be an intentional empty translation
-      // toast({ title: "Nothing to Speak", description: "Translated text is empty.", variant: "default" });
-      setSpeakingLanguage(null); // Ensure speakingLanguage is cleared
+      setSpeakingLanguage(null); 
       return;
     }
     
-    setSpeakingLanguage(lang); // To indicate which language is being spoken
+    setSpeakingLanguage(lang); 
 
     return new Promise<void>((resolve, reject) => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang === 'English' ? 'en-US' : 'es-ES';
-      utterance.onend = () => {
-        setSpeakingLanguage(null);
-        resolve();
-      };
-      utterance.onerror = (event) => {
-        console.error("Speech synthesis error", event);
-        toast({ title: "TTS Error", description: `Could not play the audio in ${lang}.`, variant: "destructive" });
-        setSpeakingLanguage(null);
-        reject(event.error || new Error("TTS failed"));
-      };
-      window.speechSynthesis.cancel(); // Cancel any previous speech
-      window.speechSynthesis.speak(utterance);
+      // Add a small delay before speaking on some browsers to ensure everything is ready
+      setTimeout(() => {
+        utterance.onend = () => {
+          setSpeakingLanguage(null);
+          resolve();
+        };
+        utterance.onerror = (event) => {
+          console.error("Speech synthesis error", event);
+          toast({ title: "TTS Error", description: `Could not play the audio in ${lang}. Error: ${event.error}`, variant: "destructive" });
+          setSpeakingLanguage(null);
+          reject(event.error || new Error("TTS failed"));
+        };
+        window.speechSynthesis.cancel(); 
+        window.speechSynthesis.speak(utterance);
+      }, 100); // 100ms delay
     });
   };
 
@@ -274,10 +311,10 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       variant={isRecording && currentRecordingLang === lang ? "destructive" : "default"}
       onClick={() => handleStartStopRecording(lang)}
       disabled={
-        (!isOpen || !isPermissionChecked || !hasMicPermission) || // Initial checks
-        (isRecording && currentRecordingLang !== lang) || // Recording another language
-        isProcessing || // Processing something
-        !!speakingLanguage // TTS is active
+        (!isOpen || !isPermissionChecked || !hasMicPermission) || 
+        (isRecording && currentRecordingLang !== lang) || 
+        isProcessing || 
+        !!speakingLanguage 
       }
       className="w-full h-16 text-lg flex-col gap-1 shadow-md"
     >
@@ -288,7 +325,12 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) { // Reset state when dialog is closed
+      if (!open) { 
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.stop();
+          console.log("Dialog closed, MediaRecorder stopped.");
+        }
+        audioChunksRef.current = [];
         setIsRecording(false);
         setCurrentRecordingLang(null);
         setIsProcessing(false);
@@ -297,8 +339,10 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
         setTranslatedText("");
         if (window.speechSynthesis?.speaking) window.speechSynthesis.cancel();
         setSpeakingLanguage(null);
-        // Do not reset permission check, but allow it to re-check if dialog reopens and it failed before
-        if(!hasMicPermission) setIsPermissionChecked(false); 
+        // Only reset permission checked if it was false to allow re-check, or if permission was never granted
+        if (!isPermissionChecked || !hasMicPermission) {
+            setIsPermissionChecked(false);
+        }
       }
       onOpenChange(open);
     }}>
@@ -368,7 +412,6 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
                 )}
               </div>
             )}
-             {/* Placeholder for when nothing is recorded/processed yet and dialog is open */}
             { !isProcessing && !transcribedText && !translatedText &&
               <div className="flex-1 flex items-center justify-center">
                 <p className="text-muted-foreground">Click a button above to start translating.</p>
@@ -384,6 +427,11 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       </DialogContent>
     </Dialog>
   );
+}
+
+// Define MediaRecorderErrorEvent if not available globally (e.g., in older TS lib versions)
+interface MediaRecorderErrorEvent extends Event {
+  readonly error: DOMException;
 }
 
 // Define BlobEvent if not available globally
