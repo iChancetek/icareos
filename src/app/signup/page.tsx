@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Stethoscope, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Stethoscope, Eye, EyeOff, Loader2, User as UserIcon } from 'lucide-react'; // Added UserIcon
 import { useAuth } from '@/hooks/useAuth';
 import { useState, type FormEvent } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -18,12 +18,21 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [displayName, setDisplayName] = useState(''); // Added state for display name
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (!displayName.trim()) {
+      toast({
+        title: "Signup Failed",
+        description: "Please enter your display name.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (password !== confirmPassword) {
       toast({
         title: "Signup Failed",
@@ -41,8 +50,8 @@ export default function SignUpPage() {
       return;
     }
     setIsSubmitting(true);
-    // Simulate API call
-    const success = await signup(email, password);
+    // Pass displayName to signup function
+    const success = await signup(email, password, displayName); 
     setIsSubmitting(false);
 
     if (success) {
@@ -51,11 +60,12 @@ export default function SignUpPage() {
         description: "Welcome to MediSummarize! You are now logged in.",
       });
     } else {
-      // This part might not be reached if signup always succeeds in the mock
+      // Error message likely shown by AuthContext now, but good to have a fallback
       toast({
         title: "Signup Failed",
-        description: "An error occurred during signup. Please try again.",
+        description: "An error occurred during signup. The email might already be in use or an unknown error occurred. Please try again.",
         variant: "destructive",
+        duration: 7000,
       });
     }
   };
@@ -74,6 +84,22 @@ export default function SignUpPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="displayName">Display Name</Label>
+              <div className="relative">
+                <Input 
+                  id="displayName" 
+                  type="text" 
+                  placeholder="e.g., Dr. Smith" 
+                  required 
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  disabled={isLoading}
+                  className="bg-background/70 pl-10" 
+                />
+                <UserIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input 
