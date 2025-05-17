@@ -195,7 +195,7 @@ export default function ConsultationDetailPage() {
     const formattedDate = format(new Date(date), "yyyy-MM-dd_HH-mm");
     const filename = `consultation_${patientName.replace(/\s+/g, '_')}_${formattedDate}.txt`;
 
-    let content = `Patient Name: ${patientName}\nConsultation Date: ${format(new Date(date), "PPP p")}\n\nAI Summary (${summaryDisplayLanguage}):\n--------------------------------------------------\n${summaryToDownload || 'No summary available.'}\n\nFull Transcript (${originalTranscriptDisplayLanguage}):\n--------------------------------------------------\n${originalTranscriptToDownload || 'No transcript available.'}\n`;
+    let content = `Patient Name: ${patientName}\nConsultation Date: ${format(new Date(date), "PPP p")}\n\nAI Summary (${summaryDisplayLanguage === 'original' ? 'Original' : summaryDisplayLanguage}):\n--------------------------------------------------\n${summaryToDownload || 'No summary available.'}\n\nFull Transcript (${originalTranscriptDisplayLanguage === 'original' ? 'Original' : originalTranscriptDisplayLanguage}):\n--------------------------------------------------\n${originalTranscriptToDownload || 'No transcript available.'}\n`;
 
     if (consultation.translatedTranscript && consultation.translatedTranscriptLanguage) {
       content += `\nInitial Translation (${consultation.translatedTranscriptLanguage}):\n--------------------------------------------------\n${consultation.translatedTranscript}\n`;
@@ -576,3 +576,5 @@ export default function ConsultationDetailPage() {
   );
 }
 
+
+    
