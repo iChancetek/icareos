@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -43,8 +44,17 @@ const summarizeConsultationFlow = ai.defineFlow(
     inputSchema: SummarizeConsultationInputSchema,
     outputSchema: SummarizeConsultationOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input): Promise<SummarizeConsultationOutput> => {
+    try {
+      const result = await prompt(input);
+      if (!result || typeof result.output?.summary !== 'string') {
+        console.error('summarizeConsultationFlow: Prompt did not return a valid summary object.', result);
+        throw new Error('Summarization failed: AI service returned an invalid response.');
+      }
+      return result.output;
+    } catch (error: any) {
+      console.error(`Error in summarizeConsultationFlow. Input: ${JSON.stringify(input)}. Error:`, error);
+      throw new Error(`AI Summarization process failed: ${error.message || 'Unknown error during summarization.'}`);
+    }
   }
 );

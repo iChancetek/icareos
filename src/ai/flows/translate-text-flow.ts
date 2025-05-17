@@ -46,11 +46,20 @@ const translateTextFlow = ai.defineFlow(
     inputSchema: TranslateTextInputSchema,
     outputSchema: TranslateTextOutputSchema,
   },
-  async input => {
+  async (input): Promise<TranslateTextOutput> => {
     if (!input.text.trim()) {
       return { translatedText: '' };
     }
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      const result = await prompt(input);
+      if (!result || typeof result.output?.translatedText !== 'string') {
+        console.error('translateTextFlow: Prompt did not return a valid translation object.', result);
+        throw new Error('Translation failed: AI service returned an invalid response.');
+      }
+      return result.output;
+    } catch (error: any) {
+      console.error(`Error in translateTextFlow. Input: ${JSON.stringify(input)}. Error:`, error);
+      throw new Error(`AI Translation process failed: ${error.message || 'Unknown error during translation.'}`);
+    }
   }
 );

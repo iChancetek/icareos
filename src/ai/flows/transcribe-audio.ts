@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -42,8 +43,17 @@ const transcribeAudioFlow = ai.defineFlow(
     inputSchema: TranscribeAudioInputSchema,
     outputSchema: TranscribeAudioOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input): Promise<TranscribeAudioOutput> => {
+    try {
+      const result = await prompt(input);
+      if (!result || typeof result.output?.transcription !== 'string') {
+        console.error('transcribeAudioFlow: Prompt did not return a valid transcription object.', result);
+        throw new Error('Transcription failed: AI service returned an invalid response.');
+      }
+      return result.output;
+    } catch (error: any) {
+      console.error(`Error in transcribeAudioFlow. Input: ${JSON.stringify(input)}. Error:`, error);
+      throw new Error(`AI Transcription process failed: ${error.message || 'Unknown error during transcription.'}`);
+    }
   }
 );
