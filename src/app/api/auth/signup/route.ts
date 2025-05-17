@@ -1,7 +1,6 @@
 
 import { NextResponse } from 'next/server';
-// In a real application, you would import a database client (e.g., Prisma, Firebase Admin SDK)
-// and a password hashing library (e.g., bcryptjs).
+import { db } from '@/lib/inMemoryUserStore'; // Simulated DB
 
 export async function POST(request: Request) {
   try {
@@ -10,31 +9,35 @@ export async function POST(request: Request) {
     if (!email || !password) {
       return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
     }
+    if (!displayName) {
+      return NextResponse.json({ message: 'Display name is required' }, { status: 400 });
+    }
 
-    // --- Real Implementation Steps ---
-    // 1. Validate email format and password strength.
-    // 2. Check if the user (email) already exists in your database.
-    //    Example: const existingUser = await db.user.findUnique({ where: { email } });
-    //    if (existingUser) {
-    //      return NextResponse.json({ message: 'User already exists' }, { status: 409 });
-    //    }
-    // 3. Hash the password securely.
-    //    Example: const hashedPassword = await bcrypt.hash(password, 10);
-    // 4. Create the new user in your database.
-    //    Example: const newUser = await db.user.create({
-    //      data: { email, password: hashedPassword, displayName },
-    //    });
-    // 5. Optionally, generate a session token or JWT for the new user.
-    // 6. Send a success response.
+    const existingUser = await db.findUser(email);
+    if (existingUser) {
+      return NextResponse.json({ message: 'User already exists' }, { status: 409 });
+    }
 
-    console.log('[API Placeholder - Signup] Received signup request for:', { email, displayName });
-    console.log('[API Placeholder - Signup] In a real app, this would involve hashing password and saving to DB.');
+    // In a real app: HASH the password securely before storing
+    // const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await db.createUser({
+      email,
+      passwordHash: password, // Storing plaintext for demo ONLY. NEVER DO THIS IN PRODUCTION.
+      displayName,
+      // photoURL can be added later or set to a default
+    });
 
-    // Placeholder response
-    return NextResponse.json({ message: 'User registered successfully (placeholder)', userId: 'mock-user-id' }, { status: 201 });
+    // Return a subset of user info, not the passwordHash
+    const { passwordHash, ...userToReturn } = newUser;
+    return NextResponse.json({ message: 'User registered successfully', user: userToReturn, token: `mock-jwt-token-for-${email}` }, { status: 201 });
 
   } catch (error) {
-    console.error('[API Placeholder - Signup] Error:', error);
-    return NextResponse.json({ message: 'An error occurred during registration' }, { status: 500 });
+    console.error('[API Signup] Error:', error);
+    const message = error instanceof Error ? error.message : 'An error occurred during registration';
+    // Adjust status code if it's a known error like 'User already exists' from createUser
+    if (message === 'User already exists') {
+        return NextResponse.json({ message }, { status: 409 });
+    }
+    return NextResponse.json({ message }, { status: 500 });
   }
 }

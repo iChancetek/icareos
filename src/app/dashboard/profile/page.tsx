@@ -13,19 +13,30 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 
 export default function ProfilePage() {
-  const { user, updateUserDisplayName, updateUserPhotoURL, isLoading: authIsLoading } = useAuth();
+  const { user, updateUserDisplayName, updateUserPhotoURL, isLoading: authIsLoading, fetchUserProfile } = useAuth();
   const { toast } = useToast();
+  
+  // Local state for form inputs, initialized from user context or empty
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null); // For immediate preview
+  
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // If user data is not yet available in context, try fetching it
+    if (!user && !authIsLoading) {
+      fetchUserProfile();
+    }
+  }, [user, authIsLoading, fetchUserProfile]);
 
   useEffect(() => {
     if (user) {
       setDisplayName(user.displayName || '');
       setEmail(user.email || 'No email associated');
-      setPhotoPreview(user.photoURL || null);
+      setPhotoPreview(user.photoURL || null); // Set preview from context user photo
     }
   }, [user]);
 
@@ -39,9 +50,9 @@ export default function ProfilePage() {
       });
       return;
     }
-    setIsSaving(true);
+    setIsSavingName(true);
     const success = await updateUserDisplayName(displayName.trim());
-    setIsSaving(false);
+    setIsSavingName(false);
 
     if (success) {
       toast({
@@ -54,6 +65,8 @@ export default function ProfilePage() {
         description: 'Could not update your display name. Please try again.',
         variant: 'destructive',
       });
+      // Optionally revert local state if API call fails
+      if(user) setDisplayName(user.displayName || '');
     }
   };
 
@@ -66,15 +79,16 @@ export default function ProfilePage() {
           description: 'Please select an image smaller than 2MB.',
           variant: 'destructive',
         });
+        if (fileInputRef.current) fileInputRef.current.value = ""; // Reset file input
         return;
       }
       const reader = new FileReader();
       reader.onloadend = async () => {
         const dataUri = reader.result as string;
-        setPhotoPreview(dataUri);
-        setIsSaving(true);
+        setPhotoPreview(dataUri); // Update preview immediately
+        setIsSavingPhoto(true);
         const success = await updateUserPhotoURL(dataUri);
-        setIsSaving(false);
+        setIsSavingPhoto(false);
         if (success) {
           toast({
             title: 'Profile Photo Updated',
@@ -86,17 +100,22 @@ export default function ProfilePage() {
             description: 'Could not save your new photo. Please try again.',
             variant: 'destructive',
           });
-           // Revert preview if save fails
+          // Revert preview if save fails and user object exists
           setPhotoPreview(user?.photoURL || null);
         }
+        if (fileInputRef.current) fileInputRef.current.value = ""; // Reset file input
       };
       reader.readAsDataURL(file);
     }
   };
   
-  const isLoading = authIsLoading || isSaving;
-  const avatarSrc = photoPreview || user?.photoURL || `https://placehold.co/100x100.png`;
+  const isLoadingOverall = authIsLoading || isSavingName || isSavingPhoto;
+  const avatarSrc = photoPreview || `https://placehold.co/100x100.png`; // Use photoPreview for immediate UI update
 
+
+  if (authIsLoading && !user) {
+     return <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-0">
@@ -124,10 +143,10 @@ export default function ProfilePage() {
               <Button 
                 variant="outline" 
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
+                disabled={isLoadingOverall}
                 className="shadow-sm"
               >
-                <Camera className="mr-2 h-4 w-4" />
+                {isSavingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
                 Change Photo
               </Button>
               <input 
@@ -135,7 +154,8 @@ export default function ProfilePage() {
                 ref={fileInputRef} 
                 onChange={handleFileChange} 
                 accept="image/png, image/jpeg, image/gif" 
-                className="hidden" 
+                className="hidden"
+                disabled={isSavingPhoto}
               />
               <p className="text-xs text-muted-foreground text-center sm:text-left">Max 2MB. Recommended: Square JPG or PNG.</p>
             </div>
@@ -153,7 +173,7 @@ export default function ProfilePage() {
                 placeholder="Enter your display name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                disabled={isLoading}
+                disabled={isLoadingOverall}
               />
             </div>
             <div className="space-y-2">
@@ -162,13 +182,13 @@ export default function ProfilePage() {
                 id="email"
                 type="email"
                 value={email}
-                disabled // Email is not editable
-                className="bg-muted/50"
+                readOnly // Email is not editable
+                className="bg-muted/50 cursor-not-allowed"
               />
               <p className="text-xs text-muted-foreground">Your email address cannot be changed here.</p>
             </div>
-            <Button type="submit" className="w-full sm:w-auto shadow-md" disabled={isLoading}>
-              {isLoading && !photoPreview ? ( // Show loader only if not just previewing photo
+            <Button type="submit" className="w-full sm:w-auto shadow-md" disabled={isLoadingOverall || !displayName.trim()}>
+              {isSavingName ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Save className="mr-2 h-4 w-4" />
@@ -179,7 +199,7 @@ export default function ProfilePage() {
         </CardContent>
          <CardFooter className="border-t pt-6 text-center">
             <p className="text-xs text-muted-foreground w-full">
-                Changes to your display name and photo will be reflected across the application.
+                Changes to your display name and photo will be reflected across the application (after refresh or next login for header).
             </p>
         </CardFooter>
       </Card>

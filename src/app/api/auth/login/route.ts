@@ -1,6 +1,6 @@
 
 import { NextResponse } from 'next/server';
-// In a real application, you would import a database client and a password hashing library (for comparison).
+import { db } from '@/lib/inMemoryUserStore'; // Simulated DB
 
 export async function POST(request: Request) {
   try {
@@ -10,31 +10,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
     }
 
-    // --- Real Implementation Steps ---
-    // 1. Find the user by email in your database.
-    //    Example: const user = await db.user.findUnique({ where: { email } });
-    //    if (!user) {
-    //      return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
-    //    }
-    // 2. Compare the provided password with the stored hashed password.
-    //    Example: const isPasswordValid = await bcrypt.compare(password, user.password);
-    //    if (!isPasswordValid) {
-    //      return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
-    //    }
-    // 3. Generate a session token or JWT for the user.
-    //    Example: const token = generateAuthToken(user.id);
-    // 4. Send a success response with the token and user info.
-    //    Set a secure, httpOnly cookie for the token.
+    const user = await db.findUser(email);
 
-    console.log('[API Placeholder - Login] Received login request for:', { email });
-    console.log('[API Placeholder - Login] In a real app, this would involve checking credentials against DB.');
+    if (!user) {
+      return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
+    }
 
-    // Placeholder response (assuming credentials are valid for demo)
-    // In a real app, you wouldn't send the password back, but user details and a token.
-    return NextResponse.json({ message: 'Login successful (placeholder)', user: { email, displayName: 'Dr. Demo' }, token: 'mock-jwt-token' }, { status: 200 });
+    // In a real app: Compare hashed password
+    // const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    const isPasswordValid = user.passwordHash === password; // Plaintext comparison for demo ONLY.
+
+    if (!isPasswordValid) {
+      return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
+    }
+
+    // Return a subset of user info, not the passwordHash
+    const { passwordHash, ...userToReturn } = user;
+    return NextResponse.json({ message: 'Login successful', user: userToReturn, token: `mock-jwt-token-for-${email}` }, { status: 200 });
 
   } catch (error) {
-    console.error('[API Placeholder - Login] Error:', error);
+    console.error('[API Login] Error:', error);
     return NextResponse.json({ message: 'An error occurred during login' }, { status: 500 });
   }
 }
