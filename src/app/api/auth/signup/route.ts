@@ -15,6 +15,7 @@ export async function POST(request: Request) {
 
     const existingUser = await db.findUser(email);
     if (existingUser) {
+      console.log(`[API Signup] Attempt to create existing user: ${email}`);
       return NextResponse.json({ message: 'User already exists' }, { status: 409 });
     }
 
@@ -26,6 +27,8 @@ export async function POST(request: Request) {
       displayName,
       // photoURL can be added later or set to a default
     });
+
+    console.log(`[API Signup] User created successfully: ${newUser.email}, Name: ${newUser.displayName}`);
 
     // Return a subset of user info, not the passwordHash
     const { passwordHash, ...userToReturn } = newUser;
