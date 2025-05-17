@@ -112,7 +112,26 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
 
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+
+        const MimeTypes = [
+          'audio/mp4', // Often preferred by Safari/iOS for AAC
+          'audio/webm;codecs=opus', // Good quality, widely supported
+          'audio/ogg;codecs=opus',  // Opus in Ogg
+          'audio/webm',             // WebM with browser default codec
+          'audio/aac',
+        ];
+        let selectedMimeType = '';
+        for (const type of MimeTypes) {
+          if (MediaRecorder.isTypeSupported(type)) {
+            selectedMimeType = type;
+            break;
+          }
+        }
+        console.log("Selected MediaRecorder mimeType:", selectedMimeType || "Browser Default");
+
+        mediaRecorderRef.current = selectedMimeType
+          ? new MediaRecorder(stream, { mimeType: selectedMimeType })
+          : new MediaRecorder(stream); // Let browser choose default if none specified are supported
 
         mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
           if (event.data.size > 0) audioChunksRef.current.push(event.data);
@@ -120,7 +139,13 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
 
         mediaRecorderRef.current.onstop = async () => {
           if (stream) stream.getTracks().forEach(track => track.stop());
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          
+          // Use the actual mimeType from the recorder instance, or a sensible fallback
+          const actualMimeType = mediaRecorderRef.current?.mimeType || (selectedMimeType || 'audio/webm');
+          console.log("Creating Blob with mimeType:", actualMimeType, "Number of chunks:", audioChunksRef.current.length);
+
+          const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
+          
           if (audioBlob.size === 0) {
             toast({ title: "No Audio Recorded", description: "Please try speaking again.", variant: "default" });
             return;
@@ -161,7 +186,9 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       // 1. Transcribe
       setProcessingStep("transcribing");
       const transcriptionResult = await transcribeAudio({ audioDataUri });
-      if (!transcriptionResult?.transcription) throw new Error("Transcription failed or returned empty.");
+      if (!transcriptionResult?.transcription && transcriptionResult?.transcription !== "") { // Allow empty transcription string
+         throw new Error("Transcription service returned invalid data.");
+      }
       const originalTranscript = transcriptionResult.transcription;
       setTranscribedText(originalTranscript);
       toast({ title: "Transcription Complete", description: `Source: ${sourceLang}`});
@@ -176,7 +203,9 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       // 2. Translate
       setProcessingStep("translating");
       const translationResult = await translateText({ text: originalTranscript, targetLanguage: targetLang });
-      if (!translationResult?.translatedText) throw new Error("Translation failed or returned empty.");
+      if (!translationResult?.translatedText && translationResult?.translatedText !== "") { // Allow empty translation
+        throw new Error("Translation failed or returned empty.");
+      }
       const finalText = translationResult.translatedText;
       setTranslatedText(finalText);
       toast({ title: "Translation Complete", description: `To: ${targetLang}`});
@@ -203,7 +232,9 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       return;
     }
     if (!text.trim()) {
-      toast({ title: "Nothing to Speak", description: "Translated text is empty.", variant: "default" });
+      // Don't toast here if text is empty, as it might be an intentional empty translation
+      // toast({ title: "Nothing to Speak", description: "Translated text is empty.", variant: "default" });
+      setSpeakingLanguage(null); // Ensure speakingLanguage is cleared
       return;
     }
     
@@ -337,6 +368,12 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
                 )}
               </div>
             )}
+             {/* Placeholder for when nothing is recorded/processed yet and dialog is open */}
+            { !isProcessing && !transcribedText && !translatedText &&
+              <div className="flex-1 flex items-center justify-center">
+                <p className="text-muted-foreground">Click a button above to start translating.</p>
+              </div>
+            }
           </>
         )}
          <DialogFooter className="p-4 border-t mt-auto">
