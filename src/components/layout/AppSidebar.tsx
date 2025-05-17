@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Stethoscope, LayoutDashboard, User, Settings, Bot, LogOut } from 'lucide-react';
+import { Stethoscope, LayoutDashboard, User, Settings, Bot, LogOut, Languages } from 'lucide-react'; // Added Languages
 import { 
   Sidebar, 
   SidebarHeader, 
@@ -21,6 +21,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { SheetTitle } from '@/components/ui/sheet';
 import ISkylarAssistantDialog from '@/components/features/ISkylarAssistantDialog';
+import RealtimeVoiceTranslatorDialog from '@/components/features/RealtimeVoiceTranslatorDialog'; // Added
 import { useState, useEffect } from 'react';
 
 interface NavItem {
@@ -33,9 +34,10 @@ interface NavItem {
 
 export default function AppSidebar() {
   const pathname = usePathname();
-  const { logout } = useAuth(); // Removed 'user' as it's not used here
-  const { state: sidebarState, isMobile: sidebarIsMobileFromHook } = useSidebar(); // Renamed to avoid conflict
+  const { logout } = useAuth(); 
+  const { state: sidebarState, isMobile: sidebarIsMobileFromHook } = useSidebar(); 
   const [isISkylarDialogOpen, setIsISkylarDialogOpen] = useState(false);
+  const [isVoiceTranslatorDialogOpen, setIsVoiceTranslatorDialogOpen] = useState(false); // Added
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -48,6 +50,11 @@ export default function AppSidebar() {
       label: 'iSkylar AI Assistant', 
       icon: Bot, 
       action: () => setIsISkylarDialogOpen(true) 
+    },
+    { 
+      label: 'Voice Translator',  // Added
+      icon: Languages,           // Added
+      action: () => setIsVoiceTranslatorDialogOpen(true) // Added
     },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
@@ -64,10 +71,9 @@ export default function AppSidebar() {
     return pathname === item.href;
   };
 
-  // Determine collapsible prop safely after mount
   const collapsibleProp = mounted ? (sidebarIsMobileFromHook ? "offcanvas" : "icon") : "icon";
   const isEffectivelyMobile = mounted && sidebarIsMobileFromHook;
-  const sidebarDisplayState = mounted ? sidebarState : "collapsed"; // Default to collapsed for SSR and initial client render if not mounted
+  const sidebarDisplayState = mounted ? sidebarState : "collapsed"; 
 
   return (
     <>
@@ -125,6 +131,7 @@ export default function AppSidebar() {
         </SidebarFooter>
       </Sidebar>
       <ISkylarAssistantDialog isOpen={isISkylarDialogOpen} onOpenChange={setIsISkylarDialogOpen} />
+      <RealtimeVoiceTranslatorDialog isOpen={isVoiceTranslatorDialogOpen} onOpenChange={setIsVoiceTranslatorDialogOpen} />
     </>
   );
 }
