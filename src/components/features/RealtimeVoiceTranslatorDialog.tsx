@@ -192,7 +192,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
           const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
           console.log("RealtimeVoiceTranslator: Audio blob created, size:", audioBlob.size, "type:", audioBlob.type);
           
-          if (audioBlob.size < 500) { // Increased threshold slightly
+          if (audioBlob.size < 1000) { // Check for very small blobs (e.g. < 1KB)
             toast({ title: "Recording Too Short", description: "Recorded audio is very short or possibly silent. Please try speaking for a longer duration.", variant: "default", duration: 5000 });
             setIsRecording(false);
             setCurrentRecordingLang(null);
@@ -253,8 +253,8 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
 
   const processAudio = async (audioDataUri: string, sourceLang: RecordingLanguage) => {
     setIsProcessing(true);
-    setTranscribedText(""); // Clear previous results
-    setTranslatedText("");  // Clear previous results
+    setTranscribedText(""); 
+    setTranslatedText("");  
     const targetLang = sourceLang === 'English' ? 'Spanish' : 'English';
     console.log(`RealtimeVoiceTranslator: Starting processAudio. Source: ${sourceLang}, Target: ${targetLang}.`);
 
@@ -275,8 +275,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
 
       if (!originalTranscript.trim()) {
          toast({ title: "Empty Transcription", description: "No speech detected in the audio."});
-         // No 'return' here, let finally block handle state reset
-         throw new Error("Empty transcription result.");
+         throw new Error("Empty transcription result."); 
       }
 
       setProcessingStep("translating");
@@ -294,7 +293,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
 
       setProcessingStep("speaking");
       console.log("RealtimeVoiceTranslator: Attempting to speak translated text in", targetLang);
-      await playTTS(finalText, targetLang);
+      await playTTS(finalText, targetLang); 
       console.log("RealtimeVoiceTranslator: TTS playback attempt finished or skipped.");
       
     } catch (error: any) {
@@ -312,7 +311,6 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
         variant: "destructive",
         duration: 9000 
       });
-      // Keep transcribed/translated text if partial success, or clear them if it was an early failure
       if (processingStep === "transcribing" || error.message === "Empty transcription result.") {
         setTranscribedText("");
         setTranslatedText("");
@@ -326,93 +324,86 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
   };
 
  const playTTS = async (text: string, lang: RecordingLanguage): Promise<void> => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
-      toast({ title: "TTS Not Supported", description: "Your browser does not support text-to-speech.", variant: "destructive" });
-      return Promise.resolve();
-    }
-    
-    setSpeakingLanguage(lang); 
-    console.log(`RealtimeVoiceTranslator: playTTS called. Lang: ${lang}, Text: "${text.substring(0,30)}..."`);
-    
-    let ttsTimedOut = false;
-    const ttsTimeoutDuration = 20000; // 20 seconds timeout for speech
-
-    const ttsPromise = new Promise<void>((resolveTTS) => {
-      if (!text.trim()) {
-        console.log("RealtimeVoiceTranslator: TTS skipped, text is empty.");
-        resolveTTS();
-        return;
-      }
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang === 'English' ? 'en-US' : 'es-ES';
-      
-      const timeoutId = setTimeout(() => {
-        ttsTimedOut = true;
-        console.warn(`RealtimeVoiceTranslator: TTS timed out for lang: ${lang} after ${ttsTimeoutDuration}ms. Cancelling speech.`);
-        if (typeof window !== 'undefined' && window.speechSynthesis) {
-            window.speechSynthesis.cancel(); 
+    return new Promise<void>((resolveTTS) => {
+        if (typeof window === 'undefined' || !window.speechSynthesis) {
+            toast({ title: "TTS Not Supported", description: "Your browser does not support text-to-speech.", variant: "destructive" });
+            resolveTTS();
+            return;
         }
-        resolveTTS(); 
-      }, ttsTimeoutDuration);
-
-      utterance.onend = () => {
-        clearTimeout(timeoutId);
-        if (ttsTimedOut) return; 
-        console.log("RealtimeVoiceTranslator: TTS 'onend' event fired for lang:", lang);
-        resolveTTS();
-      };
-
-      utterance.onerror = (event) => {
-        clearTimeout(timeoutId);
-        if (ttsTimedOut) return; 
-        console.error("RealtimeVoiceTranslator: Speech synthesis 'onerror' event:", event);
-        let errorMsg = `Could not play the audio in ${lang}.`;
-        if (event.error) {
-          errorMsg += ` Error: ${event.error}`;
+        
+        setSpeakingLanguage(lang); 
+        console.log(`RealtimeVoiceTranslator: playTTS called. Lang: ${lang}, Text: "${text.substring(0,30)}..."`);
+        
+        if (!text.trim()) {
+            console.log("RealtimeVoiceTranslator: TTS skipped, text is empty.");
+            resolveTTS();
+            return;
         }
-        toast({ title: "TTS Error", description: errorMsg, variant: "destructive" });
-        resolveTTS(); 
-      };
-      
-      try {
-        if (typeof window !== 'undefined' && window.speechSynthesis) {
-            if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-                console.log("RealtimeVoiceTranslator: Cancelling existing speech before new utterance.");
-                window.speechSynthesis.cancel();
+
+        let ttsTimedOut = false;
+        const ttsTimeoutDuration = 20000; 
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang === 'English' ? 'en-US' : 'es-ES';
+        
+        // Log available voices for debugging
+        // console.log("Available voices:", window.speechSynthesis.getVoices());
+
+        const timeoutId = setTimeout(() => {
+            ttsTimedOut = true;
+            console.warn(`RealtimeVoiceTranslator: TTS timed out for lang: ${lang} after ${ttsTimeoutDuration}ms. Cancelling speech.`);
+            if (typeof window !== 'undefined' && window.speechSynthesis) {
+                window.speechSynthesis.cancel(); 
             }
-            
-            // Short delay before speaking, can sometimes help on mobile.
-            setTimeout(() => {
-                try {
-                    if (ttsTimedOut) {
-                        console.log("RealtimeVoiceTranslator: Speak call skipped, TTS already timed out.");
-                        resolveTTS(); // ensure promise resolves if timed out before speak
-                        return;
-                    }
-                    console.log("RealtimeVoiceTranslator: Calling speechSynthesis.speak() for lang:", utterance.lang);
-                    window.speechSynthesis.speak(utterance);
-                } catch (speakError) {
-                    clearTimeout(timeoutId);
-                    console.error("RealtimeVoiceTranslator: Error directly during speechSynthesis.speak():", speakError);
-                    toast({ title: "TTS Error", description: `Failed to initiate speech: ${(speakError as Error).message}`, variant: "destructive" });
-                    resolveTTS();
-                }
-            }, 100);
+            resolveTTS(); 
+        }, ttsTimeoutDuration);
 
-        } else {
-            console.error("RealtimeVoiceTranslator: window.speechSynthesis not available at speak call.");
+        utterance.onend = () => {
+            clearTimeout(timeoutId);
+            if (ttsTimedOut) return; 
+            console.log("RealtimeVoiceTranslator: TTS 'onend' event fired for lang:", lang);
+            resolveTTS();
+        };
+
+        utterance.onerror = (event) => {
+            clearTimeout(timeoutId);
+            if (ttsTimedOut) return; 
+            console.error("RealtimeVoiceTranslator: Speech synthesis 'onerror' event:", event);
+            let errorMsg = `Could not play the audio in ${lang}.`;
+            if (event.error) {
+                errorMsg += ` Error: ${event.error}`;
+            }
+            toast({ title: "TTS Error", description: errorMsg, variant: "destructive" });
+            resolveTTS(); 
+        };
+        
+        try {
+            if (typeof window !== 'undefined' && window.speechSynthesis) {
+                if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+                    console.log("RealtimeVoiceTranslator: Cancelling existing/pending speech before new utterance.");
+                    window.speechSynthesis.cancel();
+                }
+                
+                // Try to speak directly without the inner setTimeout
+                if (ttsTimedOut) {
+                    console.log("RealtimeVoiceTranslator: Speak call skipped, TTS already timed out before direct call.");
+                    resolveTTS();
+                    return;
+                }
+                console.log("RealtimeVoiceTranslator: Calling speechSynthesis.speak() for lang:", utterance.lang);
+                window.speechSynthesis.speak(utterance);
+
+            } else {
+                console.error("RealtimeVoiceTranslator: window.speechSynthesis not available at speak call.");
+                resolveTTS(); 
+            }
+        } catch (e) {
+            clearTimeout(timeoutId);
+            console.error("RealtimeVoiceTranslator: Exception during speechSynthesis.speak() setup/call:", e);
+            toast({ title: "TTS Playback Failed", description: `An unexpected error occurred trying to play audio. Error: ${(e as Error).message}`, variant: "destructive" });
             resolveTTS(); 
         }
-      } catch (e) {
-        clearTimeout(timeoutId);
-        console.error("RealtimeVoiceTranslator: Exception during speechSynthesis.speak() setup:", e);
-        toast({ title: "TTS Playback Failed", description: `An unexpected error occurred trying to play audio.`, variant: "destructive" });
-        resolveTTS(); 
-      }
-    });
-
-    return ttsPromise.finally(() => {
+    }).finally(() => {
         console.log(`RealtimeVoiceTranslator: playTTS promise finally block for lang ${lang}. Resetting speakingLanguage.`);
         setSpeakingLanguage(null);
     });
@@ -472,9 +463,9 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
         }
         setSpeakingLanguage(null); 
         
-        if (isPermissionChecked && !hasMicPermission) {
+        if (isPermissionChecked && !hasMicPermission && !isOpen) { // only reset if closing and permission wasn't granted
             setIsPermissionChecked(false); 
-            console.log("RealtimeVoiceTranslator: Resetting permission check status because permission was not granted.");
+            console.log("RealtimeVoiceTranslator: Resetting permission check status on dialog close because permission was not granted.");
         }
       }
       onOpenChange(open);
@@ -572,3 +563,4 @@ interface BlobEvent extends Event {
   readonly data: Blob;
   readonly timecode: number;
 }
+
