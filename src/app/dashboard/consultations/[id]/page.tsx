@@ -300,8 +300,14 @@ export default function ConsultationDetailPage() {
         setIsSpeakingSummary(false);
       };
       utterance.onerror = (event) => {
-        console.error("Speech synthesis error", event);
-        toast({ title: "TTS Error", description: "Could not play the summary.", variant: "destructive" });
+        // Log more details from the event object
+        console.error("Speech synthesis error. Event object:", event);
+        if (event instanceof SpeechSynthesisErrorEvent) {
+          console.error("Speech synthesis error code:", event.error);
+          toast({ title: "TTS Error", description: `Could not play the summary. Error: ${event.error}`, variant: "destructive" });
+        } else {
+          toast({ title: "TTS Error", description: "Could not play the summary due to an unknown speech error.", variant: "destructive" });
+        }
         setIsSpeakingSummary(false);
       };
       
