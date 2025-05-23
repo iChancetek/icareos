@@ -21,7 +21,7 @@ interface AuthContextType {
   user: User | null;
   updateUserDisplayName: (newDisplayName: string) => Promise<boolean>;
   updateUserPhotoURL: (newPhotoDataUrl: string) => Promise<boolean>;
-  fetchUserProfile: () => Promise<void>; 
+  fetchUserProfile: (email?: string) => Promise<void>; 
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,11 +40,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userEmail = email || localStorage.getItem(USER_EMAIL_KEY);
     if (!userEmail) {
       console.log("AuthContext: No user email found for fetching profile.");
-      // Don't call logout here, as it might be initial load before token check
-      setIsLoading(false); // Ensure loading is set if we bail early
+      setIsLoading(false); 
       return;
     }
-    // No need to setIsLoading(true) here as it's handled by calling functions or initial load
     try {
       console.log("AuthContext: Attempting to fetch user profile for", userEmail);
       const response = await fetch(`/api/profile?email=${encodeURIComponent(userEmail)}`);
@@ -52,28 +50,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const data = await response.json();
         if (data.user) {
           setUser(data.user);
-          setIsAuthenticated(true); // This indicates a valid session
+          setIsAuthenticated(true); 
           console.log("AuthContext: Profile fetched and set:", data.user);
         } else {
            console.error("AuthContext: Profile fetch response OK, but no user data.", data);
            logout(); 
         }
       } else {
-        console.error("AuthContext: Failed to fetch profile, status:", response.status);
-        // Attempt to get error message from response body if available
+        if (response.status === 404) {
+          console.warn(`AuthContext: User profile not found (status 404) for email ${userEmail}. This can happen if the server restarted and the in-memory user store was cleared. Logging out.`);
+        } else {
+          console.error("AuthContext: Failed to fetch profile, status:", response.status);
+        }
+        
         try {
             const errorData = await response.json();
-            console.error("AuthContext: Profile fetch error data:", errorData);
+            // Log the specific message from the API if available, e.g., { message: 'User not found' }
+            if (response.status === 404) {
+                 console.warn("AuthContext: Profile fetch API error data:", errorData.message || errorData);
+            } else {
+                 console.error("AuthContext: Profile fetch API error data:", errorData.message || errorData);
+            }
         } catch (e) {
-            console.error("AuthContext: Could not parse error response from profile fetch.");
+            if (response.status !== 404) { // Avoid double logging for 404 if parsing fails
+                console.error("AuthContext: Could not parse error response from profile fetch.");
+            }
         }
         logout(); 
       }
     } catch (error) {
-      console.error("AuthContext: Error fetching profile:", error);
+      console.error("AuthContext: Error during fetchUserProfile network request or other unexpected issue:", error);
       logout(); 
-    } finally {
-       // setIsLoading(false) // Managed by the calling context (initial load or login/signup)
     }
   };
   
@@ -83,7 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (token && storedUserEmail) {
       console.log("AuthContext: Token and email found. Fetching profile for initial load...");
-      setIsLoading(true); // Set loading before async operation
+      setIsLoading(true); 
       fetchUserProfile(storedUserEmail).finally(() => setIsLoading(false));
     } else {
       console.log("AuthContext: No token or email found on initial load. Setting loading to false.");
@@ -127,14 +134,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Updated signup to include displayNameIn
   const signup = async (emailIn: string, passwordIn: string, displayNameIn: string): Promise<boolean> => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailIn, password: passwordIn, displayName: displayNameIn }), // Pass displayNameIn
+        body: JSON.stringify({ email: emailIn, password: passwordIn, displayName: displayNameIn }),
       });
       const data = await response.json();
       if (response.ok && data.token && data.user) {
@@ -169,7 +175,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUserProfileAPI = async (updates: Partial<User>): Promise<boolean> => {
     if (!user || !user.email) return false;
-    // No setIsLoading(true) here, individual profile page can manage its own saving state
     try {
       const response = await fetch('/api/profile', {
         method: 'PUT',
@@ -178,7 +183,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       const data = await response.json();
       if (response.ok && data.user) {
-        setUser(data.user); // Update context user state
+        setUser(data.user); 
         return true;
       }
       console.error("Update profile failed:", data.message);
@@ -186,8 +191,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error updating profile:", error);
       return false;
-    } finally {
-      // setIsLoading(false) // Managed by calling page
     }
   };
 
