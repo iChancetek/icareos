@@ -12,11 +12,12 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Loader2, Mic, StopCircle, Volume2, AlertTriangle, Languages, Play } from 'lucide-react'; // Added Play
+import { Loader2, Mic, StopCircle, Volume2, AlertTriangle, Languages, Play, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { transcribeAudio } from '@/ai/flows/transcribe-audio';
 import { translateText } from '@/ai/flows/translate-text-flow';
+import { summarizeConsultation } from '@/ai/flows/summarize-consultation'; // Added
 import { Progress } from '@/components/ui/progress';
 
 interface RealtimeVoiceTranslatorDialogProps {
@@ -24,7 +25,7 @@ interface RealtimeVoiceTranslatorDialogProps {
   onOpenChange: Dispatch<SetStateAction<boolean>>;
 }
 
-type ProcessingStep = "idle" | "transcribing" | "translating" | "completed"; // Changed "speaking" to "completed"
+type ProcessingStep = "idle" | "transcribing" | "translating" | "summarizing" | "completed";
 type RecordingLanguage = "English" | "Spanish";
 
 export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: RealtimeVoiceTranslatorDialogProps) {
@@ -32,6 +33,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
   const [currentRecordingLang, setCurrentRecordingLang] = useState<RecordingLanguage | null>(null);
   const [transcribedText, setTranscribedText] = useState<string>("");
   const [translatedText, setTranslatedText] = useState<string>("");
+  const [summaryText, setSummaryText] = useState<string>(""); // Added for summary
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState<ProcessingStep>("idle");
   
@@ -119,6 +121,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
 
       setTranscribedText("");
       setTranslatedText("");
+      setSummaryText(""); // Clear previous summary
       setCurrentRecordingLang(inputLang);
       audioChunksRef.current = [];
       let stream: MediaStream | null = null;
@@ -197,6 +200,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
             setCurrentRecordingLang(null);
             setTranscribedText("");
             setTranslatedText("");
+            setSummaryText("");
             return;
           }
           
@@ -254,8 +258,11 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
     setIsProcessing(true);
     setTranscribedText(""); 
     setTranslatedText("");  
+    setSummaryText(""); // Clear previous summary
     const targetLang = sourceLang === 'English' ? 'Spanish' : 'English';
     console.log(`RealtimeVoiceTranslator: Starting processAudio. Source: ${sourceLang}, Target: ${targetLang}.`);
+
+    let originalTranscript = "";
 
     try {
       setProcessingStep("transcribing");
@@ -267,7 +274,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
         throw new Error(`Transcription service returned invalid data.`);
       }
       
-      const originalTranscript = transcriptionResult.transcription;
+      originalTranscript = transcriptionResult.transcription;
       setTranscribedText(originalTranscript);
       toast({ title: "Transcription Complete", description: `Source: ${sourceLang}`});
       console.log("RealtimeVoiceTranslator: Transcription complete:", originalTranscript.substring(0,100));
@@ -290,10 +297,22 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       toast({ title: "Translation Complete", description: `To: ${targetLang}`});
       console.log("RealtimeVoiceTranslator: Translation complete:", finalText.substring(0,100));
       
-      setProcessingStep("completed"); // Mark as completed, TTS is now manual
+      // Summarization Step
+      setProcessingStep("summarizing");
+      console.log(`RealtimeVoiceTranslator: Summarizing original transcript. Text: "${originalTranscript.substring(0, 50)}..."`);
+      const summaryResult = await summarizeConsultation({ transcript: originalTranscript });
+      if (!summaryResult || typeof summaryResult.summary !== 'string') {
+        console.error("RealtimeVoiceTranslator: Invalid summary result from AI flow.", summaryResult);
+        throw new Error(`Summarization service returned invalid data.`);
+      }
+      setSummaryText(summaryResult.summary);
+      toast({ title: "Summary Complete" });
+      console.log("RealtimeVoiceTranslator: Summary complete:", summaryResult.summary.substring(0,100));
+
+      setProcessingStep("completed"); 
       
     } catch (error: any) {
-      console.error("RealtimeVoiceTranslator: Error in processing chain (transcribe/translate):", error);
+      console.error("RealtimeVoiceTranslator: Error in processing chain (transcribe/translate/summarize):", error);
       let detailedErrorMessage = "An unknown error occurred during AI processing.";
       if (error instanceof Error) {
         detailedErrorMessage = error.message;
@@ -310,20 +329,27 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       if (processingStep === "transcribing" || error.message === "Empty transcription result.") {
         setTranscribedText("");
         setTranslatedText("");
+        setSummaryText("");
+      } else if (processingStep === "translating") {
+        setTranslatedText("");
+        setSummaryText("");
+      } else if (processingStep === "summarizing") {
+        setSummaryText("");
       }
     } finally {
       console.log("RealtimeVoiceTranslator: processAudio finally block. Resetting processing states.");
       setIsProcessing(false);
-      // Keep currentRecordingLang set here so the manual play button knows the context
-      // The processAudio doesn't reset currentRecordingLang, it's reset by startStop or close
-      if (processingStep !== "completed") { // if it didn't complete, clear currentRecordingLang
+      setProcessingStep("idle"); 
+      // currentRecordingLang is reset by startStop or close, or if it didn't complete
+      if (processingStep !== "completed") { 
         setCurrentRecordingLang(null);
       }
     }
   };
 
-  const playTTSSound = async (text: string, lang: RecordingLanguage): Promise<void> => {
-    console.log(`RealtimeVoiceTranslator: playTTSSound called. Lang: ${lang}, Text: "${text.substring(0, 30)}..."`);
+  // Utility function to play TTS, returns a Promise
+  const playTTSSound = (text: string, lang: RecordingLanguage): Promise<void> => {
+    console.log(`RealtimeVoiceTranslator: playTTSSound. Lang: ${lang}, Text: "${text.substring(0, 30)}..."`);
     return new Promise<void>((resolve, reject) => {
       if (typeof window === 'undefined' || !window.speechSynthesis) {
         toast({ title: "TTS Not Supported", description: "Your browser does not support text-to-speech.", variant: "destructive" });
@@ -336,17 +362,22 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
         return;
       }
 
+      // Cancel any previous speech and clear existing timeout
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+            console.log("RealtimeVoiceTranslator: Cancelling existing/pending speech before new utterance.");
+            window.speechSynthesis.cancel();
+        }
+      }
       if (ttsTimeoutRef.current) {
         clearTimeout(ttsTimeoutRef.current);
+        ttsTimeoutRef.current = null;
       }
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang === 'English' ? 'en-US' : 'es-ES';
       
-      // Log available voices for debugging
-      // console.log("Available voices for TTS:", window.speechSynthesis.getVoices().map(v => ({name: v.name, lang: v.lang, default: v.default})));
-
-      const ttsTimeoutDuration = 20000; 
+      const ttsTimeoutDuration = 20000; // 20 seconds
       ttsTimeoutRef.current = setTimeout(() => {
         console.warn(`RealtimeVoiceTranslator: TTS playback timed out for lang: ${lang} after ${ttsTimeoutDuration}ms. Cancelling speech.`);
         if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -368,32 +399,23 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
         if (ttsTimeoutRef.current) clearTimeout(ttsTimeoutRef.current);
         ttsTimeoutRef.current = null;
         let errorMsg = `Could not play the audio in ${lang}.`;
-        if (event.error) {
+        if (event.error && typeof event.error === 'string') { // DOMError has 'name' typically
             errorMsg += ` Error: ${event.error}`;
+        } else if (event.error && typeof (event.error as any).name === 'string'){
+            errorMsg += ` Error: ${(event.error as any).name}`;
         }
         toast({ title: "TTS Error", description: errorMsg, variant: "destructive" });
-        reject(new Error(event.error || "TTSPlaybackError")); 
+        reject(new Error(typeof event.error === 'string' ? event.error : "TTSPlaybackError")); 
       };
       
       try {
-        if (typeof window !== 'undefined' && window.speechSynthesis) {
-            if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-                console.log("RealtimeVoiceTranslator: Cancelling existing/pending speech before new utterance.");
-                window.speechSynthesis.cancel();
-            }
-            console.log("RealtimeVoiceTranslator: Calling speechSynthesis.speak() for lang:", utterance.lang);
-            window.speechSynthesis.speak(utterance);
-        } else {
-            console.error("RealtimeVoiceTranslator: window.speechSynthesis not available at speak call.");
-            if (ttsTimeoutRef.current) clearTimeout(ttsTimeoutRef.current);
-            ttsTimeoutRef.current = null;
-            reject(new Error("TTSNotAvailableAtSpeakCall")); 
-        }
-      } catch (e) {
+         console.log("RealtimeVoiceTranslator: Calling speechSynthesis.speak() for lang:", utterance.lang);
+         window.speechSynthesis.speak(utterance);
+      } catch (e: any) {
         if (ttsTimeoutRef.current) clearTimeout(ttsTimeoutRef.current);
         ttsTimeoutRef.current = null;
         console.error("RealtimeVoiceTranslator: Exception during speechSynthesis.speak() setup/call:", e);
-        toast({ title: "TTS Playback Failed", description: `An unexpected error occurred trying to play audio. Error: ${(e as Error).message}`, variant: "destructive" });
+        toast({ title: "TTS Playback Failed", description: `An unexpected error occurred trying to play audio. Error: ${e.message || String(e)}`, variant: "destructive" });
         reject(e); 
       }
     });
@@ -408,7 +430,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       await playTTSSound(translatedText, targetLanguageToSpeak);
     } catch (error) {
       console.error("Error during manual TTS playback:", error);
-      // Toast for specific TTS errors is handled within playTTSSound
+      // Toast for specific TTS errors is handled within playTTSSound or its caller.
     } finally {
       setIsManuallyPlayingTTS(false);
     }
@@ -429,8 +451,9 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
   const getProgressValue = () => {
     if (!isProcessing) return 0;
     switch (processingStep) {
-      case "transcribing": return 33;
-      case "translating": return 66;
+      case "transcribing": return 25;
+      case "translating": return 50;
+      case "summarizing": return 75;
       case "completed": return 100;
       default: return 0;
     }
@@ -470,6 +493,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
         setProcessingStep("idle");
         setTranscribedText("");
         setTranslatedText("");
+        setSummaryText("");
 
         if (typeof window !== 'undefined' && window.speechSynthesis) { 
             if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
@@ -487,14 +511,14 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       }
       onOpenChange(open);
     }}>
-      <DialogContent className="sm:max-w-xl md:max-w-2xl flex flex-col h-[80vh] max-h-[800px] min-h-[500px]">
+      <DialogContent className="sm:max-w-xl md:max-w-2xl flex flex-col h-[85vh] max-h-[900px] min-h-[500px]">
         <DialogHeader className="p-4 border-b">
           <DialogTitle className="flex items-center text-xl">
             <Languages className="mr-2 h-6 w-6 text-primary" />
             Real-time Voice Translator
           </DialogTitle>
           <DialogDescription className="text-sm">
-            Speak in English or Spanish. The app will transcribe and translate. Tap play to hear the translation.
+            Speak in English or Spanish. The app will transcribe, translate, and summarize. Tap play to hear the translation.
           </DialogDescription>
         </DialogHeader>
 
@@ -521,7 +545,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
               {renderMicButton("Spanish", "Speak in Spanish")}
             </div>
 
-            {(isProcessing || transcribedText || translatedText) && (
+            {(isProcessing || transcribedText || translatedText || summaryText) && (
               <div className="flex-1 p-4 space-y-4 overflow-y-auto">
                 {isProcessing && (
                   <div className="space-y-2">
@@ -568,9 +592,18 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
                     <p className="p-3 bg-primary/10 rounded-md border border-primary/30 whitespace-pre-wrap text-sm">{translatedText}</p>
                   </div>
                 )}
+
+                {summaryText && (
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-semibold text-muted-foreground flex items-center">
+                       <FileText className="mr-2 h-4 w-4" /> AI Summary (of original):
+                    </h3>
+                    <p className="p-3 bg-accent/10 rounded-md border border-accent/30 whitespace-pre-wrap text-sm">{summaryText}</p>
+                  </div>
+                )}
               </div>
             )}
-            { !isProcessing && !transcribedText && !translatedText &&
+            { !isProcessing && !transcribedText && !translatedText && !summaryText &&
               <div className="flex-1 flex items-center justify-center">
                 <p className="text-muted-foreground">Click a button above to start translating.</p>
               </div>
@@ -597,5 +630,3 @@ interface BlobEvent extends Event {
   readonly data: Blob;
   readonly timecode: number;
 }
-
-    
