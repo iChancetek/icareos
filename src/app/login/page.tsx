@@ -86,7 +86,7 @@ export default function LoginPage() {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold tracking-tight">MediScribe</CardTitle>
-          <CardDescription>Powered by Generative AI to Enhance Patient Care</CardDescription>
+          <CardDescription>AI-Driven Medical Documentation Powered By Generative AI</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
