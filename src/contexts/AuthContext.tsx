@@ -4,206 +4,208 @@
 import type { ReactNode } from 'react';
 import React, { createContext, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { trackLoginEventInHubSpot } from '@/services/hubspotService';
+import {
+  getAuth,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  GoogleAuthProvider,
+  signInWithPopup,
+  type User as FirebaseUser,
+} from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase'; // Correctly import from firebase.ts
+import { useToast } from "@/hooks/use-toast";
 
+
+// Define our custom User type based on the project brief
 interface User {
-  email: string;
-  displayName: string;
-  photoURL?: string;
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  role: 'user' | 'therapist' | 'admin';
+  createdAt: Date | null;
+  lastLogin: Date | null;
 }
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (emailIn: string, passwordIn: string) => Promise<boolean>;
-  signup: (emailIn: string, passwordIn: string, displayNameIn: string) => Promise<boolean>; // Added displayNameIn
+  signup: (emailIn: string, passwordIn: string, displayNameIn: string) => Promise<boolean>;
   logout: () => void;
+  signInWithGoogle: () => Promise<boolean>;
   user: User | null;
-  updateUserDisplayName: (newDisplayName: string) => Promise<boolean>;
-  updateUserPhotoURL: (newPhotoDataUrl: string) => Promise<boolean>;
-  fetchUserProfile: (email?: string) => Promise<void>; 
+  firebaseUser: FirebaseUser | null; // Keep firebase user for some direct operations
+  updateUserProfile: (updates: { displayName?: string, photoURL?: string }) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AUTH_TOKEN_KEY = 'medisummarize_auth_token';
-const USER_EMAIL_KEY = 'medisummarize_user_email'; 
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
 
-  const fetchUserProfile = async (email?: string) => {
-    const userEmail = email || localStorage.getItem(USER_EMAIL_KEY);
-    if (!userEmail) {
-      console.log("AuthContext: No user email found for fetching profile.");
-      setIsLoading(false); 
-      return;
-    }
-    try {
-      console.log("AuthContext: Attempting to fetch user profile for", userEmail);
-      const response = await fetch(`/api/profile?email=${encodeURIComponent(userEmail)}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.user) {
-          setUser(data.user);
-          setIsAuthenticated(true); 
-          console.log("AuthContext: Profile fetched and set:", data.user);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      setIsLoading(true);
+      if (fbUser) {
+        setFirebaseUser(fbUser);
+        const userDocRef = doc(db, 'users', fbUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUser({
+            uid: fbUser.uid,
+            email: fbUser.email,
+            displayName: userData.displayName,
+            photoURL: userData.photoURL,
+            role: userData.role,
+            createdAt: userData.createdAt?.toDate(),
+            lastLogin: userData.lastLogin?.toDate(),
+          });
         } else {
-           console.error("AuthContext: Profile fetch response OK, but no user data.", data);
-           logout(); 
+            // This case can happen with social sign-in where user exists in Auth but not Firestore yet.
+            const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> = {
+                uid: fbUser.uid,
+                email: fbUser.email,
+                displayName: fbUser.displayName,
+                photoURL: fbUser.photoURL,
+                role: 'user', // Default role
+            };
+             await setDoc(userDocRef, {
+                ...newUserProfile,
+                createdAt: serverTimestamp(),
+                lastLogin: serverTimestamp(),
+            }, { merge: true });
+            
+            setUser({
+                ...newUserProfile,
+                createdAt: new Date(),
+                lastLogin: new Date(),
+            });
         }
       } else {
-        if (response.status === 404) {
-          console.warn(`AuthContext: User profile not found (status 404) for email ${userEmail}. This can happen if the server restarted and the in-memory user store was cleared. Logging out.`);
-        } else {
-          console.error("AuthContext: Failed to fetch profile, status:", response.status);
-        }
-        
-        try {
-            const errorData = await response.json();
-            // Log the specific message from the API if available, e.g., { message: 'User not found' }
-            if (response.status === 404) {
-                 console.warn("AuthContext: Profile fetch API error data:", errorData.message || errorData);
-            } else {
-                 console.error("AuthContext: Profile fetch API error data:", errorData.message || errorData);
-            }
-        } catch (e) {
-            if (response.status !== 404) { // Avoid double logging for 404 if parsing fails
-                console.error("AuthContext: Could not parse error response from profile fetch.");
-            }
-        }
-        logout(); 
+        setFirebaseUser(null);
+        setUser(null);
       }
-    } catch (error) {
-      console.error("AuthContext: Error during fetchUserProfile network request or other unexpected issue:", error);
-      logout(); 
-    }
-  };
-  
-  useEffect(() => {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
-    const storedUserEmail = localStorage.getItem(USER_EMAIL_KEY);
-
-    if (token && storedUserEmail) {
-      console.log("AuthContext: Token and email found. Fetching profile for initial load...");
-      setIsLoading(true); 
-      fetchUserProfile(storedUserEmail).finally(() => setIsLoading(false));
-    } else {
-      console.log("AuthContext: No token or email found on initial load. Setting loading to false.");
       setIsLoading(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const isAuthenticated = !isLoading && !!user;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !['/login', '/signup'].includes(pathname)) {
       router.push('/login');
+    }
+    if (!isLoading && isAuthenticated && (pathname === '/login' || pathname === '/signup')) {
+      router.push(`/dashboard/consultations`);
     }
   }, [isAuthenticated, isLoading, pathname, router]);
 
   const login = async (emailIn: string, passwordIn: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailIn, password: passwordIn }),
-      });
-      const data = await response.json();
-      if (response.ok && data.token && data.user) {
-        localStorage.setItem(AUTH_TOKEN_KEY, data.token);
-        localStorage.setItem(USER_EMAIL_KEY, data.user.email); 
-        setUser(data.user);
-        setIsAuthenticated(true);
-        await trackLoginEventInHubSpot(data.user.email);
-        router.push('/dashboard/consultations');
-        return true;
-      } else {
-        console.error("Login failed:", data.message);
-        return false;
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      return false;
-    } finally {
+      await signInWithEmailAndPassword(auth, emailIn, passwordIn);
+      // Auth state change will handle the rest
+      return true;
+    } catch (error: any) {
+      console.error("Firebase Login Error:", error.message);
+      toast({ title: "Login Failed", description: error.message, variant: "destructive" });
       setIsLoading(false);
+      return false;
     }
   };
 
   const signup = async (emailIn: string, passwordIn: string, displayNameIn: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailIn, password: passwordIn, displayName: displayNameIn }),
+      const userCredential = await createUserWithEmailAndPassword(auth, emailIn, passwordIn);
+      const fbUser = userCredential.user;
+      
+      const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> = {
+        uid: fbUser.uid,
+        email: fbUser.email,
+        displayName: displayNameIn,
+        photoURL: fbUser.photoURL,
+        role: 'user', // default role
+      };
+
+      await setDoc(doc(db, "users", fbUser.uid), {
+          ...newUserProfile,
+          createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp(),
       });
-      const data = await response.json();
-      if (response.ok && data.token && data.user) {
-        localStorage.setItem(AUTH_TOKEN_KEY, data.token);
-        localStorage.setItem(USER_EMAIL_KEY, data.user.email); 
-        setUser(data.user); 
-        setIsAuthenticated(true);
-        await trackLoginEventInHubSpot(data.user.email); 
-        router.push('/dashboard/consultations');
-        return true;
-      } else {
-         console.error("Signup failed:", data.message);
-        return false;
-      }
-    } catch (error) {
-       console.error("Signup error:", error);
-      return false;
-    } finally {
+      // onAuthStateChanged will handle setting the user state.
+      return true;
+    } catch (error: any) {
+      console.error("Firebase Signup Error:", error.message);
+      toast({ title: "Signup Failed", description: error.message, variant: "destructive" });
       setIsLoading(false);
+      return false;
     }
   };
 
-  const logout = () => {
-    console.log("AuthContext: Logging out user.");
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(USER_EMAIL_KEY);
-    setIsAuthenticated(false);
-    setUser(null);
-    setIsLoading(false); 
+  const signInWithGoogle = async (): Promise<boolean> => {
+      setIsLoading(true);
+      try {
+          const provider = new GoogleAuthProvider();
+          await signInWithPopup(auth, provider);
+          // onAuthStateChanged will handle the rest (including creating a user doc if it's the first time)
+          return true;
+      } catch (error: any) {
+          console.error("Google Sign-In Error:", error.message);
+          toast({ title: "Google Sign-In Failed", description: error.message, variant: "destructive" });
+          setIsLoading(false);
+          return false;
+      }
+  };
+
+  const logout = async () => {
+    await signOut(auth);
+    // onAuthStateChanged will clear user state
     router.push('/login');
   };
 
-  const updateUserProfileAPI = async (updates: Partial<User>): Promise<boolean> => {
-    if (!user || !user.email) return false;
-    try {
-      const response = await fetch('/api/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email, ...updates }),
-      });
-      const data = await response.json();
-      if (response.ok && data.user) {
-        setUser(data.user); 
-        return true;
+  const updateUserProfile = async (updates: { displayName?: string, photoURL?: string }): Promise<boolean> => {
+      if (!firebaseUser) return false;
+      try {
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          await setDoc(userDocRef, updates, { merge: true });
+          // Optimistically update local state
+          if (user) {
+              setUser({...user, ...updates});
+          }
+          return true;
+      } catch (error: any) {
+          console.error("Update Profile Error:", error.message);
+          toast({ title: "Update Failed", description: "Could not update profile in database.", variant: "destructive" });
+          return false;
       }
-      console.error("Update profile failed:", data.message);
-      return false;
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      return false;
-    }
-  };
-
-  const updateUserDisplayName = (newDisplayName: string) => {
-    return updateUserProfileAPI({ displayName: newDisplayName });
-  };
-
-  const updateUserPhotoURL = (newPhotoDataUrl: string) => {
-    return updateUserProfileAPI({ photoURL: newPhotoDataUrl });
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, signup, logout, user, updateUserDisplayName, updateUserPhotoURL, fetchUserProfile }}>
+    <AuthContext.Provider value={{
+        isAuthenticated,
+        isLoading,
+        login,
+        signup,
+        logout,
+        signInWithGoogle,
+        user,
+        firebaseUser,
+        updateUserProfile
+    }}>
       {children}
     </AuthContext.Provider>
   );

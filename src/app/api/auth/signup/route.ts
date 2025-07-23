@@ -1,46 +1,52 @@
+"use client";
 
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/inMemoryUserStore'; // Simulated DB
+import type { ReactNode } from 'react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import AppHeader from '@/components/layout/AppHeader';
+import AppSidebar from '@/components/layout/AppSidebar';
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { Loader2 } from 'lucide-react';
 
-export async function POST(request: Request) {
-  try {
-    const { email, password, displayName } = await request.json();
+export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
 
-    if (!email || !password) {
-      return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace('/login');
     }
-    if (!displayName) {
-      return NextResponse.json({ message: 'Display name is required' }, { status: 400 });
-    }
+  }, [isAuthenticated, isLoading, router]);
 
-    const existingUser = await db.findUser(email);
-    if (existingUser) {
-      console.log(`[API Signup] Attempt to create existing user: ${email}`);
-      return NextResponse.json({ message: 'User already exists' }, { status: 409 });
-    }
-
-    // In a real app: HASH the password securely before storing
-    // const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await db.createUser({
-      email,
-      passwordHash: password, // Storing plaintext for demo ONLY. NEVER DO THIS IN PRODUCTION.
-      displayName,
-      // photoURL can be added later or set to a default
-    });
-
-    console.log(`[API Signup] User created successfully: ${newUser.email}, Name: ${newUser.displayName}`);
-
-    // Return a subset of user info, not the passwordHash
-    const { passwordHash, ...userToReturn } = newUser;
-    return NextResponse.json({ message: 'User registered successfully', user: userToReturn, token: `mock-jwt-token-for-${email}` }, { status: 201 });
-
-  } catch (error) {
-    console.error('[API Signup] Error:', error);
-    const message = error instanceof Error ? error.message : 'An error occurred during registration';
-    // Adjust status code if it's a known error like 'User already exists' from createUser
-    if (message === 'User already exists') {
-        return NextResponse.json({ message }, { status: 409 });
-    }
-    return NextResponse.json({ message }, { status: 500 });
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
   }
+
+  if (!isAuthenticated) {
+    return null; // Redirect is handled by the useEffect
+  }
+
+  return (
+    <SidebarProvider defaultOpen={true}>
+      <div className="flex min-h-screen w-full flex-col bg-muted/40">
+        <AppSidebar />
+        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-[calc(var(--sidebar-width-icon)_+_1rem)] md:pl-[calc(var(--sidebar-width)_+_1rem)] group-data-[collapsible=icon]:sm:pl-[calc(var(--sidebar-width-icon)_+_1rem)] transition-[padding-left] duration-300 ease-in-out">
+          <div className="flex flex-1 flex-col sm:pl-14 md:group-data-[state=expanded]:pl-64"> 
+             <AppHeader />
+            <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
+              {children}
+            </main>
+            <footer className="border-t bg-background/80 p-4 text-center text-sm text-muted-foreground">
+              Powered by ChanceTEK LLC
+            </footer>
+          </div>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
 }
