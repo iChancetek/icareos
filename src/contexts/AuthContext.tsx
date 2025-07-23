@@ -154,7 +154,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(userProfile);
         
         // Play greeting after user profile is loaded
-        playGreeting(userProfile, fbUser);
+        if (userProfile) {
+          playGreeting(userProfile, fbUser);
+        }
 
       } else {
         setFirebaseUser(null);
@@ -192,7 +194,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Auth state change will handle fetching profile and redirecting.
       return true;
     } catch (error: any) {
-      console.error("Firebase Login Error:", error.message);
+      console.error("Firebase Login Error Code:", error.code);
       toast({ title: "Login Failed", description: "Invalid credentials. Please try again.", variant: "destructive" });
       setIsLoading(false);
       return false;
