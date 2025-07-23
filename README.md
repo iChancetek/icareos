@@ -1,11 +1,11 @@
 
-# MediSummarize: AI-Powered Medical Consultation Summaries
+# MediScribe: AI-Powered Medical Consultation Summaries
 
 ## Overview
 
-MediSummarize is a modern, Generative AI-powered voice recording and transcription application. It's specifically designed for healthcare professionals like doctors and nurses to streamline communication, automate documentation, and significantly enhance the patient experience. The application allows for recording medical consultations, transcribing them using AI, generating concise summaries, and offers features like translation and text-to-speech to improve accessibility and understanding.
+MediScribe is a modern, Generative AI-powered voice recording and transcription application. It's specifically designed for healthcare professionals like doctors and nurses to streamline communication, automate documentation, and significantly enhance the patient experience. The application allows for recording medical consultations, transcribing them using AI, generating concise summaries, and offers features like translation and text-to-speech to improve accessibility and understanding.
 
-Built with Next.js, React, ShadCN UI, Tailwind CSS, and Genkit for AI functionalities, MediSummarize provides a user-friendly interface with a focus on efficiency and clarity for medical professionals.
+Built with Next.js, React, ShadCN UI, Tailwind CSS, and Genkit for AI functionalities, MediScribe provides a user-friendly interface with a focus on efficiency and clarity for medical professionals.
 
 ## Core Features
 
@@ -114,4 +114,4 @@ Built with Next.js, React, ShadCN UI, Tailwind CSS, and Genkit for AI functional
 *   **Error Handling**: While basic error handling is in place, a production application would require more comprehensive error logging and user feedback mechanisms.
 *   **Scalability & Security**: The current architecture is designed for demonstration. A production application would need a robust backend, database, secure file storage, and adherence to data privacy regulations (e.g., HIPAA if dealing with real patient data).
 
-This README provides a comprehensive guide to MediSummarize. For developers, it outlines the core components and areas for further development towards a production-ready system.
+This README provides a comprehensive guide to MediScribe. For developers, it outlines the core components and areas for further development towards a production-ready system.

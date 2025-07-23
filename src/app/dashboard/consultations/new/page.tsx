@@ -441,7 +441,7 @@ export default function NewConsultationPage() {
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Microphone Access Denied</AlertTitle>
               <AlertDescription>
-                MediSummarize needs microphone access. Please enable it in your browser settings and refresh.
+                MediScribe needs microphone access. Please enable it in your browser settings and refresh.
               </AlertDescription>
             </Alert>
           )}

@@ -68,7 +68,7 @@ export default function SignUpPage() {
     if (success) {
       toast({
         title: "Signup Successful",
-        description: "Welcome to MediSummarize! You are now being redirected.",
+        description: "Welcome to MediScribe! You are now being redirected.",
       });
     }
   };
@@ -94,7 +94,7 @@ export default function SignUpPage() {
           <div className="mb-4 flex justify-center">
             <Stethoscope className="h-16 w-16 text-primary" />
           </div>
-          <CardTitle className="text-3xl font-bold">MediSummarize</CardTitle>
+          <CardTitle className="text-3xl font-bold">MediScribe</CardTitle>
           <CardDescription>Create your account to get started.</CardDescription>
         </CardHeader>
         <CardContent>

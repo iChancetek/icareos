@@ -83,7 +83,7 @@ export default function AppSidebar() {
           <div className="flex items-center gap-2">
             <Stethoscope className="h-8 w-8 text-primary" />
             {(sidebarDisplayState === 'expanded' || (sidebarDisplayState === 'collapsed' && isEffectivelyMobile)) &&  (
-              <h1 className="text-xl font-semibold text-foreground">MediSummarize</h1>
+              <h1 className="text-xl font-semibold text-foreground">MediScribe</h1>
             )}
           </div>
           {mounted && !sidebarIsMobileFromHook && <SidebarTrigger className="absolute right-2 top-3 data-[state=open]:hidden data-[state=closed]:block group-data-[collapsible=offcanvas]:hidden" />}

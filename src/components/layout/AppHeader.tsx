@@ -38,7 +38,7 @@ export default function AppHeader() {
       )}
       <Link href="/dashboard/consultations" className="flex items-center gap-2 text-lg font-semibold md:text-base">
         <Stethoscope className="h-7 w-7 text-primary" />
-        <span className="hidden font-bold sm:inline-block">MediSummarize</span>
+        <span className="hidden font-bold sm:inline-block">MediScribe</span>
       </Link>
       <div className="ml-auto flex items-center gap-4">
         <DropdownMenu>

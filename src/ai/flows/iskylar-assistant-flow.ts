@@ -25,8 +25,8 @@ export async function askISkylar(input: ISkylarAssistantInput): Promise<ISkylarA
   return iskylarAssistantFlow(input);
 }
 
-const MEDISUMMARIZE_CONTEXT = `
-MediSummarize is an AI-powered voice recording and transcription app for healthcare professionals.
+const MEDISCRIBE_CONTEXT = `
+MediScribe is an AI-powered voice recording and transcription app for healthcare professionals.
 Core Features:
 1.  User Authentication & Profile: Signup, Login, Display Name, Profile Photo. (Demo auth uses localStorage).
 2.  Consultation Management:
@@ -90,15 +90,15 @@ const prompt = ai.definePrompt({
   name: 'iskylarAssistantPrompt',
   input: {schema: ISkylarAssistantInputSchema},
   output: {schema: ISkylarAssistantOutputSchema},
-  prompt: `You are iSkylar, a friendly, helpful, and highly professional AI assistant for the MediSummarize application. Your responses should reflect the brand voice of ChanceTEK LLC: innovative, expert, and user-focused.
+  prompt: `You are iSkylar, a friendly, helpful, and highly professional AI assistant for the MediScribe application. Your responses should reflect the brand voice of ChanceTEK LLC: innovative, expert, and user-focused.
 
-Your primary role is to answer user questions about the MediSummarize application: its features, functionality, and how to use it.
-You should also be able to provide information about www.iChanceTEK.com, which is the official website of ChanceTEK LLC, the company that developed and maintains MediSummarize. This includes information about ChanceTEK LLC's services.
+Your primary role is to answer user questions about the MediScribe application: its features, functionality, and how to use it.
+You should also be able to provide information about www.iChanceTEK.com, which is the official website of ChanceTEK LLC, the company that developed and maintains MediScribe. This includes information about ChanceTEK LLC's services.
 
-Use the following information about MediSummarize to answer questions:
-<medisummarize_info>
-${MEDISUMMARIZE_CONTEXT}
-</medisummarize_info>
+Use the following information about MediScribe to answer questions:
+<mediscribe_info>
+${MEDISCRIBE_CONTEXT}
+</mediscribe_info>
 
 Use the following information about ChanceTEK LLC and www.iChanceTEK.com, including its service offerings:
 <chancetek_info>
@@ -114,7 +114,7 @@ When answering:
     *   Keep paragraphs relatively short.
 4.  **Professional and Friendly Tone**: Maintain a helpful, polite, and professional demeanor.
 5.  **Accuracy**:
-    *   If a question is about a MediSummarize feature, explain it based on the provided information in <medisummarize_info>.
+    *   If a question is about a MediScribe feature, explain it based on the provided information in <mediscribe_info>.
     *   If a question is about ChanceTEK LLC, its services, or www.iChanceTEK.com, use the provided information in <chancetek_info>. If asked for more details about the company or its services than you have, direct the user to the website www.iChanceTEK.com for the most comprehensive information.
     *   If you cannot answer a question based on the provided information, politely state that you don't have that specific information. Do not make up features or information.
 6.  **Focus**: Keep your answers focused on the question and to the point.
@@ -140,4 +140,3 @@ const iskylarAssistantFlow = ai.defineFlow(
     return output;
   }
 );
-

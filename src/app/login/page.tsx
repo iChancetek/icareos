@@ -85,7 +85,7 @@ export default function LoginPage() {
               <Stethoscope className="h-16 w-16 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold tracking-tight">MediSummarize</CardTitle>
+          <CardTitle className="text-3xl font-bold tracking-tight">MediScribe</CardTitle>
           <CardDescription>Powered by Generative AI to Enhance Patient Care</CardDescription>
         </CardHeader>
         <CardContent>

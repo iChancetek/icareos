@@ -11,7 +11,7 @@ const inter = Inter({
 
 
 export const metadata: Metadata = {
-  title: 'MediSummarize',
+  title: 'MediScribe',
   description: 'AI-Powered Medical Consultation Summaries',
 };
 

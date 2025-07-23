@@ -52,7 +52,7 @@ export default function ISkylarAssistantDialog({ isOpen, onOpenChange }: ISkylar
         {
           id: 'greeting-' + Date.now(),
           type: 'assistant',
-          text: "Hello! I'm iSkylar. How can I help you with MediSummarize or ChanceTEK LLC today?",
+          text: "Hello! I'm iSkylar. How can I help you with MediScribe or ChanceTEK LLC today?",
         },
       ]);
     }
@@ -106,7 +106,7 @@ export default function ISkylarAssistantDialog({ isOpen, onOpenChange }: ISkylar
             Chat with iSkylar
           </DialogTitle>
           <DialogDescription className="text-sm">
-            Ask about MediSummarize features or ChanceTEK LLC.
+            Ask about MediScribe features or ChanceTEK LLC.
           </DialogDescription>
         </DialogHeader>
         
