@@ -43,6 +43,43 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// --- Voice Greeting Logic ---
+let hasGreeted = false; // Prevent greeting on hot-reloads
+
+const playGreeting = (user: User, firebaseUser: FirebaseUser) => {
+  if (typeof window === 'undefined' || !window.speechSynthesis || hasGreeted) {
+    return;
+  }
+  
+  const creationTime = new Date(firebaseUser.metadata.creationTime || 0).getTime();
+  const lastSignInTime = new Date(firebaseUser.metadata.lastSignInTime || 0).getTime();
+  
+  // A simple check to see if this is likely the very first sign-in session.
+  // A small buffer (e.g., 5 seconds) accounts for minor delays.
+  const isNewUser = Math.abs(lastSignInTime - creationTime) < 5000;
+
+  const userName = user.displayName?.split(' ')[0] || 'there'; // Use first name or 'there' as fallback
+  
+  const greetingText = isNewUser
+    ? `Hello ${userName}, it’s a pleasure to meet you. Welcome to MediScribe.`
+    : `Welcome back, ${userName}. Good to see you again.`;
+
+  try {
+    const utterance = new SpeechSynthesisUtterance(greetingText);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.95;
+    
+    // Ensure any previous speech is stopped before starting a new one.
+    window.speechSynthesis.cancel(); 
+    window.speechSynthesis.speak(utterance);
+    
+    hasGreeted = true; // Mark as greeted for this session
+  } catch (error) {
+    console.error("SpeechSynthesis Error:", error);
+  }
+};
+
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
@@ -115,10 +152,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         
         setUser(userProfile);
+        
+        // Play greeting after user profile is loaded
+        playGreeting(userProfile, fbUser);
 
       } else {
         setFirebaseUser(null);
         setUser(null);
+        hasGreeted = false; // Reset greeting state on logout
       }
       setIsLoading(false);
     });
