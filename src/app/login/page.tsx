@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Stethoscope, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Stethoscope, Eye, EyeOff, Loader2, Mail, KeyRound } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, type FormEvent } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
 const GoogleIcon = () => (
-    <svg className="h-5 w-5" viewBox="0 0 24 24">
+    <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.3v2.84C4.02 20.94 7.7 23 12 23z" fill="#34A853"></path>
         <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.3C1.42 8.84 1 10.36 1 12s.42 3.16 1.3 4.93l3.54-2.84z" fill="#FBBC05"></path>
@@ -77,31 +77,34 @@ export default function LoginPage() {
   const isLoading = authIsLoading || isSubmitting;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/30 p-4 selection:bg-primary/20">
-      <Card className="w-full max-w-md shadow-xl rounded-xl border border-primary/20 bg-card/95 backdrop-blur-sm hover:shadow-2xl hover:shadow-primary/25 transition-all duration-300 ease-in-out">
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 selection:bg-primary/20 animated-gradient text-white">
+      <Card className="w-full max-w-md bg-black/30 backdrop-blur-lg border-white/20 shadow-2xl rounded-2xl">
         <CardHeader className="text-center">
           <div className="mb-6 flex justify-center">
-            <div className="rounded-full p-5 bg-primary/10 shadow-lg shadow-primary/20">
-              <Stethoscope className="h-16 w-16 text-primary" />
+            <div className="rounded-full p-5 bg-white/10 shadow-lg shadow-primary/20">
+              <Stethoscope className="h-16 w-16 text-white" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold tracking-tight">MediScribe</CardTitle>
-          <CardDescription>AI-Driven Medical Documentation Powered By Generative AI</CardDescription>
+          <CardTitle className="text-4xl font-bold tracking-tight text-white">Welcome to MediScribe</CardTitle>
+          <CardDescription className="text-lg text-white/80">Your AI-Driven Medical Documentation is ready.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="m@example.com" 
-                required 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-                className="bg-card/70 backdrop-blur-sm border-primary/20 focus:border-primary/40 placeholder:text-muted-foreground/80 transition-all duration-200"
-              />
+               <div className="relative">
+                 <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/50" />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="m@example.com" 
+                  required 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                  className="bg-white/10 pl-10 text-white placeholder:text-white/50 border-white/20 focus:border-white/40 focus:ring-offset-black/20"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -109,7 +112,7 @@ export default function LoginPage() {
                 <Button
                   type="button"
                   variant="link"
-                  className="p-0 h-auto text-sm text-primary hover:text-primary/80 transition-colors duration-150 hover:underline"
+                  className="p-0 h-auto text-sm text-white/80 hover:text-white transition-colors duration-150 hover:underline"
                   onClick={handleForgotPassword}
                   disabled={isLoading}
                 >
@@ -117,6 +120,7 @@ export default function LoginPage() {
                 </Button>
               </div>
               <div className="relative">
+                 <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/50" />
                 <Input 
                   id="password" 
                   type={showPassword ? "text" : "password"} 
@@ -124,13 +128,13 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className="bg-card/70 backdrop-blur-sm border-primary/20 focus:border-primary/40 placeholder:text-muted-foreground/80 transition-all duration-200"
+                  className="bg-white/10 pl-10 text-white placeholder:text-white/50 border-white/20 focus:border-white/40 focus:ring-offset-black/20"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
+                  className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-white/60 hover:text-white"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
                 >
@@ -140,39 +144,39 @@ export default function LoginPage() {
             </div>
             <Button 
               type="submit" 
-              className="w-full text-lg py-6 font-semibold tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 transform hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 ease-in-out focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:outline-none shadow-md hover:shadow-lg hover:shadow-primary/20"
+              className="w-full text-lg py-6 font-semibold tracking-wide bg-white text-primary hover:bg-white/90 transform hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 ease-in-out focus-visible:ring-4 focus-visible:ring-white/40 focus-visible:outline-none shadow-lg hover:shadow-xl hover:shadow-white/20"
               disabled={isLoading}
             >
-              {isLoading ? <Loader2 className="animate-spin" /> : 'Login'}
+              {isLoading ? <Loader2 className="animate-spin" /> : 'Sign In'}
             </Button>
           </form>
 
           <div className="relative my-6">
-              <Separator />
+              <Separator className="bg-white/20"/>
               <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
-                  <span className="bg-card px-2 text-sm text-muted-foreground">OR</span>
+                  <span className="bg-black/30 px-3 text-sm text-white/80 backdrop-blur-sm">OR</span>
               </div>
           </div>
         
           <Button
             variant="outline"
-            className="w-full text-lg py-6"
+            className="w-full text-lg py-6 bg-white/10 text-white hover:bg-white/20 hover:text-white border-white/20 backdrop-blur-sm"
             onClick={handleGoogleSignIn}
             disabled={isLoading}
           >
               {isLoading ? <Loader2 className="animate-spin" /> : <> <GoogleIcon/> Sign in with Google </>}
           </Button>
           
-          <div className="mt-6 text-center text-sm">
+          <div className="mt-6 text-center text-sm text-white/80">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className={cn("font-semibold text-primary hover:text-primary/80 transition-colors duration-150 hover:underline", isLoading && "pointer-events-none opacity-50")}>
-              Sign up
+            <Link href="/signup" className={cn("font-semibold text-white hover:text-white/80 transition-colors duration-150 hover:underline", isLoading && "pointer-events-none opacity-50")}>
+              Create Account
             </Link>
           </div>
         </CardContent>
       </Card>
-      <footer className="mt-8 text-center text-sm text-muted-foreground">
-        Powered by ChanceTEK LLC
+      <footer className="mt-8 text-center text-sm text-white/70">
+        AI-Driven Medical Documentation – Powered by Generative AI
       </footer>
     </div>
   );

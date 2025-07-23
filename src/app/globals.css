@@ -88,3 +88,16 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* Added for animated background */
+@keyframes bgShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animated-gradient {
+  background: linear-gradient(270deg, #1e3a8a, #3b82f6, #06b6d4, #a5f3fc);
+  background-size: 800% 800%;
+  animation: bgShift 15s ease infinite;
+}
