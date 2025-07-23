@@ -5,7 +5,6 @@ import type { ReactNode } from 'react';
 import React, { createContext, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import {
-  getAuth,
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -14,18 +13,17 @@ import {
   signInWithPopup,
   type User as FirebaseUser,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase'; // Correctly import from firebase.ts
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { useToast } from "@/hooks/use-toast";
-
 
 // Define our custom User type based on the project brief
 interface User {
   uid: string;
   email: string | null;
-  username: string | null; // Added username
-  displayName: string | null;
-  photoURL: string | null;
+  username: string | null;
+  displayName: string | null; // Corresponds to 'fullName' in the brief
+  photoURL: string | null; // Corresponds to 'profileImage'
   role: 'user' | 'therapist' | 'admin';
   createdAt: Date | null;
   lastLogin: Date | null;
@@ -35,11 +33,11 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (emailIn: string, passwordIn: string) => Promise<boolean>;
-  signup: (emailIn: string, passwordIn: string, displayNameIn: string, usernameIn: string) => Promise<boolean>; // Added username
+  signup: (emailIn: string, passwordIn: string, displayNameIn: string, usernameIn: string) => Promise<boolean>;
   logout: () => void;
   signInWithGoogle: () => Promise<boolean>;
   user: User | null;
-  firebaseUser: FirebaseUser | null; // Keep firebase user for some direct operations
+  firebaseUser: FirebaseUser | null;
   updateUserProfile: (updates: { displayName?: string, photoURL?: string }) => Promise<boolean>;
 }
 
@@ -53,49 +51,71 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const { toast } = useToast();
 
+  const fetchUserProfile = async (fbUser: FirebaseUser): Promise<User | null> => {
+    const userDocRef = doc(db, 'users', fbUser.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      // Update lastLogin timestamp on profile fetch after login
+      await updateDoc(userDocRef, {
+        lastLogin: serverTimestamp(),
+      });
+      return {
+        uid: fbUser.uid,
+        email: fbUser.email,
+        username: userData.username,
+        displayName: userData.displayName, // fullName from Firestore
+        photoURL: userData.photoURL, // profilePictureURL from Firestore
+        role: userData.role || 'user',
+        createdAt: userData.createdAt?.toDate() || null,
+        lastLogin: new Date(), // Reflect the update immediately
+      };
+    }
+    return null;
+  };
+
+  const createUserProfile = async (fbUser: FirebaseUser, displayName?: string, username?: string): Promise<User> => {
+    const userDocRef = doc(db, 'users', fbUser.uid);
+    const newUsername = username || fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0, 5)}`;
+    const newDisplayName = displayName || fbUser.displayName || 'New User';
+    
+    const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> = {
+      uid: fbUser.uid,
+      email: fbUser.email,
+      username: newUsername,
+      displayName: newDisplayName,
+      photoURL: fbUser.photoURL,
+      role: 'user', // Default role
+    };
+    
+    await setDoc(userDocRef, {
+      ...newUserProfile,
+      createdAt: serverTimestamp(),
+      lastLogin: serverTimestamp(),
+    });
+
+    return {
+      ...newUserProfile,
+      createdAt: new Date(),
+      lastLogin: new Date(),
+    };
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setIsLoading(true);
       if (fbUser) {
         setFirebaseUser(fbUser);
-        const userDocRef = doc(db, 'users', fbUser.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUser({
-            uid: fbUser.uid,
-            email: fbUser.email,
-            username: userData.username || fbUser.email?.split('@')[0] || null, // Add username
-            displayName: userData.displayName,
-            photoURL: userData.photoURL,
-            role: userData.role,
-            createdAt: userData.createdAt?.toDate(),
-            lastLogin: userData.lastLogin?.toDate(),
-          });
-        } else {
-            // This case can happen with social sign-in where user exists in Auth but not Firestore yet.
-            const newUsername = fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0, 5)}`;
-            const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> = {
-                uid: fbUser.uid,
-                email: fbUser.email,
-                username: newUsername,
-                displayName: fbUser.displayName,
-                photoURL: fbUser.photoURL,
-                role: 'user', // Default role
-            };
-             await setDoc(userDocRef, {
-                ...newUserProfile,
-                createdAt: serverTimestamp(),
-                lastLogin: serverTimestamp(),
-            }, { merge: true });
-            
-            setUser({
-                ...newUserProfile,
-                createdAt: new Date(),
-                lastLogin: new Date(),
-            });
+        let userProfile = await fetchUserProfile(fbUser);
+        
+        if (!userProfile) {
+          // This case happens on first social sign-in or if doc creation failed previously.
+          userProfile = await createUserProfile(fbUser);
         }
+        
+        setUser(userProfile);
+
       } else {
         setFirebaseUser(null);
         setUser(null);
@@ -109,23 +129,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAuthenticated = !isLoading && !!user;
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated && !['/login', '/signup'].includes(pathname)) {
-      router.push('/login');
+    const publicRoutes = ['/login', '/signup'];
+    const isPublicRoute = publicRoutes.includes(pathname);
+
+    if (!isLoading) {
+      if (!isAuthenticated && !isPublicRoute) {
+        router.push('/login');
+      }
+      if (isAuthenticated && isPublicRoute) {
+        // The project brief mentions redirecting to a dynamic dashboard,
+        // but for now we stick to the existing '/dashboard/consultations' route to avoid UI changes.
+        router.push('/dashboard/consultations');
+      }
     }
-    if (!isLoading && isAuthenticated && (pathname === '/login' || pathname === '/signup')) {
-      router.push(`/dashboard/consultations`);
-    }
-  }, [isAuthenticated, isLoading, pathname, router]);
+  }, [isAuthenticated, isLoading, pathname, router, user]);
 
   const login = async (emailIn: string, passwordIn: string): Promise<boolean> => {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, emailIn, passwordIn);
-      // Auth state change will handle the rest
+      // Auth state change will handle fetching profile and redirecting.
       return true;
     } catch (error: any) {
       console.error("Firebase Login Error:", error.message);
-      toast({ title: "Login Failed", description: error.message, variant: "destructive" });
+      toast({ title: "Login Failed", description: "Invalid credentials. Please try again.", variant: "destructive" });
       setIsLoading(false);
       return false;
     }
@@ -134,46 +161,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (emailIn: string, passwordIn: string, displayNameIn: string, usernameIn: string): Promise<boolean> => {
     setIsLoading(true);
     try {
+      // A full uniqueness check for username should be done with a server-side function for production.
+      // This implementation proceeds with creating the user.
       const userCredential = await createUserWithEmailAndPassword(auth, emailIn, passwordIn);
       const fbUser = userCredential.user;
       
-      const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> = {
-        uid: fbUser.uid,
-        email: fbUser.email,
-        username: usernameIn, // Save username
-        displayName: displayNameIn,
-        photoURL: fbUser.photoURL,
-        role: 'user', // default role
-      };
-
-      await setDoc(doc(db, "users", fbUser.uid), {
-          ...newUserProfile,
-          createdAt: serverTimestamp(),
-          lastLogin: serverTimestamp(),
-      });
-      // onAuthStateChanged will handle setting the user state.
+      await createUserProfile(fbUser, displayNameIn, usernameIn);
+      // onAuthStateChanged will handle setting the user state and redirecting.
       return true;
     } catch (error: any) {
+      let errorMessage = "An unknown error occurred.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "This email address is already in use.";
+      } else {
+        errorMessage = error.message;
+      }
       console.error("Firebase Signup Error:", error.message);
-      toast({ title: "Signup Failed", description: error.message, variant: "destructive" });
+      toast({ title: "Signup Failed", description: errorMessage, variant: "destructive" });
       setIsLoading(false);
       return false;
     }
   };
 
   const signInWithGoogle = async (): Promise<boolean> => {
-      setIsLoading(true);
-      try {
-          const provider = new GoogleAuthProvider();
-          await signInWithPopup(auth, provider);
-          // onAuthStateChanged will handle the rest (including creating a user doc if it's the first time)
-          return true;
-      } catch (error: any) {
-          console.error("Google Sign-In Error:", error.message);
-          toast({ title: "Google Sign-In Failed", description: error.message, variant: "destructive" });
-          setIsLoading(false);
-          return false;
-      }
+    setIsLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      // onAuthStateChanged will handle the rest (fetching or creating a user doc)
+      return true;
+    } catch (error: any) {
+      console.error("Google Sign-In Error:", error.message);
+      toast({ title: "Google Sign-In Failed", description: error.message, variant: "destructive" });
+      setIsLoading(false);
+      return false;
+    }
   };
 
   const logout = async () => {
@@ -183,33 +205,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateUserProfile = async (updates: { displayName?: string, photoURL?: string }): Promise<boolean> => {
-      if (!firebaseUser) return false;
-      try {
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-          await setDoc(userDocRef, updates, { merge: true });
-          // Optimistically update local state
-          if (user) {
-              setUser({...user, ...updates});
-          }
-          return true;
-      } catch (error: any) {
-          console.error("Update Profile Error:", error.message);
-          toast({ title: "Update Failed", description: "Could not update profile in database.", variant: "destructive" });
-          return false;
+    if (!firebaseUser) return false;
+    try {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      await updateDoc(userDocRef, updates);
+
+      // Optimistically update local state
+      if (user) {
+        setUser({ ...user, ...updates });
       }
+      return true;
+    } catch (error: any) {
+      console.error("Update Profile Error:", error.message);
+      toast({ title: "Update Failed", description: "Could not update your profile.", variant: "destructive" });
+      return false;
+    }
   };
 
   return (
     <AuthContext.Provider value={{
-        isAuthenticated,
-        isLoading,
-        login,
-        signup,
-        logout,
-        signInWithGoogle,
-        user,
-        firebaseUser,
-        updateUserProfile
+      isAuthenticated,
+      isLoading,
+      login,
+      signup,
+      logout,
+      signInWithGoogle,
+      user,
+      firebaseUser,
+      updateUserProfile
     }}>
       {children}
     </AuthContext.Provider>
