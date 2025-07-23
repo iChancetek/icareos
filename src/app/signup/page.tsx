@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Stethoscope, Eye, EyeOff, Loader2, User as UserIcon } from 'lucide-react';
+import { Stethoscope, Eye, EyeOff, Loader2, User as UserIcon, AtSign } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, type FormEvent } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -30,17 +30,18 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [displayName, setDisplayName] = useState(''); 
+  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState(''); // Added username state
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!displayName.trim()) {
+    if (!displayName.trim() || !username.trim()) {
       toast({
         title: "Signup Failed",
-        description: "Please enter your full name.",
+        description: "Please enter your full name and username.",
         variant: "destructive",
       });
       return;
@@ -62,7 +63,7 @@ export default function SignUpPage() {
       return;
     }
     setIsSubmitting(true);
-    const success = await signup(email, password, displayName); 
+    const success = await signup(email, password, displayName, username); 
     setIsSubmitting(false);
 
     if (success) {
@@ -98,7 +99,7 @@ export default function SignUpPage() {
           <CardDescription>Create your account to get started.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="displayName">Full Name</Label>
               <div className="relative">
@@ -113,6 +114,22 @@ export default function SignUpPage() {
                   className="bg-background/70 pl-10" 
                 />
                 <UserIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+              </div>
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <div className="relative">
+                <Input 
+                  id="username" 
+                  type="text" 
+                  placeholder="e.g., dr_jane" 
+                  required 
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={isLoading}
+                  className="bg-background/70 pl-10" 
+                />
+                <AtSign className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               </div>
             </div>
             <div className="space-y-2">

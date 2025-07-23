@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 interface User {
   uid: string;
   email: string | null;
+  username: string | null; // Added username
   displayName: string | null;
   photoURL: string | null;
   role: 'user' | 'therapist' | 'admin';
@@ -34,7 +35,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (emailIn: string, passwordIn: string) => Promise<boolean>;
-  signup: (emailIn: string, passwordIn: string, displayNameIn: string) => Promise<boolean>;
+  signup: (emailIn: string, passwordIn: string, displayNameIn: string, usernameIn: string) => Promise<boolean>; // Added username
   logout: () => void;
   signInWithGoogle: () => Promise<boolean>;
   user: User | null;
@@ -65,6 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser({
             uid: fbUser.uid,
             email: fbUser.email,
+            username: userData.username || fbUser.email?.split('@')[0] || null, // Add username
             displayName: userData.displayName,
             photoURL: userData.photoURL,
             role: userData.role,
@@ -73,9 +75,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
         } else {
             // This case can happen with social sign-in where user exists in Auth but not Firestore yet.
+            const newUsername = fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0, 5)}`;
             const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> = {
                 uid: fbUser.uid,
                 email: fbUser.email,
+                username: newUsername,
                 displayName: fbUser.displayName,
                 photoURL: fbUser.photoURL,
                 role: 'user', // Default role
@@ -127,7 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signup = async (emailIn: string, passwordIn: string, displayNameIn: string): Promise<boolean> => {
+  const signup = async (emailIn: string, passwordIn: string, displayNameIn: string, usernameIn: string): Promise<boolean> => {
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, emailIn, passwordIn);
@@ -136,6 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> = {
         uid: fbUser.uid,
         email: fbUser.email,
+        username: usernameIn, // Save username
         displayName: displayNameIn,
         photoURL: fbUser.photoURL,
         role: 'user', // default role
