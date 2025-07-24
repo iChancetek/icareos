@@ -1,9 +1,8 @@
-
 "use client";
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Stethoscope, LayoutDashboard, User, Settings, Bot, LogOut, Languages } from 'lucide-react'; // Added Languages
+import { Stethoscope, LayoutDashboard, User, Settings, Bot, LogOut, Languages } from 'lucide-react';
 import { 
   Sidebar, 
   SidebarHeader, 
@@ -20,8 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { SheetTitle } from '@/components/ui/sheet';
-import ISkylarAssistantDialog from '@/components/features/ISkylarAssistantDialog';
-import RealtimeVoiceTranslatorDialog from '@/components/features/RealtimeVoiceTranslatorDialog'; // Added
+import RealtimeVoiceTranslatorDialog from '@/components/features/RealtimeVoiceTranslatorDialog';
 import { useState, useEffect } from 'react';
 
 interface NavItem {
@@ -36,8 +34,7 @@ export default function AppSidebar() {
   const pathname = usePathname();
   const { logout } = useAuth(); 
   const { state: sidebarState, isMobile: sidebarIsMobileFromHook } = useSidebar(); 
-  const [isISkylarDialogOpen, setIsISkylarDialogOpen] = useState(false);
-  const [isVoiceTranslatorDialogOpen, setIsVoiceTranslatorDialogOpen] = useState(false); // Added
+  const [isVoiceTranslatorDialogOpen, setIsVoiceTranslatorDialogOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -47,14 +44,14 @@ export default function AppSidebar() {
   const navItems: NavItem[] = [
     { href: '/dashboard/consultations', label: 'Consultations', icon: LayoutDashboard, matchStartsWith: true },
     { 
+      href: '/dashboard/iskylar',
       label: 'iSkylar - AI Voice Therapist', 
       icon: Bot, 
-      action: () => setIsISkylarDialogOpen(true) 
     },
     { 
-      label: 'Voice Translator',  // Added
-      icon: Languages,           // Added
-      action: () => setIsVoiceTranslatorDialogOpen(true) // Added
+      label: 'Voice Translator',
+      icon: Languages,
+      action: () => setIsVoiceTranslatorDialogOpen(true)
     },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
@@ -130,7 +127,6 @@ export default function AppSidebar() {
           </Button>
         </SidebarFooter>
       </Sidebar>
-      <ISkylarAssistantDialog isOpen={isISkylarDialogOpen} onOpenChange={setIsISkylarDialogOpen} />
       <RealtimeVoiceTranslatorDialog isOpen={isVoiceTranslatorDialogOpen} onOpenChange={setIsVoiceTranslatorDialogOpen} />
     </>
   );
