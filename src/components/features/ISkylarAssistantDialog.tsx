@@ -19,6 +19,7 @@ import { askISkylar } from '@/ai/flows/iskylar-assistant-flow';
 import { textToSpeech } from '@/ai/flows/text-to-speech-flow';
 import { transcribeAudio } from '@/ai/flows/transcribe-audio';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth'; // Added for personalized greeting
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
@@ -50,6 +51,7 @@ export default function ISkylarAssistantDialog({ isOpen, onOpenChange }: ISkylar
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth(); // Get user for greeting
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -58,11 +60,12 @@ export default function ISkylarAssistantDialog({ isOpen, onOpenChange }: ISkylar
   }, [conversation]);
 
   useEffect(() => {
-    // Initial greeting when dialog opens and conversation is empty
+    // Personalized greeting when dialog opens and conversation is empty
     if (isOpen && conversation.length === 0) {
-      handleAssistantResponse("Hello! I'm iSkylar. How can I help you today?");
+      const welcomeMessage = `Hello${user?.displayName ? `, ${user.displayName}` : ''}! I'm iSkylar. How can I help you focus on your well-being today?`;
+      handleAssistantResponse(welcomeMessage);
     }
-  }, [isOpen, conversation.length]);
+  }, [isOpen, conversation.length, user]);
 
   useEffect(() => {
     if (isOpen && !isPermissionChecked) {
@@ -303,3 +306,5 @@ export default function ISkylarAssistantDialog({ isOpen, onOpenChange }: ISkylar
     </Dialog>
   );
 }
+
+    
