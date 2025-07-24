@@ -175,7 +175,7 @@ export default function LoginPage() {
           </Button>
           
         </CardContent>
-        <CardFooter className="flex flex-col mt-6 text-center text-sm text-white/80">
+        <CardFooter className="flex flex-col items-center justify-center mt-6 text-center text-sm text-white/80">
            <div className="w-full">
             Don&apos;t have an account?{' '}
             <Link href="/signup" className={cn("font-semibold text-white hover:text-white/80 transition-colors duration-150 hover:underline", isLoading && "pointer-events-none opacity-50")}>

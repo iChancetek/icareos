@@ -228,7 +228,7 @@ export default function SignUpPage() {
               {isLoading ? <Loader2 className="animate-spin" /> : <> <GoogleIcon/> Continue with Google </>}
           </Button>
         </CardContent>
-         <CardFooter className="flex flex-col mt-6 text-center text-sm text-white/80">
+         <CardFooter className="flex flex-col items-center justify-center mt-6 text-center text-sm text-white/80">
            <div className="w-full">
             Already have an account?{' '}
             <Link href="/login" className={cn("font-semibold text-white hover:underline", isLoading && "pointer-events-none opacity-50")}>
