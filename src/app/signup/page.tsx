@@ -93,7 +93,9 @@ export default function SignUpPage() {
       <Card className="w-full max-w-md bg-black/30 backdrop-blur-lg border-white/20 shadow-2xl rounded-2xl">
         <CardHeader className="text-center">
           <div className="mb-4 flex justify-center">
-            <Stethoscope className="h-16 w-16 text-white" />
+            <div className="rounded-full p-5 bg-white/10 shadow-lg shadow-primary/20">
+              <Stethoscope className="h-16 w-16 text-white" />
+            </div>
           </div>
           <CardTitle className="text-3xl font-bold">Create Your MediScribe Account</CardTitle>
           <CardDescription className="text-lg text-white/80">Join the future of medical documentation.</CardDescription>
@@ -227,6 +229,9 @@ export default function SignUpPage() {
           </div>
         </CardContent>
       </Card>
+      <footer className="mt-8 text-center text-sm text-white/70">
+        AI-Driven Medical Documentation – Powered by Generative AI
+      </footer>
     </div>
   );
 }
