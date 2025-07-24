@@ -91,16 +91,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const { toast } = useToast();
 
-  const createUserProfile = async (fbUser: FirebaseUser, displayName?: string, username?: string): Promise<User> => {
+  const createUserProfile = async (fbUser: FirebaseUser, displayName: string, username: string): Promise<User> => {
     const userDocRef = doc(db, 'users', fbUser.uid);
-    const newUsername = username || fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0, 5)}`;
-    const newDisplayName = displayName || fbUser.displayName || 'New User';
     
     const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> & {createdAt: any, lastLogin: any} = {
       uid: fbUser.uid,
       email: fbUser.email,
-      username: newUsername,
-      displayName: newDisplayName,
+      username: username,
+      displayName: displayName,
       photoURL: fbUser.photoURL,
       role: 'user', 
       createdAt: serverTimestamp(),
@@ -136,8 +134,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           playGreeting(userProfile, fbUser);
         } else {
           // Existing user, fetch their profile
-          const userData = userDoc.data();
           await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
+          const userData = userDoc.data();
           const userProfile: User = {
             uid: fbUser.uid,
             email: fbUser.email,
@@ -182,6 +180,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, emailIn, passwordIn);
+      // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
       console.error("Firebase Login Error Code:", error.code);
@@ -268,3 +267,5 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export default AuthContext;
+
+    
