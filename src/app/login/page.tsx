@@ -3,15 +3,12 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Stethoscope, Eye, EyeOff, Loader2, Mail, KeyRound } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, type FormEvent } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
 
 const GoogleIcon = () => (
     <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
@@ -88,8 +85,6 @@ export default function LoginPage() {
       return;
     }
 
-    // This is a placeholder call.
-    // In a real app, you would have a proper API route and error handling.
     try {
       const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
@@ -117,118 +112,116 @@ export default function LoginPage() {
   const isLoading = authIsLoading || isSubmitting;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4 selection:bg-primary/20 animated-gradient text-white">
-      <div className="absolute top-4 right-4 z-10">
-        <Link href="/signup" passHref>
-          <Button variant="outline" className="bg-white/10 text-white hover:bg-white/20 border-white/20 backdrop-blur-sm" disabled={isLoading}>
-            Create Account
-          </Button>
-        </Link>
+    <div className="min-h-screen w-full bg-white dark:bg-gray-900 lg:grid lg:grid-cols-2">
+      <div className="hidden lg:flex flex-col items-start justify-center bg-[#0A1931] p-12 text-white">
+        <h1 className="text-5xl font-bold mb-4">Welcome to iSkylar</h1>
+        <p className="text-lg text-gray-300 max-w-md">
+          Your AI Voice Therapist. Powered by Generative AI. iSkylar is ready to listen.
+        </p>
       </div>
-      <Card className="w-full max-w-md bg-background/30 dark:bg-black/30 backdrop-blur-lg border-white/20 shadow-2xl rounded-2xl">
-        <CardHeader className="text-center">
-          <div className="mb-6 flex justify-center">
-            <div className="rounded-full p-5 bg-primary/80 dark:bg-white/10 shadow-lg shadow-primary/20">
-              <Stethoscope className="h-16 w-16 text-white" />
-            </div>
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-[#0A1931]">
+        <div className="w-full max-w-md space-y-8 bg-white dark:bg-[#1C2C4E] p-10 rounded-2xl shadow-lg">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+              Sign In
+            </h2>
+             <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+              Don't have an account?{' '}
+              <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+                Create one now
+              </Link>
+            </p>
           </div>
-          <CardTitle className="text-4xl font-bold tracking-tight text-foreground dark:text-white">Welcome to MediScribe</CardTitle>
-          <CardDescription className="text-lg text-muted-foreground dark:text-white/80">AI-Driven Medical Documentation is ready.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-muted-foreground dark:text-white/80">Email</Label>
-               <div className="relative">
-                 <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground dark:text-white/50" />
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="m@example.com" 
-                  required 
+          <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+            <div className="rounded-md shadow-sm -space-y-px">
+              <div>
+                <Label htmlFor="email" className="sr-only">Email address</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className="relative block w-full appearance-none rounded-t-md border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:z-10 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none focus:ring-blue-500 dark:focus:ring-blue-400 sm:text-sm"
+                  placeholder="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  className="bg-background/80 dark:bg-white/10 pl-10 text-foreground dark:text-white placeholder:text-muted-foreground dark:placeholder:text-white/50 border-border dark:border-white/20 focus:border-primary dark:focus:border-white/40 focus:ring-offset-background dark:focus:ring-offset-black/20"
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-muted-foreground dark:text-white/80">Password</Label>
-                <Button
-                  type="button"
-                  variant="link"
-                  className="p-0 h-auto text-sm text-muted-foreground dark:text-white/80 hover:text-primary dark:hover:text-white transition-colors duration-150 hover:underline"
-                  onClick={handleForgotPassword}
-                  disabled={isLoading}
-                >
-                  Forgot password?
-                </Button>
-              </div>
               <div className="relative">
-                 <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground dark:text-white/50" />
-                <Input 
-                  id="password" 
-                  type={showPassword ? "text" : "password"} 
-                  required 
+                <Label htmlFor="password" className="sr-only">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  className="relative block w-full appearance-none rounded-b-md border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:z-10 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none focus:ring-blue-500 dark:focus:ring-blue-400 sm:text-sm"
+                  placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className="bg-background/80 dark:bg-white/10 pl-10 text-foreground dark:text-white placeholder:text-muted-foreground dark:placeholder:text-white/50 border-border dark:border-white/20 focus:border-primary dark:focus:border-white/40 focus:ring-offset-background dark:focus:ring-offset-black/20"
                 />
-                <Button
+                 <button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground dark:text-white/60 hover:text-primary dark:hover:text-white"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </Button>
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  )}
+                </button>
               </div>
             </div>
-            <Button 
-              type="submit" 
-              className="w-full text-lg py-6 font-semibold tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 transform hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 ease-in-out focus-visible:ring-4 focus-visible:ring-ring/40 dark:focus-visible:ring-white/40 focus-visible:outline-none shadow-lg hover:shadow-xl hover:shadow-primary/20 dark:hover:shadow-white/20"
-              disabled={isLoading}
-            >
-              {isLoading ? <Loader2 className="animate-spin" /> : 'Sign In'}
-            </Button>
-          </form>
 
-          <div className="relative my-6">
-              <Separator className="bg-border dark:bg-white/20"/>
-              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
-                  <span className="bg-card dark:bg-black/30 px-3 text-sm text-muted-foreground dark:text-white/80 backdrop-blur-sm">OR</span>
+            <div className="flex items-center justify-between">
+              <div className="text-sm">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                  disabled={isLoading}
+                >
+                  Forgot your password?
+                </button>
               </div>
-          </div>
-        
-          <Button
-            variant="outline"
-            className="w-full text-lg py-6 bg-card dark:bg-white/10 text-foreground dark:text-white hover:bg-accent dark:hover:bg-white/20 hover:text-accent-foreground dark:hover:text-white border-border dark:border-white/20 backdrop-blur-sm"
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
-          >
-              {isLoading ? <Loader2 className="animate-spin" /> : <> <GoogleIcon/> Sign in with Google </>}
-          </Button>
-          
-        </CardContent>
-        <CardFooter className="flex flex-col items-center justify-center mt-6 text-center text-sm text-muted-foreground dark:text-white/80">
-           <div className="w-full">
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className={cn("font-semibold text-primary dark:text-white hover:text-primary/80 dark:hover:text-white/80 transition-colors duration-150 hover:underline", isLoading && "pointer-events-none opacity-50")}>
-              Create Account
-            </Link>
-          </div>
-          <p className="mt-8 text-center text-xs text-muted-foreground/80 dark:text-white/70">
-            Powered by Generative AI to Enhance Patient Care
-          </p>
-        </CardFooter>
-      </Card>
+            </div>
+
+            <div>
+              <Button
+                type="submit"
+                className="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-offset-gray-800"
+                disabled={isLoading}
+              >
+                {isLoading ? <Loader2 className="animate-spin" /> : 'Sign In'}
+              </Button>
+            </div>
+          </form>
+            <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                    <span className="bg-white dark:bg-[#1C2C4E] px-2 text-gray-500 dark:text-gray-400">OR CONTINUE WITH</span>
+                </div>
+            </div>
+
+            <div>
+                <Button
+                    variant="outline"
+                    className="w-full justify-center flex items-center"
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoading}
+                >
+                    {isLoading ? <Loader2 className="animate-spin" /> : <><GoogleIcon /> Sign in with Google</>}
+                </Button>
+            </div>
+        </div>
+      </div>
     </div>
   );
 }
-
-    
