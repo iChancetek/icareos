@@ -90,6 +90,13 @@ export default function SignUpPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 selection:bg-primary/20 animated-gradient text-white">
+      <div className="absolute top-4 right-4 z-10">
+        <Link href="/login" passHref>
+          <Button variant="outline" className="bg-white/10 text-white hover:bg-white/20 border-white/20 backdrop-blur-sm" disabled={isLoading}>
+            Sign In
+          </Button>
+        </Link>
+      </div>
       <Card className="w-full max-w-md bg-black/30 backdrop-blur-lg border-white/20 shadow-2xl rounded-2xl">
         <CardHeader className="text-center">
           <div className="mb-4 flex justify-center">
