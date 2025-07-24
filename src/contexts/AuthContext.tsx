@@ -41,6 +41,11 @@ interface AuthContextType {
   updateUserProfile: (updates: { displayName?: string, photoURL?: string }) => Promise<boolean>;
 }
 
+interface NewUserInfo {
+  displayName: string;
+  username: string;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // --- Voice Greeting Logic ---
@@ -54,11 +59,9 @@ const playGreeting = (user: User, firebaseUser: FirebaseUser) => {
   const creationTime = new Date(firebaseUser.metadata.creationTime || 0).getTime();
   const lastSignInTime = new Date(firebaseUser.metadata.lastSignInTime || 0).getTime();
   
-  // A simple check to see if this is likely the very first sign-in session.
-  // A small buffer (e.g., 5 seconds) accounts for minor delays.
   const isNewUser = Math.abs(lastSignInTime - creationTime) < 5000;
 
-  const userName = user.displayName?.split(' ')[0] || 'there'; // Use first name or 'there' as fallback
+  const userName = user.displayName?.split(' ')[0] || 'there';
   
   const greetingText = isNewUser
     ? `Hello ${userName}, it’s a pleasure to meet you. Welcome to MediScribe.`
@@ -69,11 +72,10 @@ const playGreeting = (user: User, firebaseUser: FirebaseUser) => {
     utterance.lang = 'en-US';
     utterance.rate = 0.95;
     
-    // Ensure any previous speech is stopped before starting a new one.
     window.speechSynthesis.cancel(); 
     window.speechSynthesis.speak(utterance);
     
-    hasGreeted = true; // Mark as greeted for this session
+    hasGreeted = true;
   } catch (error) {
     console.error("SpeechSynthesis Error:", error);
   }
@@ -84,33 +86,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [newUserInfo, setNewUserInfo] = useState<NewUserInfo | null>(null); // Temp store for signup info
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
-
-  const fetchUserProfile = async (fbUser: FirebaseUser): Promise<User | null> => {
-    const userDocRef = doc(db, 'users', fbUser.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      // Update lastLogin timestamp on profile fetch after login
-      await updateDoc(userDocRef, {
-        lastLogin: serverTimestamp(),
-      });
-      return {
-        uid: fbUser.uid,
-        email: fbUser.email,
-        username: userData.username,
-        displayName: userData.displayName, // fullName from Firestore
-        photoURL: userData.photoURL, // profilePictureURL from Firestore
-        role: userData.role || 'user',
-        createdAt: userData.createdAt?.toDate() || null,
-        lastLogin: new Date(), // Reflect the update immediately
-      };
-    }
-    return null;
-  };
 
   const createUserProfile = async (fbUser: FirebaseUser, displayName?: string, username?: string): Promise<User> => {
     const userDocRef = doc(db, 'users', fbUser.uid);
@@ -123,7 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       username: newUsername,
       displayName: newDisplayName,
       photoURL: fbUser.photoURL,
-      role: 'user', // Default role
+      role: 'user', 
       createdAt: serverTimestamp(),
       lastLogin: serverTimestamp(),
     };
@@ -142,30 +121,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       if (fbUser) {
         setFirebaseUser(fbUser);
-        let userProfile = await fetchUserProfile(fbUser);
-        
-        if (!userProfile) {
-          // This case happens on first social sign-in or if doc creation failed previously.
-          userProfile = await createUserProfile(fbUser, fbUser.displayName || 'New User');
-        }
-        
-        setUser(userProfile);
-        
-        // Play greeting after user profile is loaded
-        if (userProfile) {
+        const userDocRef = doc(db, 'users', fbUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+          // This is a new user (from any provider). Create their profile.
+          const profileData = newUserInfo || { 
+            displayName: fbUser.displayName || "New User", 
+            username: fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0,5)}` 
+          };
+          const userProfile = await createUserProfile(fbUser, profileData.displayName, profileData.username);
+          setUser(userProfile);
+          setNewUserInfo(null); // Clear temp info
+          playGreeting(userProfile, fbUser);
+        } else {
+          // Existing user, fetch their profile
+          const userData = userDoc.data();
+          await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
+          const userProfile: User = {
+            uid: fbUser.uid,
+            email: fbUser.email,
+            username: userData.username,
+            displayName: userData.displayName,
+            photoURL: userData.photoURL,
+            role: userData.role || 'user',
+            createdAt: userData.createdAt?.toDate() || null,
+            lastLogin: new Date(),
+          };
+          setUser(userProfile);
           playGreeting(userProfile, fbUser);
         }
-
       } else {
         setFirebaseUser(null);
         setUser(null);
-        hasGreeted = false; // Reset greeting state on logout
+        hasGreeted = false;
       }
       setIsLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [newUserInfo]); // Rerun when newUserInfo is set
 
   const isAuthenticated = !isLoading && !!user;
 
@@ -178,21 +173,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         router.push('/login');
       }
       if (isAuthenticated && isPublicRoute) {
-        // The project brief mentions redirecting to a dynamic dashboard,
-        // but for now we stick to the existing '/dashboard/consultations' route to avoid UI changes.
         router.push('/dashboard/consultations');
       }
     }
-  }, [isAuthenticated, isLoading, pathname, router, user]);
+  }, [isAuthenticated, isLoading, pathname, router]);
 
   const login = async (emailIn: string, passwordIn: string): Promise<boolean> => {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, emailIn, passwordIn);
-      // Auth state change will handle fetching profile and redirecting.
       return true;
-    } catch (error: any)
-{
+    } catch (error: any) {
       console.error("Firebase Login Error Code:", error.code);
       toast({ title: "Login Failed", description: "Invalid credentials. Please try again.", variant: "destructive" });
       setIsLoading(false);
@@ -203,19 +194,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (emailIn: string, passwordIn: string, displayNameIn: string, usernameIn: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // 1. Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, emailIn, passwordIn);
-      const fbUser = userCredential.user;
-
-      // 2. Create the Firestore profile document for the new user.
-      // This happens on the client, but is secured by the rules below.
-      await createUserProfile(fbUser, displayNameIn, usernameIn);
-      
-      // onAuthStateChanged will handle setting the user state and redirecting.
-      // The user is now fully set up.
+      // Temporarily store the additional info
+      setNewUserInfo({ displayName: displayNameIn, username: usernameIn });
+      // Create user in Firebase Auth, onAuthStateChanged will handle profile creation
+      await createUserWithEmailAndPassword(auth, emailIn, passwordIn);
       return true;
-
     } catch (error: any) {
+      setNewUserInfo(null); // Clear temp info on failure
       let errorMessage = "An unknown error occurred.";
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = "This email address is already in use.";
@@ -234,7 +219,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      // onAuthStateChanged will handle the rest (fetching or creating a user doc)
       return true;
     } catch (error: any) {
       console.error("Google Sign-In Error:", error.message);
@@ -246,7 +230,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     await signOut(auth);
-    // onAuthStateChanged will clear user state
     router.push('/login');
   };
 
@@ -256,7 +239,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userDocRef = doc(db, 'users', firebaseUser.uid);
       await updateDoc(userDocRef, updates);
 
-      // Optimistically update local state
       if (user) {
         setUser({ ...user, ...updates });
       }
