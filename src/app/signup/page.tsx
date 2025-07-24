@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Stethoscope, Eye, EyeOff, Loader2, User as UserIcon, AtSign, Mail, KeyRound } from 'lucide-react';
@@ -104,13 +104,13 @@ export default function SignUpPage() {
               <Stethoscope className="h-16 w-16 text-white" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold">Create Your MediScribe Account</CardTitle>
+          <CardTitle className="text-3xl font-bold tracking-tight text-white">Create Your MediScribe Account</CardTitle>
           <CardDescription className="text-lg text-white/80">Join the future of medical documentation.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="displayName">Full Name</Label>
+              <Label htmlFor="displayName" className="text-white/80">Full Name</Label>
               <div className="relative">
                  <UserIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/50" />
                 <Input 
@@ -126,7 +126,7 @@ export default function SignUpPage() {
               </div>
             </div>
              <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username" className="text-white/80">Username</Label>
               <div className="relative">
                  <AtSign className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/50" />
                 <Input 
@@ -142,7 +142,7 @@ export default function SignUpPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-white/80">Email</Label>
                <div className="relative">
                  <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/50" />
                 <Input 
@@ -158,7 +158,7 @@ export default function SignUpPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-white/80">Password</Label>
               <div className="relative">
                  <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/50" />
                 <Input 
@@ -183,7 +183,7 @@ export default function SignUpPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Label htmlFor="confirm-password" className="text-white/80">Confirm Password</Label>
                <div className="relative">
                  <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/50" />
                 <Input 
@@ -227,18 +227,19 @@ export default function SignUpPage() {
           >
               {isLoading ? <Loader2 className="animate-spin" /> : <> <GoogleIcon/> Continue with Google </>}
           </Button>
-
-          <div className="mt-6 text-center text-sm text-white/80">
+        </CardContent>
+         <CardFooter className="flex flex-col mt-6 text-center text-sm text-white/80">
+           <div className="w-full">
             Already have an account?{' '}
             <Link href="/login" className={cn("font-semibold text-white hover:underline", isLoading && "pointer-events-none opacity-50")}>
               Sign In
             </Link>
           </div>
-        </CardContent>
+          <p className="mt-8 text-center text-xs text-white/70">
+            Powered by Generative AI
+          </p>
+        </CardFooter>
       </Card>
-      <footer className="mt-8 text-center text-sm text-white/70">
-        AI-Driven Medical Documentation – Powered by Generative AI
-      </footer>
     </div>
   );
 }
