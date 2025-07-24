@@ -97,7 +97,13 @@
 }
 
 .animated-gradient {
-  background: linear-gradient(270deg, #1e3a8a, #3b82f6, #06b6d4, #a5f3fc);
+  background: linear-gradient(270deg, hsl(var(--primary) / 0.8), hsl(var(--primary) / 0.5), hsl(var(--accent) / 0.8), hsl(var(--accent) / 0.3));
   background-size: 800% 800%;
   animation: bgShift 15s ease infinite;
+}
+
+.dark .animated-gradient {
+   background: linear-gradient(270deg, #1e3a8a, #3b82f6, #06b6d4, #a5f3fc);
+   background-size: 800% 800%;
+   animation: bgShift 15s ease infinite;
 }

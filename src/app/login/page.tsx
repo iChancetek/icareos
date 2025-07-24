@@ -85,22 +85,22 @@ export default function LoginPage() {
           </Button>
         </Link>
       </div>
-      <Card className="w-full max-w-md bg-black/30 backdrop-blur-lg border-white/20 shadow-2xl rounded-2xl">
+      <Card className="w-full max-w-md bg-background/30 dark:bg-black/30 backdrop-blur-lg border-white/20 shadow-2xl rounded-2xl">
         <CardHeader className="text-center">
           <div className="mb-6 flex justify-center">
-            <div className="rounded-full p-5 bg-white/10 shadow-lg shadow-primary/20">
+            <div className="rounded-full p-5 bg-primary/80 dark:bg-white/10 shadow-lg shadow-primary/20">
               <Stethoscope className="h-16 w-16 text-white" />
             </div>
           </div>
-          <CardTitle className="text-4xl font-bold tracking-tight text-white">Welcome to MediScribe</CardTitle>
-          <CardDescription className="text-lg text-white/80">AI-Driven Medical Documentation is ready.</CardDescription>
+          <CardTitle className="text-4xl font-bold tracking-tight text-foreground dark:text-white">Welcome to MediScribe</CardTitle>
+          <CardDescription className="text-lg text-muted-foreground dark:text-white/80">AI-Driven Medical Documentation is ready.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-white/80">Email</Label>
+              <Label htmlFor="email" className="text-muted-foreground dark:text-white/80">Email</Label>
                <div className="relative">
-                 <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/50" />
+                 <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground dark:text-white/50" />
                 <Input 
                   id="email" 
                   type="email" 
@@ -109,17 +109,17 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  className="bg-white/10 pl-10 text-white placeholder:text-white/50 border-white/20 focus:border-white/40 focus:ring-offset-black/20"
+                  className="bg-background/80 dark:bg-white/10 pl-10 text-foreground dark:text-white placeholder:text-muted-foreground dark:placeholder:text-white/50 border-border dark:border-white/20 focus:border-primary dark:focus:border-white/40 focus:ring-offset-background dark:focus:ring-offset-black/20"
                 />
               </div>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-white/80">Password</Label>
+                <Label htmlFor="password" className="text-muted-foreground dark:text-white/80">Password</Label>
                 <Button
                   type="button"
                   variant="link"
-                  className="p-0 h-auto text-sm text-white/80 hover:text-white transition-colors duration-150 hover:underline"
+                  className="p-0 h-auto text-sm text-muted-foreground dark:text-white/80 hover:text-primary dark:hover:text-white transition-colors duration-150 hover:underline"
                   onClick={handleForgotPassword}
                   disabled={isLoading}
                 >
@@ -127,7 +127,7 @@ export default function LoginPage() {
                 </Button>
               </div>
               <div className="relative">
-                 <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/50" />
+                 <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground dark:text-white/50" />
                 <Input 
                   id="password" 
                   type={showPassword ? "text" : "password"} 
@@ -135,13 +135,13 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className="bg-white/10 pl-10 text-white placeholder:text-white/50 border-white/20 focus:border-white/40 focus:ring-offset-black/20"
+                  className="bg-background/80 dark:bg-white/10 pl-10 text-foreground dark:text-white placeholder:text-muted-foreground dark:placeholder:text-white/50 border-border dark:border-white/20 focus:border-primary dark:focus:border-white/40 focus:ring-offset-background dark:focus:ring-offset-black/20"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-white/60 hover:text-white"
+                  className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground dark:text-white/60 hover:text-primary dark:hover:text-white"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
                 >
@@ -151,7 +151,7 @@ export default function LoginPage() {
             </div>
             <Button 
               type="submit" 
-              className="w-full text-lg py-6 font-semibold tracking-wide bg-white text-primary hover:bg-white/90 transform hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 ease-in-out focus-visible:ring-4 focus-visible:ring-white/40 focus-visible:outline-none shadow-lg hover:shadow-xl hover:shadow-white/20"
+              className="w-full text-lg py-6 font-semibold tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 transform hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 ease-in-out focus-visible:ring-4 focus-visible:ring-ring/40 dark:focus-visible:ring-white/40 focus-visible:outline-none shadow-lg hover:shadow-xl hover:shadow-primary/20 dark:hover:shadow-white/20"
               disabled={isLoading}
             >
               {isLoading ? <Loader2 className="animate-spin" /> : 'Sign In'}
@@ -159,15 +159,15 @@ export default function LoginPage() {
           </form>
 
           <div className="relative my-6">
-              <Separator className="bg-white/20"/>
+              <Separator className="bg-border dark:bg-white/20"/>
               <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
-                  <span className="bg-black/30 px-3 text-sm text-white/80 backdrop-blur-sm">OR</span>
+                  <span className="bg-card dark:bg-black/30 px-3 text-sm text-muted-foreground dark:text-white/80 backdrop-blur-sm">OR</span>
               </div>
           </div>
         
           <Button
             variant="outline"
-            className="w-full text-lg py-6 bg-white/10 text-white hover:bg-white/20 hover:text-white border-white/20 backdrop-blur-sm"
+            className="w-full text-lg py-6 bg-card dark:bg-white/10 text-foreground dark:text-white hover:bg-accent dark:hover:bg-white/20 hover:text-accent-foreground dark:hover:text-white border-border dark:border-white/20 backdrop-blur-sm"
             onClick={handleGoogleSignIn}
             disabled={isLoading}
           >
@@ -175,14 +175,14 @@ export default function LoginPage() {
           </Button>
           
         </CardContent>
-        <CardFooter className="flex flex-col items-center justify-center mt-6 text-center text-sm text-white/80">
+        <CardFooter className="flex flex-col items-center justify-center mt-6 text-center text-sm text-muted-foreground dark:text-white/80">
            <div className="w-full">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className={cn("font-semibold text-white hover:text-white/80 transition-colors duration-150 hover:underline", isLoading && "pointer-events-none opacity-50")}>
+            <Link href="/signup" className={cn("font-semibold text-primary dark:text-white hover:text-primary/80 dark:hover:text-white/80 transition-colors duration-150 hover:underline", isLoading && "pointer-events-none opacity-50")}>
               Create Account
             </Link>
           </div>
-          <p className="mt-8 text-center text-xs text-white/70">
+          <p className="mt-8 text-center text-xs text-muted-foreground/80 dark:text-white/70">
             Powered by Generative AI
           </p>
         </CardFooter>
