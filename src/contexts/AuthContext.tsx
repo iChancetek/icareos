@@ -97,10 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const newUserProfileData: User = await runTransaction(db, async (transaction) => {
         const userDoc = await transaction.get(userDocRef);
         if (userDoc.exists()) {
-          // This case should ideally not be hit if a new user is signing up,
-          // but as a safeguard, we return the existing data.
           console.warn("User document already exists for new user:", fbUser.uid);
-          // Just read and return existing data
           const existingData = userDoc.data();
           return {
              ...existingData,
@@ -140,48 +137,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setIsLoading(true);
-      if (fbUser) {
-        setFirebaseUser(fbUser);
-        const userDocRef = doc(db, 'users', fbUser.uid);
-        const userDoc = await getDoc(userDocRef);
+      try {
+        if (fbUser) {
+          setFirebaseUser(fbUser);
+          const userDocRef = doc(db, 'users', fbUser.uid);
+          const userDoc = await getDoc(userDocRef);
 
-        if (!userDoc.exists()) {
-          console.log("New user detected, creating profile...");
-          const profileData = newUserInfo || { 
-            displayName: fbUser.displayName || "New User", 
-            username: fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0,5)}` 
-          };
-          const userProfile = await createUserProfile(fbUser, profileData.displayName, profileData.username);
-          if (userProfile) {
+          if (!userDoc.exists()) {
+            console.log("New user detected, creating profile...");
+            const profileData = newUserInfo || { 
+              displayName: fbUser.displayName || "New User", 
+              username: fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0,5)}` 
+            };
+            const userProfile = await createUserProfile(fbUser, profileData.displayName, profileData.username);
+            if (userProfile) {
+              setUser(userProfile);
+              playGreeting(userProfile, fbUser);
+            }
+            setNewUserInfo(null); // Clear temp info
+          } else {
+            // Existing user, fetch their profile and update last login
+            await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
+            const userData = userDoc.data();
+            const userProfile: User = {
+              uid: fbUser.uid,
+              email: fbUser.email,
+              username: userData.username,
+              displayName: userData.displayName,
+              photoURL: userData.photoURL,
+              role: userData.role || 'user',
+              createdAt: userData.createdAt?.toDate() || null,
+              lastLogin: new Date(),
+            };
             setUser(userProfile);
-            playGreeting(userProfile, fbUser);
+            if (!hasGreeted) { // Only greet returning users if they haven't been greeted this session
+              playGreeting(userProfile, fbUser);
+            }
           }
-          setNewUserInfo(null); // Clear temp info
         } else {
-          // Existing user, fetch their profile and update last login
-          await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
-          const userData = userDoc.data();
-          const userProfile: User = {
-            uid: fbUser.uid,
-            email: fbUser.email,
-            username: userData.username,
-            displayName: userData.displayName,
-            photoURL: userData.photoURL,
-            role: userData.role || 'user',
-            createdAt: userData.createdAt?.toDate() || null,
-            lastLogin: new Date(),
-          };
-          setUser(userProfile);
-          if (!hasGreeted) { // Only greet returning users if they haven't been greeted this session
-            playGreeting(userProfile, fbUser);
-          }
+          setFirebaseUser(null);
+          setUser(null);
+          hasGreeted = false; // Reset greeting state on logout
         }
-      } else {
-        setFirebaseUser(null);
+      } catch (error) {
+        console.error("Error during auth state change processing:", error);
         setUser(null);
-        hasGreeted = false; // Reset greeting state on logout
+        setFirebaseUser(null);
+        toast({ title: "Authentication Error", description: "There was a problem verifying your session.", variant: "destructive" });
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     return () => unsubscribe();
@@ -207,7 +212,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, emailIn, passwordIn);
-      // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
       console.error("Firebase Login Error Code:", error.code, "Message:", error.message);
@@ -220,13 +224,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (emailIn: string, passwordIn: string, displayNameIn: string, usernameIn: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // Temporarily store the additional info
       setNewUserInfo({ displayName: displayNameIn, username: usernameIn });
-      // Create user in Firebase Auth, onAuthStateChanged will handle profile creation
       await createUserWithEmailAndPassword(auth, emailIn, passwordIn);
       return true;
     } catch (error: any) {
-      setNewUserInfo(null); // Clear temp info on failure
+      setNewUserInfo(null);
       let errorMessage = "An unknown error occurred.";
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = "This email address is already in use.";
