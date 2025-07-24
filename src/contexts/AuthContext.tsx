@@ -94,11 +94,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const createUserProfile = async (fbUser: FirebaseUser, displayName: string, username: string): Promise<User | null> => {
     const userDocRef = doc(db, 'users', fbUser.uid);
     try {
-      const newUserProfileData: User = await runTransaction(db, async (transaction) => {
+      const newUserProfileData = await runTransaction(db, async (transaction) => {
         const userDoc = await transaction.get(userDocRef);
         if (userDoc.exists()) {
           console.warn("User document already exists for new user:", fbUser.uid);
           const existingData = userDoc.data();
+          // This path should ideally not be hit for a brand new user, but as a fallback, update last login and return existing data.
+          transaction.update(userDocRef, { lastLogin: serverTimestamp() });
           return {
              ...existingData,
              uid: fbUser.uid,
@@ -145,6 +147,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           if (!userDoc.exists()) {
             console.log("New user detected, creating profile...");
+            // Use temp info for email/pass signup, or derive from fbUser for Google OAuth
             const profileData = newUserInfo || { 
               displayName: fbUser.displayName || "New User", 
               username: fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0,5)}` 
@@ -154,7 +157,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setUser(userProfile);
               playGreeting(userProfile, fbUser);
             }
-            setNewUserInfo(null); // Clear temp info
+            setNewUserInfo(null); // Clear temp info after use
           } else {
             // Existing user, fetch their profile and update last login
             await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
@@ -190,7 +193,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [newUserInfo]); // Rerun when newUserInfo is set
+  }, [newUserInfo, toast]); // Rerun when newUserInfo is set
 
   const isAuthenticated = !isLoading && !!user;
 
@@ -212,6 +215,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, emailIn, passwordIn);
+      // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
       console.error("Firebase Login Error Code:", error.code, "Message:", error.message);
@@ -224,14 +228,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (emailIn: string, passwordIn: string, displayNameIn: string, usernameIn: string): Promise<boolean> => {
     setIsLoading(true);
     try {
+      // Store user info temporarily. onAuthStateChanged will use it to create the Firestore doc.
       setNewUserInfo({ displayName: displayNameIn, username: usernameIn });
       await createUserWithEmailAndPassword(auth, emailIn, passwordIn);
+      // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
-      setNewUserInfo(null);
-      let errorMessage = "An unknown error occurred.";
+      setNewUserInfo(null); // Clear temp info on failure
+      let errorMessage = "An unknown error occurred during signup.";
       if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "This email address is already in use.";
+        errorMessage = "This email address is already in use by another account.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'The password is too weak. It must be at least 6 characters long.';
       } else {
         errorMessage = error.message;
       }
@@ -246,7 +254,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       const provider = new GoogleAuthProvider();
+      // Clear any pending email/pass signup info before starting Google sign-in
+      setNewUserInfo(null); 
       await signInWithPopup(auth, provider);
+      // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
       console.error("Google Sign-In Error Code:", error.code, "Message:", error.message);
@@ -258,6 +269,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     await signOut(auth);
+    // Clearing local state immediately for a faster UI response
+    setUser(null);
+    setFirebaseUser(null);
+    hasGreeted = false;
     router.push('/login');
   };
 
@@ -295,4 +310,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export default AuthContext;
+export const useAuth = () => {
+  const context = React.useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
