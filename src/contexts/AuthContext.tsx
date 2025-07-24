@@ -13,7 +13,7 @@ import {
   signInWithPopup,
   type User as FirebaseUser,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc, runTransaction } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useToast } from "@/hooks/use-toast";
 
@@ -91,27 +91,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const { toast } = useToast();
 
-  const createUserProfile = async (fbUser: FirebaseUser, displayName: string, username: string): Promise<User> => {
+  const createUserProfile = async (fbUser: FirebaseUser, displayName: string, username: string): Promise<User | null> => {
     const userDocRef = doc(db, 'users', fbUser.uid);
-    
-    const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> & {createdAt: any, lastLogin: any} = {
-      uid: fbUser.uid,
-      email: fbUser.email,
-      username: username,
-      displayName: displayName,
-      photoURL: fbUser.photoURL,
-      role: 'user', 
-      createdAt: serverTimestamp(),
-      lastLogin: serverTimestamp(),
-    };
-    
-    await setDoc(userDocRef, newUserProfile);
+    try {
+      const newUserProfileData: User = await runTransaction(db, async (transaction) => {
+        const userDoc = await transaction.get(userDocRef);
+        if (userDoc.exists()) {
+          // This case should ideally not be hit if a new user is signing up,
+          // but as a safeguard, we return the existing data.
+          console.warn("User document already exists for new user:", fbUser.uid);
+          // Just read and return existing data
+          const existingData = userDoc.data();
+          return {
+             ...existingData,
+             uid: fbUser.uid,
+             createdAt: existingData.createdAt?.toDate() || new Date(),
+             lastLogin: new Date(),
+          } as User;
+        }
 
-    return {
-      ...newUserProfile,
-      createdAt: new Date(),
-      lastLogin: new Date(),
-    };
+        const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> & {createdAt: any, lastLogin: any} = {
+          uid: fbUser.uid,
+          email: fbUser.email,
+          username: username,
+          displayName: displayName,
+          photoURL: fbUser.photoURL,
+          role: 'user', 
+          createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp(),
+        };
+
+        transaction.set(userDocRef, newUserProfile);
+        
+        return {
+          ...newUserProfile,
+          createdAt: new Date(),
+          lastLogin: new Date(),
+        };
+      });
+      return newUserProfileData;
+    } catch (error) {
+      console.error("Error creating user profile in transaction: ", error);
+      toast({ title: "Profile Creation Failed", description: "Could not create your user profile in the database.", variant: "destructive" });
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -123,17 +146,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-          // This is a new user (from any provider). Create their profile.
+          console.log("New user detected, creating profile...");
           const profileData = newUserInfo || { 
             displayName: fbUser.displayName || "New User", 
             username: fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0,5)}` 
           };
           const userProfile = await createUserProfile(fbUser, profileData.displayName, profileData.username);
-          setUser(userProfile);
+          if (userProfile) {
+            setUser(userProfile);
+            playGreeting(userProfile, fbUser);
+          }
           setNewUserInfo(null); // Clear temp info
-          playGreeting(userProfile, fbUser);
         } else {
-          // Existing user, fetch their profile
+          // Existing user, fetch their profile and update last login
           await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
           const userData = userDoc.data();
           const userProfile: User = {
@@ -147,12 +172,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             lastLogin: new Date(),
           };
           setUser(userProfile);
-          playGreeting(userProfile, fbUser);
+          if (!hasGreeted) { // Only greet returning users if they haven't been greeted this session
+            playGreeting(userProfile, fbUser);
+          }
         }
       } else {
         setFirebaseUser(null);
         setUser(null);
-        hasGreeted = false;
+        hasGreeted = false; // Reset greeting state on logout
       }
       setIsLoading(false);
     });
@@ -183,7 +210,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
-      console.error("Firebase Login Error Code:", error.code);
+      console.error("Firebase Login Error Code:", error.code, "Message:", error.message);
       toast({ title: "Login Failed", description: "Invalid credentials. Please try again.", variant: "destructive" });
       setIsLoading(false);
       return false;
@@ -206,7 +233,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         errorMessage = error.message;
       }
-      console.error("Firebase Signup Error:", error.message);
+      console.error("Firebase Signup Error Code:", error.code, "Message:", error.message);
       toast({ title: "Signup Failed", description: errorMessage, variant: "destructive" });
       setIsLoading(false);
       return false;
@@ -220,7 +247,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await signInWithPopup(auth, provider);
       return true;
     } catch (error: any) {
-      console.error("Google Sign-In Error:", error.message);
+      console.error("Google Sign-In Error Code:", error.code, "Message:", error.message);
       toast({ title: "Google Sign-In Failed", description: error.message, variant: "destructive" });
       setIsLoading(false);
       return false;
@@ -267,5 +294,3 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export default AuthContext;
-
-    
