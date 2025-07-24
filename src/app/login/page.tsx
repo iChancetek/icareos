@@ -51,6 +51,12 @@ export default function LoginPage() {
         title: "Login Successful",
         description: "Welcome back!",
       });
+    } else {
+         toast({
+            title: "Login Failed",
+            description: "Invalid email or password. Please try again.",
+            variant: "destructive",
+        });
     }
   };
   
@@ -63,15 +69,49 @@ export default function LoginPage() {
           title: "Login Successful",
           description: "Welcome!",
       });
+    } else {
+        toast({
+            title: "Google Sign-In Failed",
+            description: "Could not sign in with Google. Please try again.",
+            variant: "destructive",
+        });
     }
   }
 
-  const handleForgotPassword = () => {
-    toast({
-      title: "Forgot Password (Demo Feature)",
-      description: "This is a demo. A real password reset requires backend email functionality which is not implemented. No email will be sent.",
-      duration: 7000,
-    });
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address to reset your password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // This is a placeholder call.
+    // In a real app, you would have a proper API route and error handling.
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        toast({
+          title: "Password Reset Email Sent (Demo)",
+          description: data.message,
+        });
+      } else {
+        throw new Error(data.message || 'Failed to send reset email.');
+      }
+    } catch (error) {
+       toast({
+        title: "Password Reset Error",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    }
   };
 
   const isLoading = authIsLoading || isSubmitting;

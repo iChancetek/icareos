@@ -71,6 +71,12 @@ export default function SignUpPage() {
         title: "Signup Successful",
         description: "Welcome to MediScribe! You are now being redirected.",
       });
+    } else {
+        toast({
+            title: "Signup Failed",
+            description: "An error occurred during signup. Please try again.",
+            variant: "destructive",
+        });
     }
   };
   
@@ -83,6 +89,12 @@ export default function SignUpPage() {
           title: "Signup Successful",
           description: "Welcome! Your profile is created.",
       });
+    } else {
+        toast({
+            title: "Google Sign-In Failed",
+            description: "Could not sign in with Google. Please try again.",
+            variant: "destructive",
+        });
     }
   }
 
