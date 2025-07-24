@@ -47,7 +47,7 @@ export default function AppSidebar() {
   const navItems: NavItem[] = [
     { href: '/dashboard/consultations', label: 'Consultations', icon: LayoutDashboard, matchStartsWith: true },
     { 
-      label: 'iSkylar AI Assistant', 
+      label: 'iSkylar - AI Voice Therapist', 
       icon: Bot, 
       action: () => setIsISkylarDialogOpen(true) 
     },
