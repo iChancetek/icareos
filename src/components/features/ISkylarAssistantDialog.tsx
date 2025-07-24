@@ -60,9 +60,9 @@ export default function ISkylarAssistantDialog({ isOpen, onOpenChange }: ISkylar
   useEffect(() => {
     // Initial greeting when dialog opens and conversation is empty
     if (isOpen && conversation.length === 0) {
-      handleAssistantResponse("Hello! I'm iSkylar. How can I help you with MediScribe or your personal wellness today?");
+      handleAssistantResponse("Hello! I'm iSkylar. How can I help you today?");
     }
-  }, [isOpen]);
+  }, [isOpen, conversation.length]);
 
   useEffect(() => {
     if (isOpen && !isPermissionChecked) {
@@ -202,7 +202,7 @@ export default function ISkylarAssistantDialog({ isOpen, onOpenChange }: ISkylar
             Chat with iSkylar
           </DialogTitle>
           <DialogDescription className="text-sm">
-            Ask about MediScribe features or your personal wellness.
+            Your personal AI voice therapist for wellness.
           </DialogDescription>
         </DialogHeader>
         
