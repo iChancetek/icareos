@@ -60,7 +60,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 220 15% 25%; /* Darker, softer border */
     --input: 220 15% 25%; /* Consistent with dark border */
-    --ring: 220 80% 65%; /* Match new dark primary */
+    --ring: 220 80% 65%; /* Match new dark ring */
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;

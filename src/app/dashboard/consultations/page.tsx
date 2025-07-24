@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -136,16 +135,13 @@ export default function ConsultationsPage() {
                     </p>
                   ) : (
                     <p className="text-sm text-muted-foreground italic">
-                      {consultation.status === 'Transcribing' ? 'Transcription in progress...' :
-                       consultation.status === 'Summarizing' ? 'Summarization in progress...' :
-                       consultation.status === 'Failed' ? 'Processing failed. Please try again.' :
-                       'Summary not yet available.'}
+                      {'Summary not yet available.'}
                     </p>
                   )}
                 </CardContent>
                 <CardFooter>
                   <Link href={`/dashboard/consultations/${consultation.id}`} passHref className="w-full">
-                    <Button variant="outline" className="w-full shadow-sm hover:shadow-md" disabled={consultation.status !== 'Completed'}>
+                    <Button variant="outline" className="w-full shadow-sm hover:shadow-md">
                       View Details
                       <ExternalLink className="ml-2 h-4 w-4" />
                     </Button>

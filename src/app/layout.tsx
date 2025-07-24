@@ -12,7 +12,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: 'MediScribe',
-  description: 'AI-Powered Medical Consultation Summaries',
+  description: 'A modern AI companion for healthcare professionals—powered by voice, empathy, and innovation.',
 };
 
 export default function RootLayout({

@@ -55,7 +55,7 @@ export default function HomePage() {
           Welcome to MediScribe
         </h1>
         <p className="mt-4 max-w-2xl mx-auto text-xl text-white/90 drop-shadow-sm">
-          The future of medical documentation. Record, transcribe, and summarize your consultations with the power of AI.
+          A modern AI companion for healthcare professionals—powered by voice, empathy, and innovation.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4">
           <Link href="/login" passHref>
