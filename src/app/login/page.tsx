@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Stethoscope, Eye, EyeOff, Loader2, Mail, KeyRound } from 'lucide-react';
@@ -181,10 +181,12 @@ export default function LoginPage() {
             </Link>
           </div>
         </CardContent>
+        <CardFooter className="mt-8 text-center text-sm text-white/70">
+            AI-Driven Medical Documentation – Powered by Generative AI
+        </CardFooter>
       </Card>
-      <footer className="mt-8 text-center text-sm text-white/70">
-        AI-Driven Medical Documentation – Powered by Generative AI
-      </footer>
     </div>
   );
 }
+
+    
