@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -547,3 +546,5 @@ export default function ConsultationDetailPage() {
     </div>
   );
 }
+
+    

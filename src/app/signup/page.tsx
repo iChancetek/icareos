@@ -1,11 +1,10 @@
-
 "use client";
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Stethoscope } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, type FormEvent } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -99,22 +98,23 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col items-start justify-center bg-[#0A1931] p-12 text-white">
+      <div className="hidden lg:flex flex-col items-center justify-center p-12 text-white text-center">
+        <Stethoscope className="h-16 w-16 text-white mb-6" />
         <h1 className="text-5xl font-bold mb-4">Welcome to MediScribe</h1>
         <p className="text-lg text-gray-300 max-w-md">
-            Join a new generation of healthcare professionals using AI to enhance patient care and personal wellness.
+          A modern AI companion for healthcare professionals—powered by voice, empathy, and innovation.
         </p>
       </div>
-      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+       <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8 bg-[#1C2C4E] p-10 rounded-2xl shadow-lg">
           <div>
             <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-white">
-              Get Started with MediScribe
+              Get Started
             </h2>
              <p className="mt-2 text-center text-sm text-gray-400">
               Already have an account?{' '}
               <Link href="/login" className="font-medium text-blue-400 hover:text-blue-300">
-                Sign in here
+                Sign in
               </Link>
             </p>
           </div>
@@ -224,7 +224,7 @@ export default function SignUpPage() {
                     <div className="w-full border-t border-gray-600" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                    <span className="bg-[#1C2C4E] px-2 text-gray-400">OR CONTINUE WITH</span>
+                    <span className="bg-[#1C2C4E] px-2 text-gray-400">OR</span>
                 </div>
             </div>
 
@@ -243,3 +243,5 @@ export default function SignUpPage() {
     </div>
   );
 }
+
+    
