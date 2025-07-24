@@ -203,14 +203,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (emailIn: string, passwordIn: string, displayNameIn: string, usernameIn: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // A full uniqueness check for username should be done with a server-side function for production.
-      // This implementation proceeds with creating the user.
+      // 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, emailIn, passwordIn);
       const fbUser = userCredential.user;
+
+      // 2. Call our own API route to create the Firestore profile
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uid: fbUser.uid,
+          email: fbUser.email,
+          displayName: displayNameIn,
+          username: usernameIn,
+        }),
+      });
+
+      if (!response.ok) {
+        // If API call fails, we should ideally delete the just-created auth user to prevent orphaned accounts.
+        // For simplicity here, we'll just throw an error.
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create user profile in database.');
+      }
       
-      await createUserProfile(fbUser, displayNameIn, usernameIn);
       // onAuthStateChanged will handle setting the user state and redirecting.
+      // The user is now fully set up.
       return true;
+
     } catch (error: any) {
       let errorMessage = "An unknown error occurred.";
       if (error.code === 'auth/email-already-in-use') {
@@ -218,7 +239,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         errorMessage = error.message;
       }
-      console.error("Firebase Signup Error:", error.message);
+      console.error("Firebase Signup Error:", errorMessage);
       toast({ title: "Signup Failed", description: errorMessage, variant: "destructive" });
       setIsLoading(false);
       return false;

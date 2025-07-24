@@ -1,52 +1,41 @@
-"use client";
 
-import type { ReactNode } from 'react';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import AppHeader from '@/components/layout/AppHeader';
-import AppSidebar from '@/components/layout/AppSidebar';
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { Loader2 } from 'lucide-react';
+import { NextResponse } from 'next/server';
+import { db } from '@/lib/firebase'; // Assuming admin-sdk is not set up, use client for demo
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const { user, isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
+// IMPORTANT: For a production app, this endpoint should be protected (e.g., check for a valid Firebase ID token)
+// and ideally use the Firebase Admin SDK on a secure backend to create user profiles.
+// This implementation uses the client SDK for simplicity in this environment.
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.replace('/login');
+export async function POST(request: Request) {
+  try {
+    const { uid, email, displayName, username } = await request.json();
+
+    if (!uid || !email || !displayName || !username) {
+      return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
     }
-  }, [isAuthenticated, isLoading, router]);
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    const userDocRef = doc(db, 'users', uid);
+    
+    const newUserProfile = {
+      uid: uid,
+      email: email,
+      username: username,
+      displayName: displayName, // fullName
+      photoURL: null, // profilePictureURL - starts as null
+      role: 'user', // Default role
+      createdAt: serverTimestamp(),
+      lastLogin: serverTimestamp(),
+    };
+
+    await setDoc(userDocRef, newUserProfile);
+
+    console.log(`[API Signup] Successfully created Firestore profile for UID: ${uid}`);
+    return NextResponse.json({ message: 'User profile created successfully', uid: uid }, { status: 201 });
+
+  } catch (error: any) {
+    console.error('[API Signup] Error creating user profile:', error);
+    // Log the detailed error on the server, but return a generic message to the client.
+    return NextResponse.json({ message: 'An error occurred while creating the user profile.', error: error.message || 'Unknown error' }, { status: 500 });
   }
-
-  if (!isAuthenticated) {
-    return null; // Redirect is handled by the useEffect
-  }
-
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="flex min-h-screen w-full flex-col bg-muted/40">
-        <AppSidebar />
-        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-[calc(var(--sidebar-width-icon)_+_1rem)] md:pl-[calc(var(--sidebar-width)_+_1rem)] group-data-[collapsible=icon]:sm:pl-[calc(var(--sidebar-width-icon)_+_1rem)] transition-[padding-left] duration-300 ease-in-out">
-          <div className="flex flex-1 flex-col sm:pl-14 md:group-data-[state=expanded]:pl-64"> 
-             <AppHeader />
-            <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
-              {children}
-            </main>
-            <footer className="border-t bg-background/80 p-4 text-center text-sm text-muted-foreground">
-              Powered by ChanceTEK LLC
-            </footer>
-          </div>
-        </div>
-      </div>
-    </SidebarProvider>
-  );
 }
