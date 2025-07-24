@@ -13,7 +13,7 @@ import {
   signInWithPopup,
   type User as FirebaseUser,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, updateDoc, runTransaction, collection, getDocs, query, where, limit } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc, runTransaction, collection, getDocs, query, where, limit, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { Consultation } from '@/types';
 
@@ -25,6 +25,7 @@ export interface User {
   displayName: string | null; // Corresponds to 'fullName' in the brief
   photoURL: string | null; // Corresponds to 'profileImage'
   role: 'user' | 'therapist' | 'admin';
+  accountStatus: 'active' | 'disabled';
   createdAt: Date | null;
   lastLogin: Date | null;
 }
@@ -70,12 +71,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userDocRef = doc(db, 'users', fbUser.uid);
     try {
       const newUserProfileData = await runTransaction(db, async (transaction) => {
-        // Check if username is unique
         const usernameQuery = query(collection(db, 'users'), where('username', '==', username), limit(1));
         const usernameSnapshot = await getDocs(usernameQuery);
         if (!usernameSnapshot.empty) {
-          // This check is not perfect because of transaction isolation, but it's a good first pass.
-          // A more robust solution might use a separate collection for usernames or a Cloud Function trigger.
           throw new Error(`Username "${username}" is already taken.`);
         }
 
@@ -99,6 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           displayName: displayName,
           photoURL: fbUser.photoURL,
           role: 'user', 
+          accountStatus: 'active',
           createdAt: serverTimestamp(),
           lastLogin: serverTimestamp(),
         };
@@ -114,7 +113,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return newUserProfileData;
     } catch (error) {
       console.error("Error creating user profile in transaction: ", error);
-      // If user creation fails, we should sign out the partially created Firebase auth user
       await signOut(auth);
       throw error; // Rethrow to be caught by the signup function
     }
@@ -141,11 +139,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
             setNewUserInfo(null);
           } else {
-            // Update last login timestamp
-            if (pathname !== '/dashboard/admin') { // Avoid excessive writes for admins just browsing
+            const userData = userDoc.data();
+            if (userData.accountStatus === 'disabled') {
+                console.warn(`Login attempt by disabled user: ${fbUser.email}`);
+                await signOut(auth);
+                // Optionally add a toast message here to inform the user
+                throw new Error("User account is disabled.");
+            }
+            if (pathname !== '/dashboard/admin') { 
                 await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
             }
-            const userData = userDoc.data();
             const userProfile: User = {
               uid: fbUser.uid,
               email: fbUser.email,
@@ -153,6 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               displayName: userData.displayName,
               photoURL: userData.photoURL,
               role: userData.role || 'user',
+              accountStatus: userData.accountStatus || 'active',
               createdAt: userData.createdAt?.toDate() || null,
               lastLogin: new Date(),
             };
@@ -201,11 +205,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
-      // This is the common error for wrong password or user not found.
       if (error.code === 'auth/invalid-credential') {
         console.warn("Firebase Login Warning:", "Invalid credentials provided by user.");
       } else {
-        // Log other, more critical errors as errors.
         console.error("Firebase Login Error Code:", error.code, "Message:", error.message);
       }
       setIsLoading(false);
@@ -303,7 +305,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
         const docRef = doc(db, 'consultations', id);
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().userId === user.uid) {
+        // Admin can view any consultation, regular user can only view their own
+        if (docSnap.exists() && (docSnap.data().userId === user.uid || user.role === 'admin')) {
             return docSnap.data() as Consultation;
         }
         return null;
@@ -317,9 +320,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return false;
     try {
         const docRef = doc(db, 'consultations', id);
-        // Security check: ensure user owns this doc before updating.
         const docSnap = await getDoc(docRef);
-        if(docSnap.exists() && docSnap.data().userId === user.uid) {
+        // Admin or owner can update
+        if(docSnap.exists() && (docSnap.data().userId === user.uid || user.role === 'admin')) {
             await updateDoc(docRef, updates);
             return true;
         }
@@ -334,10 +337,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return false;
     try {
         const docRef = doc(db, 'consultations', id);
-        // Security check: ensure user owns this doc before deleting.
-         const docSnap = await getDoc(docRef);
-        if(docSnap.exists() && docSnap.data().userId === user.uid) {
-            await docRef.delete();
+        const docSnap = await getDoc(docRef);
+        // Admin or owner can delete
+        if(docSnap.exists() && (docSnap.data().userId === user.uid || user.role === 'admin')) {
+            await deleteDoc(docRef);
             return true;
         }
         return false;
@@ -403,3 +406,5 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     </AuthContext.Provider>
   );
 };
+
+    
