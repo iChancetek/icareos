@@ -146,7 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (!userProfile) {
           // This case happens on first social sign-in or if doc creation failed previously.
-          userProfile = await createUserProfile(fbUser);
+          userProfile = await createUserProfile(fbUser, fbUser.displayName || 'New User');
         }
         
         setUser(userProfile);
@@ -207,26 +207,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userCredential = await createUserWithEmailAndPassword(auth, emailIn, passwordIn);
       const fbUser = userCredential.user;
 
-      // 2. Call our own API route to create the Firestore profile
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          uid: fbUser.uid,
-          email: fbUser.email,
-          displayName: displayNameIn,
-          username: usernameIn,
-        }),
-      });
-
-      if (!response.ok) {
-        // If API call fails, we should ideally delete the just-created auth user to prevent orphaned accounts.
-        // For simplicity here, we'll just throw an error.
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create user profile in database.');
-      }
+      // 2. Create the Firestore profile document for the new user.
+      // This happens on the client, but is secured by the rules below.
+      await createUserProfile(fbUser, displayNameIn, usernameIn);
       
       // onAuthStateChanged will handle setting the user state and redirecting.
       // The user is now fully set up.
@@ -239,7 +222,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         errorMessage = error.message;
       }
-      console.error("Firebase Signup Error:", errorMessage);
+      console.error("Firebase Signup Error:", error.message);
       toast({ title: "Signup Failed", description: errorMessage, variant: "destructive" });
       setIsLoading(false);
       return false;
