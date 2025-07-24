@@ -100,7 +100,7 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen w-full bg-white dark:bg-gray-900 lg:grid lg:grid-cols-2">
       <div className="hidden lg:flex flex-col items-start justify-center bg-[#0A1931] p-12 text-white">
-        <h1 className="text-5xl font-bold mb-4">Create your account</h1>
+        <h1 className="text-5xl font-bold mb-4">Welcome to MediScribe</h1>
         <p className="text-lg text-gray-300 max-w-md">
             Join a new generation of healthcare professionals using AI to enhance patient care and personal wellness.
         </p>
@@ -109,7 +109,7 @@ export default function SignUpPage() {
         <div className="w-full max-w-md space-y-8 bg-white dark:bg-[#1C2C4E] p-10 rounded-2xl shadow-lg">
           <div>
             <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-              Get Started with iSkylar
+              Get Started with MediScribe
             </h2>
              <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
               Already have an account?{' '}

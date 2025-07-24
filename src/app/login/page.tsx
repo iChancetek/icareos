@@ -114,9 +114,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen w-full bg-white dark:bg-gray-900 lg:grid lg:grid-cols-2">
       <div className="hidden lg:flex flex-col items-start justify-center bg-[#0A1931] p-12 text-white">
-        <h1 className="text-5xl font-bold mb-4">Welcome to iSkylar</h1>
+        <h1 className="text-5xl font-bold mb-4">Welcome to MediScribe</h1>
         <p className="text-lg text-gray-300 max-w-md">
-          Your AI Voice Therapist. Powered by Generative AI. iSkylar is ready to listen.
+          A modern AI companion for healthcare professionals—powered by voice, empathy, and innovation.
         </p>
       </div>
       <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-[#0A1931]">
