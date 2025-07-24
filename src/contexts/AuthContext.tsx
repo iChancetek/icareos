@@ -15,7 +15,6 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc, runTransaction } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { useToast } from "@/hooks/use-toast";
 
 // Define our custom User type based on the project brief
 interface User {
@@ -48,39 +47,6 @@ interface NewUserInfo {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// --- Voice Greeting Logic ---
-let hasGreeted = false; // Prevent greeting on hot-reloads
-
-const playGreeting = (user: User, firebaseUser: FirebaseUser) => {
-  if (typeof window === 'undefined' || !window.speechSynthesis || hasGreeted) {
-    return;
-  }
-  
-  const creationTime = new Date(firebaseUser.metadata.creationTime || 0).getTime();
-  const lastSignInTime = new Date(firebaseUser.metadata.lastSignInTime || 0).getTime();
-  
-  const isNewUser = Math.abs(lastSignInTime - creationTime) < 5000;
-
-  const userName = user.displayName?.split(' ')[0] || 'there';
-  
-  const greetingText = isNewUser
-    ? `Hello ${userName}, it’s a pleasure to meet you. Welcome to MediScribe.`
-    : `Welcome back, ${userName}. Good to see you again.`;
-
-  try {
-    const utterance = new SpeechSynthesisUtterance(greetingText);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.95;
-    
-    window.speechSynthesis.cancel(); 
-    window.speechSynthesis.speak(utterance);
-    
-    hasGreeted = true;
-  } catch (error) {
-    console.error("SpeechSynthesis Error:", error);
-  }
-};
-
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -89,7 +55,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [newUserInfo, setNewUserInfo] = useState<NewUserInfo | null>(null); // Temp store for signup info
   const router = useRouter();
   const pathname = usePathname();
-  const { toast } = useToast();
 
   const createUserProfile = async (fbUser: FirebaseUser, displayName: string, username: string): Promise<User | null> => {
     const userDocRef = doc(db, 'users', fbUser.uid);
@@ -99,7 +64,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (userDoc.exists()) {
           console.warn("User document already exists for new user:", fbUser.uid);
           const existingData = userDoc.data();
-          // This path should ideally not be hit for a brand new user, but as a fallback, update last login and return existing data.
           transaction.update(userDocRef, { lastLogin: serverTimestamp() });
           return {
              ...existingData,
@@ -131,7 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return newUserProfileData;
     } catch (error) {
       console.error("Error creating user profile in transaction: ", error);
-      toast({ title: "Profile Creation Failed", description: "Could not create your user profile in the database.", variant: "destructive" });
+      // Removed toast from here
       return null;
     }
   };
@@ -147,7 +111,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           if (!userDoc.exists()) {
             console.log("New user detected, creating profile...");
-            // Use temp info for email/pass signup, or derive from fbUser for Google OAuth
             const profileData = newUserInfo || { 
               displayName: fbUser.displayName || "New User", 
               username: fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0,5)}` 
@@ -155,11 +118,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const userProfile = await createUserProfile(fbUser, profileData.displayName, profileData.username);
             if (userProfile) {
               setUser(userProfile);
-              playGreeting(userProfile, fbUser);
             }
-            setNewUserInfo(null); // Clear temp info after use
+            setNewUserInfo(null);
           } else {
-            // Existing user, fetch their profile and update last login
             await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
             const userData = userDoc.data();
             const userProfile: User = {
@@ -173,27 +134,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               lastLogin: new Date(),
             };
             setUser(userProfile);
-            if (!hasGreeted) { // Only greet returning users if they haven't been greeted this session
-              playGreeting(userProfile, fbUser);
-            }
           }
         } else {
           setFirebaseUser(null);
           setUser(null);
-          hasGreeted = false; // Reset greeting state on logout
         }
       } catch (error) {
         console.error("Error during auth state change processing:", error);
         setUser(null);
         setFirebaseUser(null);
-        toast({ title: "Authentication Error", description: "There was a problem verifying your session.", variant: "destructive" });
       } finally {
         setIsLoading(false);
       }
     });
 
     return () => unsubscribe();
-  }, [newUserInfo, toast]); // Rerun when newUserInfo is set
+  }, [newUserInfo]);
 
   const isAuthenticated = !isLoading && !!user;
 
@@ -215,11 +171,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, emailIn, passwordIn);
-      // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
       console.error("Firebase Login Error Code:", error.code, "Message:", error.message);
-      toast({ title: "Login Failed", description: "Invalid credentials. Please try again.", variant: "destructive" });
       setIsLoading(false);
       return false;
     }
@@ -228,23 +182,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (emailIn: string, passwordIn: string, displayNameIn: string, usernameIn: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // Store user info temporarily. onAuthStateChanged will use it to create the Firestore doc.
       setNewUserInfo({ displayName: displayNameIn, username: usernameIn });
       await createUserWithEmailAndPassword(auth, emailIn, passwordIn);
-      // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
-      setNewUserInfo(null); // Clear temp info on failure
-      let errorMessage = "An unknown error occurred during signup.";
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "This email address is already in use by another account.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'The password is too weak. It must be at least 6 characters long.';
-      } else {
-        errorMessage = error.message;
-      }
+      setNewUserInfo(null); 
       console.error("Firebase Signup Error Code:", error.code, "Message:", error.message);
-      toast({ title: "Signup Failed", description: errorMessage, variant: "destructive" });
       setIsLoading(false);
       return false;
     }
@@ -254,14 +197,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      // Clear any pending email/pass signup info before starting Google sign-in
       setNewUserInfo(null); 
       await signInWithPopup(auth, provider);
-      // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
       console.error("Google Sign-In Error Code:", error.code, "Message:", error.message);
-      toast({ title: "Google Sign-In Failed", description: error.message, variant: "destructive" });
       setIsLoading(false);
       return false;
     }
@@ -269,10 +209,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     await signOut(auth);
-    // Clearing local state immediately for a faster UI response
     setUser(null);
     setFirebaseUser(null);
-    hasGreeted = false;
     router.push('/login');
   };
 
@@ -288,7 +226,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return true;
     } catch (error: any) {
       console.error("Update Profile Error:", error.message);
-      toast({ title: "Update Failed", description: "Could not update your profile.", variant: "destructive" });
       return false;
     }
   };
