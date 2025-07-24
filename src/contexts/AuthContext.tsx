@@ -95,7 +95,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return newUserProfileData;
     } catch (error) {
       console.error("Error creating user profile in transaction: ", error);
-      // Removed toast from here
       return null;
     }
   };
@@ -154,7 +153,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAuthenticated = !isLoading && !!user;
 
   useEffect(() => {
-    const publicRoutes = ['/login', '/signup'];
+    const publicRoutes = ['/login', '/signup', '/'];
     const isPublicRoute = publicRoutes.includes(pathname);
 
     if (!isLoading) {
@@ -171,9 +170,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, emailIn, passwordIn);
+      // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
-      console.error("Firebase Login Error Code:", error.code, "Message:", error.message);
+      // This is the common error for wrong password or user not found.
+      if (error.code === 'auth/invalid-credential') {
+        console.warn("Firebase Login Warning:", "Invalid credentials provided by user.");
+      } else {
+        // Log other, more critical errors as errors.
+        console.error("Firebase Login Error Code:", error.code, "Message:", error.message);
+      }
       setIsLoading(false);
       return false;
     }
@@ -184,6 +190,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setNewUserInfo({ displayName: displayNameIn, username: usernameIn });
       await createUserWithEmailAndPassword(auth, emailIn, passwordIn);
+      // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
       setNewUserInfo(null); 
@@ -199,6 +206,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const provider = new GoogleAuthProvider();
       setNewUserInfo(null); 
       await signInWithPopup(auth, provider);
+      // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
       console.error("Google Sign-In Error Code:", error.code, "Message:", error.message);
