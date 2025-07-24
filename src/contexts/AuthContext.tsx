@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           username: username,
           displayName: displayName,
           photoURL: fbUser.photoURL,
-          role: 'user', 
+          role: 'admin', 
           accountStatus: 'active',
           createdAt: serverTimestamp(),
           lastLogin: serverTimestamp(),
@@ -407,4 +407,5 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+    
     
