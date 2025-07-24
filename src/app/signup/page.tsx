@@ -98,22 +98,22 @@ export default function SignUpPage() {
   const isLoading = authIsLoading || isSubmitting;
 
   return (
-    <div className="min-h-screen w-full bg-white dark:bg-gray-900 lg:grid lg:grid-cols-2">
+    <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
       <div className="hidden lg:flex flex-col items-start justify-center bg-[#0A1931] p-12 text-white">
         <h1 className="text-5xl font-bold mb-4">Welcome to MediScribe</h1>
         <p className="text-lg text-gray-300 max-w-md">
             Join a new generation of healthcare professionals using AI to enhance patient care and personal wellness.
         </p>
       </div>
-      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-[#0A1931]">
-        <div className="w-full max-w-md space-y-8 bg-white dark:bg-[#1C2C4E] p-10 rounded-2xl shadow-lg">
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md space-y-8 bg-[#1C2C4E] p-10 rounded-2xl shadow-lg">
           <div>
-            <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+            <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-white">
               Get Started with MediScribe
             </h2>
-             <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+             <p className="mt-2 text-center text-sm text-gray-400">
               Already have an account?{' '}
-              <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+              <Link href="/login" className="font-medium text-blue-400 hover:text-blue-300">
                 Sign in here
               </Link>
             </p>
@@ -127,7 +127,7 @@ export default function SignUpPage() {
                         name="displayName"
                         type="text"
                         required
-                        className="relative block w-full appearance-none rounded-t-md border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:z-10 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none focus:ring-blue-500 dark:focus:ring-blue-400 sm:text-sm"
+                        className="relative block w-full appearance-none rounded-t-md border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:z-10 focus:border-blue-400 focus:outline-none focus:ring-blue-400 sm:text-sm"
                         placeholder="Full Name"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
@@ -141,7 +141,7 @@ export default function SignUpPage() {
                         name="username"
                         type="text"
                         required
-                        className="relative block w-full appearance-none border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:z-10 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none focus:ring-blue-500 dark:focus:ring-blue-400 sm:text-sm"
+                        className="relative block w-full appearance-none border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:z-10 focus:border-blue-400 focus:outline-none focus:ring-blue-400 sm:text-sm"
                         placeholder="Username"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
@@ -156,7 +156,7 @@ export default function SignUpPage() {
                         type="email"
                         autoComplete="email"
                         required
-                        className="relative block w-full appearance-none border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:z-10 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none focus:ring-blue-500 dark:focus:ring-blue-400 sm:text-sm"
+                        className="relative block w-full appearance-none border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:z-10 focus:border-blue-400 focus:outline-none focus:ring-blue-400 sm:text-sm"
                         placeholder="Email address"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -170,7 +170,7 @@ export default function SignUpPage() {
                         name="password"
                         type={showPassword ? 'text' : 'password'}
                         required
-                        className="relative block w-full appearance-none border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:z-10 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none focus:ring-blue-500 dark:focus:ring-blue-400 sm:text-sm"
+                        className="relative block w-full appearance-none border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:z-10 focus:border-blue-400 focus:outline-none focus:ring-blue-400 sm:text-sm"
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -192,7 +192,7 @@ export default function SignUpPage() {
                         name="confirm-password"
                         type={showConfirmPassword ? 'text' : 'password'}
                         required
-                        className="relative block w-full appearance-none rounded-b-md border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:z-10 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none focus:ring-blue-500 dark:focus:ring-blue-400 sm:text-sm"
+                        className="relative block w-full appearance-none rounded-b-md border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:z-10 focus:border-blue-400 focus:outline-none focus:ring-blue-400 sm:text-sm"
                         placeholder="Confirm Password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
@@ -212,7 +212,7 @@ export default function SignUpPage() {
             <div>
               <Button
                 type="submit"
-                className="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-offset-gray-800"
+                className="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-500 py-2 px-4 text-sm font-medium text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-gray-800"
                 disabled={isLoading}
               >
                 {isLoading ? <Loader2 className="animate-spin" /> : 'Create Account'}
@@ -221,17 +221,17 @@ export default function SignUpPage() {
           </form>
             <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+                    <div className="w-full border-t border-gray-600" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                    <span className="bg-white dark:bg-[#1C2C4E] px-2 text-gray-500 dark:text-gray-400">OR CONTINUE WITH</span>
+                    <span className="bg-[#1C2C4E] px-2 text-gray-400">OR CONTINUE WITH</span>
                 </div>
             </div>
 
             <div>
                 <Button
                     variant="outline"
-                    className="w-full justify-center flex items-center"
+                    className="w-full justify-center flex items-center bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
                     onClick={handleGoogleSignIn}
                     disabled={isLoading}
                 >

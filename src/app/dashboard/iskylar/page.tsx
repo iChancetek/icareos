@@ -21,7 +21,7 @@ export default function ISkylarPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] w-full flex-col bg-[#0A1931] text-white">
+    <div className="flex h-[calc(100vh-8rem)] w-full flex-col text-white">
       <header className="absolute top-4 right-4 z-10">
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9 border-2 border-slate-500">
