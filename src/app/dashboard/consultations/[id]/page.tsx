@@ -27,28 +27,6 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { translateText } from '@/ai/flows/translate-text-flow';
 
-// Mock data - replace with API call in a real app
-const mockConsultations: Consultation[] = [
-  {
-    id: '1',
-    patientName: 'John Doe',
-    date: new Date(2023, 10, 15, 10, 30).toISOString(),
-    status: 'Completed',
-    transcript: `Doctor: Good morning, John. What brings you in today?\nJohn: Morning, Doctor. I've been having this persistent cough for about a week now, and I'm starting to feel quite fatigued.\nDoctor: I see. Any fever or body aches?\nJohn: Yes, a low-grade fever in the evenings, and my muscles feel a bit sore.\nDoctor: Alright, let's have a listen to your lungs... (Sound of stethoscope)... Lungs sound clear. It's likely a viral infection, common this time of year. I'd recommend plenty of rest, stay hydrated, and you can take some over-the-counter medication for the fever and aches. If it doesn't improve in 3-4 days, or if you feel worse, please come back.\nJohn: Okay, Doctor. Thank you.`,
-    summary: 'Patient John Doe presented with a week-long persistent cough, fatigue, low-grade evening fevers, and muscle soreness. Lung examination was clear. Diagnosis points to a viral infection. Recommended treatment includes rest, hydration, and OTC medication for symptoms. Advised to return if no improvement in 3-4 days or if condition worsens.',
-    audioDataUri: undefined,
-  },
-  {
-    id: '2',
-    patientName: 'Jane Smith',
-    date: new Date(2023, 10, 16, 14, 0).toISOString(),
-    status: 'Completed',
-    transcript: `Doctor: Hello Jane, good to see you. Here for your annual check-up?\nJane: Yes, Doctor. Everything's been fine, just the usual.\nDoctor: Excellent. Let's go over your vitals... Blood pressure is 120/80, heart rate is 70. All good. Any changes in your diet or exercise routine?\nJane: I've been trying to eat more vegetables and walk for 30 minutes a day.\nDoctor: That's great to hear, Jane. Keep it up. Your lab results from last week also look perfect. Continue with your healthy habits, and I'll see you next year unless anything comes up.\nJane: Wonderful. Thanks, Doctor!`,
-    summary: 'Patient Jane Smith attended for an annual check-up. Vitals (BP 120/80, HR 70) are normal. Patient reports positive lifestyle changes including increased vegetable intake and daily walks. Recent lab results are perfect. Advised to continue healthy habits and schedule next check-up in a year.',
-    audioDataUri: undefined,
-  },
-];
-
 
 export default function ConsultationDetailPage() {
   const router = useRouter();
@@ -102,28 +80,16 @@ export default function ConsultationDetailPage() {
             translatedTranscript: storedTranslatedTranscript || undefined,
             translatedTranscriptLanguage: storedTranslatedTranscriptLanguage || undefined,
           };
-        } else {
-          foundConsultation = mockConsultations.find(c => c.id === id);
-           if (foundConsultation) { // Store mock data if loaded
-            localStorage.setItem(`consultation-${id}-patientName`, foundConsultation.patientName);
-            localStorage.setItem(`consultation-${id}-transcript`, foundConsultation.transcript || '');
-            localStorage.setItem(`consultation-${id}-summary`, foundConsultation.summary || '');
-            localStorage.setItem(`consultation-${id}-date`, foundConsultation.date);
-            if (foundConsultation.audioDataUri) localStorage.setItem(`consultation-${id}-audioDataUri`, foundConsultation.audioDataUri);
-          }
         }
         
         if (!foundConsultation) {
-            // Fallback for directly accessing a non-existent ID or if localStorage is cleared
-            foundConsultation = {
-                id: id,
-                patientName: `Patient ${id.substring(0,4)}`,
-                date: new Date().toISOString(),
-                status: 'Completed',
-                transcript: `This is a sample transcript for consultation ID ${id}. The patient discussed various symptoms with the doctor. The doctor provided advice and a potential treatment plan. This is a longer text to simulate a real transcript which can be quite extensive and cover multiple topics during the medical consultation. It's important for the AI to accurately capture all key details.`,
-                summary: `This is an AI-generated summary for consultation ID ${id}. Key points: symptom discussion, doctor's advice, treatment plan. This summary is concise and highlights the most critical information for quick review.`,
-                audioDataUri: undefined,
-            };
+            toast({
+                title: "Consultation Not Found",
+                description: "Could not find the requested consultation. It may have been deleted.",
+                variant: "destructive"
+            });
+            router.push('/dashboard/consultations');
+            return;
         }
         
         setConsultation(foundConsultation);
@@ -140,7 +106,7 @@ export default function ConsultationDetailPage() {
         setIsSpeakingSummary(false);
       }
     };
-  }, [id]);
+  }, [id, router, toast]);
 
   const handleSaveSummary = () => {
     if (!consultation) return;
@@ -334,7 +300,7 @@ export default function ConsultationDetailPage() {
   }
 
   if (!consultation) {
-    return <div className="text-center py-10">Consultation not found. Please go back and create one.</div>;
+    return <div className="text-center py-10">Consultation not found. It may have been deleted or you may not have access.</div>;
   }
 
   const summaryTextToDisplay = summaryDisplayLanguage !== 'original' && translatedSummary !== null ? translatedSummary : (consultation.summary || '');
@@ -581,6 +547,3 @@ export default function ConsultationDetailPage() {
     </div>
   );
 }
-
-
-    

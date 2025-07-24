@@ -11,36 +11,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
-// Initial mock data - used as a fallback
-const initialMockConsultations: Consultation[] = [
-  {
-    id: 'mock-1',
-    patientName: 'John Doe (Mock)',
-    date: new Date(2023, 10, 15, 10, 30).toISOString(),
-    status: 'Completed',
-    summary: 'Patient presented with flu-like symptoms. Prescribed rest and fluids.',
-    transcript: 'Doctor: How are you feeling today, John? John: Not so great, doc...',
-    audioDataUri: undefined,
-  },
-  {
-    id: 'mock-2',
-    patientName: 'Jane Smith (Mock)',
-    date: new Date(2023, 10, 16, 14, 0).toISOString(),
-    status: 'Completed',
-    summary: 'Routine check-up. All vitals normal. Discussed diet and exercise.',
-    transcript: 'Doctor: Hello Jane, welcome. Any concerns today? Jane: No, just here for my check-up...',
-    audioDataUri: undefined,
-  },
-  {
-    id: 'mock-3',
-    patientName: 'Robert Brown (Mock)',
-    date: new Date(Date.now() - 86400000).toISOString(), // Yesterday
-    status: 'Completed',
-    summary: 'Follow-up for hypertension. Blood pressure stable.',
-    audioDataUri: undefined,
-  },
-];
-
 
 export default function ConsultationsPage() {
   const [consultations, setConsultations] = useState<Consultation[]>([]);
@@ -89,22 +59,7 @@ export default function ConsultationsPage() {
 
       loaded.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       
-      if (loaded.length > 0) {
-        setConsultations(loaded);
-      } else {
-        // If no consultations in localStorage, use initial mock data and store it for consistency in demo
-        const sortedMocks = initialMockConsultations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setConsultations(sortedMocks);
-        sortedMocks.forEach(mock => {
-            if (!localStorage.getItem(`consultation-${mock.id}-patientName`)) { // Avoid overwriting if some mock data was partially interacted with
-                 localStorage.setItem(`consultation-${mock.id}-patientName`, mock.patientName);
-                 localStorage.setItem(`consultation-${mock.id}-transcript`, mock.transcript || '');
-                 localStorage.setItem(`consultation-${mock.id}-summary`, mock.summary || '');
-                 localStorage.setItem(`consultation-${mock.id}-date`, mock.date);
-                 if (mock.audioDataUri) localStorage.setItem(`consultation-${mock.id}-audioDataUri`, mock.audioDataUri);
-            }
-        });
-      }
+      setConsultations(loaded);
       setIsLoading(false);
     };
     

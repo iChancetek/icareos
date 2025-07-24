@@ -73,7 +73,7 @@ export default function HomePage() {
         </div>
       </main>
       <footer className="absolute bottom-4 text-center text-xs text-white/80">
-          Powered by Generative AI from ChanceTEK LLC
+          Powered by Generative AI to Enhance Patient Care
       </footer>
     </div>
   );

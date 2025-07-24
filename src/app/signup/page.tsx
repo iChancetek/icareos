@@ -248,7 +248,7 @@ export default function SignUpPage() {
             </Link>
           </div>
           <p className="mt-8 text-center text-xs text-muted-foreground/80 dark:text-white/70">
-            Powered by Generative AI
+            Powered by Generative AI to Enhance Patient Care
           </p>
         </CardFooter>
       </Card>
