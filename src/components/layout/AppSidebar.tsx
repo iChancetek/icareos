@@ -1,8 +1,9 @@
+
 "use client";
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Stethoscope, LayoutDashboard, User, Settings, Bot, LogOut, Languages } from 'lucide-react';
+import { Stethoscope, LayoutDashboard, User, Settings, Bot, LogOut, Languages, ShieldCheck } from 'lucide-react';
 import { 
   Sidebar, 
   SidebarHeader, 
@@ -28,11 +29,12 @@ interface NavItem {
   icon: React.ElementType;
   matchStartsWith?: boolean;
   action?: () => void;
+  adminOnly?: boolean;
 }
 
 export default function AppSidebar() {
   const pathname = usePathname();
-  const { logout } = useAuth(); 
+  const { user, logout } = useAuth(); 
   const { state: sidebarState, isMobile: sidebarIsMobileFromHook } = useSidebar(); 
   const [isVoiceTranslatorDialogOpen, setIsVoiceTranslatorDialogOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -45,7 +47,7 @@ export default function AppSidebar() {
     { href: '/dashboard/consultations', label: 'Consultations', icon: LayoutDashboard, matchStartsWith: true },
     { 
       href: '/dashboard/iskylar',
-      label: 'iSkylar - AI Voice Therapist', 
+      label: 'iSkylar', 
       icon: Bot, 
     },
     { 
@@ -55,6 +57,7 @@ export default function AppSidebar() {
     },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+    { href: '/dashboard/admin', label: 'Admin Panel', icon: ShieldCheck, adminOnly: true },
   ];
 
   const isActive = (item: NavItem) => {
@@ -90,7 +93,11 @@ export default function AppSidebar() {
 
         <SidebarContent className="flex-1 p-2">
           <SidebarMenu>
-            {navItems.map((item) => (
+            {navItems.map((item) => {
+              if (item.adminOnly && user?.role !== 'admin') {
+                return null;
+              }
+              return (
               <SidebarMenuItem key={item.label}>
                 {item.href ? (
                   <Link href={item.href} legacyBehavior passHref>
@@ -114,7 +121,8 @@ export default function AppSidebar() {
                   </SidebarMenuButton>
                 )}
               </SidebarMenuItem>
-            ))}
+              );
+            })}
           </SidebarMenu>
         </SidebarContent>
 

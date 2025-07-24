@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -9,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Mic, StopCircle, Save, Loader2, AlertTriangle, CheckCircle, LanguagesIcon } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/hooks/useAuth';
 import { transcribeAudio } from '@/ai/flows/transcribe-audio';
 import { summarizeConsultation } from '@/ai/flows/summarize-consultation';
 import { translateText } from '@/ai/flows/translate-text-flow';
@@ -22,6 +24,8 @@ type RecordingState = 'idle' | 'recording' | 'processing' | 'success' | 'error';
 export default function NewConsultationPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user, saveConsultation } = useAuth();
+
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [progress, setProgress] = useState(0);
   const [patientName, setPatientName] = useState('');
@@ -77,7 +81,7 @@ export default function NewConsultationPage() {
         duration: 7000,
       });
     }
-  }, [isPermissionChecked, toast]); // Re-run if isPermissionChecked changes (e.g. dialog reopens)
+  }, [isPermissionChecked, toast, hasMicPermission]);
 
 
   const handleStartRecording = async () => {
@@ -267,6 +271,11 @@ export default function NewConsultationPage() {
       setCurrentStepMessage("Invalid audio data format.");
       return;
     }
+    if (!user) {
+        toast({ title: "Authentication Error", description: "You must be logged in to save a consultation.", variant: "destructive" });
+        return;
+    }
+
     setRecordingState('processing');
     setProgress(0);
     
@@ -326,21 +335,25 @@ export default function NewConsultationPage() {
       setCurrentStepMessage(processingSteps[3]); 
       console.log("NewConsultation: Finalizing consultation save...");
       
-      const newConsultationId = Math.random().toString(36).substring(2, 9); 
-      const consultationToSave: Consultation = {
-        id: newConsultationId,
+      const consultationToSave: Omit<Consultation, 'id' | 'userId'> = {
         patientName: patientName,
         date: new Date().toISOString(),
         status: 'Completed', 
         transcript: transcript,
         summary: summary,
-        audioDataUri: audioDataUri,
+        audioDataUri: audioDataUri, // For immediate playback, might not be suitable for long-term
         translatedTranscript: translatedTranscript,
         translatedTranscriptLanguage: finalTranslationLanguage,
       };
       
-      console.log("NewConsultation: Attempting to send data to HubSpot placeholder:", consultationToSave);
-      await sendDataToHubSpot(consultationToSave, audioDataUri); 
+      const newConsultationId = await saveConsultation(consultationToSave);
+
+      if (!newConsultationId) {
+        throw new Error("Failed to save the consultation to the database.");
+      }
+
+      console.log("NewConsultation: Attempting to send data to HubSpot placeholder...");
+      await sendDataToHubSpot({ ...consultationToSave, id: newConsultationId, userId: user.uid }, audioDataUri); 
 
       await new Promise(resolve => setTimeout(resolve, 500)); 
       setProgress(100);
@@ -351,19 +364,6 @@ export default function NewConsultationPage() {
 
       console.log("NewConsultation: New consultation ID generated:", newConsultationId, "Navigating...");
       
-      localStorage.setItem(`consultation-${newConsultationId}-patientName`, patientName);
-      localStorage.setItem(`consultation-${newConsultationId}-transcript`, transcript);
-      localStorage.setItem(`consultation-${newConsultationId}-summary`, summary);
-      localStorage.setItem(`consultation-${newConsultationId}-date`, consultationToSave.date);
-      if (audioDataUri) {
-        localStorage.setItem(`consultation-${newConsultationId}-audioDataUri`, audioDataUri);
-      }
-      if (translatedTranscript && finalTranslationLanguage) {
-        localStorage.setItem(`consultation-${newConsultationId}-translatedTranscript`, translatedTranscript);
-        localStorage.setItem(`consultation-${newConsultationId}-translatedTranscriptLanguage`, finalTranslationLanguage);
-      }
-
-
       setTimeout(() => router.push(`/dashboard/consultations/${newConsultationId}`), 1500);
 
     } catch (error) {
@@ -406,7 +406,7 @@ export default function NewConsultationPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <Card className="max-w-2xl mx-auto shadow-2xl">
+      <Card className="max-w-2xl mx-auto shadow-2xl bg-card/80">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">New Consultation</CardTitle>
           <CardDescription>Record audio for transcription and summarization.</CardDescription>
@@ -578,5 +578,3 @@ interface BlobEvent extends Event {
   readonly data: Blob;
   readonly timecode: number;
 }
-
-    

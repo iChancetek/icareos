@@ -1,6 +1,7 @@
 
 export interface Consultation {
   id: string;
+  userId: string; // ID of the user who created the consultation
   patientName: string;
   date: string; // ISO string date
   status: 'Recorded' | 'Transcribing' | 'Summarizing' | 'Completed' | 'Failed';
@@ -10,10 +11,4 @@ export interface Consultation {
   audioDataUri?: string; // Optional: Base64 Data URI for locally stored/played audio
   translatedTranscript?: string; // Optional: For initially translated transcript
   translatedTranscriptLanguage?: string; // Optional: Language of the translatedTranscript
-  // Potential future fields for HubSpot integration:
-  // hubspotContactId?: string;
-  // hubspotDealId?: string;
-  // hubspotNoteId?: string;
 }
-
-    

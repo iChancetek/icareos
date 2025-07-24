@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { PlusCircle, FileText, ExternalLink, Loader2 } from 'lucide-react';
 import type { Consultation } from '@/types';
+import { useAuth } from '@/hooks/useAuth';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -14,56 +16,18 @@ import { format } from 'date-fns';
 export default function ConsultationsPage() {
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { getUserConsultations } = useAuth();
 
   useEffect(() => {
-    const loadConsultationsFromStorage = () => {
+    async function loadConsultations() {
       setIsLoading(true);
-      const loaded: Consultation[] = [];
-      const keys = Object.keys(localStorage);
-      const consultationIds: string[] = [];
-
-      keys.forEach(key => {
-        if (key.startsWith('consultation-') && key.endsWith('-patientName')) {
-          const id = key.replace('consultation-', '').replace('-patientName', '');
-          if (!consultationIds.includes(id)) {
-            consultationIds.push(id);
-          }
-        }
-      });
-
-      consultationIds.forEach(id => {
-        const patientName = localStorage.getItem(`consultation-${id}-patientName`);
-        const transcript = localStorage.getItem(`consultation-${id}-transcript`);
-        const summary = localStorage.getItem(`consultation-${id}-summary`);
-        const date = localStorage.getItem(`consultation-${id}-date`);
-        const audioDataUri = localStorage.getItem(`consultation-${id}-audioDataUri`);
-        const translatedTranscript = localStorage.getItem(`consultation-${id}-translatedTranscript`);
-        const translatedTranscriptLanguage = localStorage.getItem(`consultation-${id}-translatedTranscriptLanguage`);
-        const status = 'Completed'; 
-
-        if (patientName && date) { 
-          loaded.push({
-            id,
-            patientName,
-            date,
-            status: status as Consultation['status'],
-            transcript: transcript || undefined,
-            summary: summary || undefined,
-            audioDataUri: audioDataUri || undefined,
-            translatedTranscript: translatedTranscript || undefined,
-            translatedTranscriptLanguage: translatedTranscriptLanguage || undefined,
-          });
-        }
-      });
-
-      loaded.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      
-      setConsultations(loaded);
+      const userConsultations = await getUserConsultations();
+      setConsultations(userConsultations);
       setIsLoading(false);
-    };
+    }
     
-    loadConsultationsFromStorage();
-  }, []);
+    loadConsultations();
+  }, [getUserConsultations]);
 
   const getStatusBadgeVariant = (status: Consultation['status']) => {
     switch (status) {
@@ -95,7 +59,7 @@ export default function ConsultationsPage() {
       </div>
 
       {consultations.length === 0 ? (
-        <Card className="text-center py-12 shadow-lg">
+        <Card className="text-center py-12 shadow-lg bg-card/80">
           <CardHeader>
             <div className="mx-auto bg-accent/10 rounded-full p-4 w-fit mb-4 shadow-inner">
               <FileText className="h-12 w-12 text-primary" />
@@ -118,7 +82,7 @@ export default function ConsultationsPage() {
         <ScrollArea className="h-[calc(100vh-16rem)]"> 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {consultations.map((consultation) => (
-              <Card key={consultation.id} className="flex flex-col justify-between shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card">
+              <Card key={consultation.id} className="flex flex-col justify-between shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card/80">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl">{consultation.patientName}</CardTitle>
@@ -155,5 +119,3 @@ export default function ConsultationsPage() {
     </div>
   );
 }
-
-    

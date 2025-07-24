@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -5,13 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { ArrowLeft, FileText, MessageSquare, Download, Edit3, Trash2, Loader2, PlayCircle, Languages, MessageCircle, Play, StopCircle, Volume2 } from 'lucide-react';
 import type { Consultation } from '@/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/hooks/useAuth';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +34,8 @@ export default function ConsultationDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const { toast } = useToast();
+  const { getConsultationById, updateConsultation, deleteConsultation } = useAuth();
+
 
   const [consultation, setConsultation] = useState<Consultation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,40 +55,15 @@ export default function ConsultationDetailPage() {
   const [isSpeakingSummary, setIsSpeakingSummary] = useState(false);
   const [ttsSummaryLanguage, setTtsSummaryLanguage] = useState('en-US');
 
-
-  useEffect(() => {
+  const fetchConsultation = useCallback(async () => {
     if (id) {
-      setIsLoading(true);
-      // Simulating API call delay
-      setTimeout(() => {
-        const storedPatientName = localStorage.getItem(`consultation-${id}-patientName`);
-        const storedTranscript = localStorage.getItem(`consultation-${id}-transcript`);
-        const storedSummary = localStorage.getItem(`consultation-${id}-summary`);
-        const storedDate = localStorage.getItem(`consultation-${id}-date`);
-        const storedAudioDataUri = localStorage.getItem(`consultation-${id}-audioDataUri`);
-        const storedTranslatedTranscript = localStorage.getItem(`consultation-${id}-translatedTranscript`);
-        const storedTranslatedTranscriptLanguage = localStorage.getItem(`consultation-${id}-translatedTranscriptLanguage`);
-
-        let foundConsultation: Consultation | undefined;
-
-        if (storedPatientName && storedDate) { // Transcript and summary can be empty initially
-          foundConsultation = {
-            id: id,
-            patientName: storedPatientName,
-            date: storedDate,
-            status: 'Completed',
-            transcript: storedTranscript || '',
-            summary: storedSummary || '',
-            audioDataUri: storedAudioDataUri || undefined,
-            translatedTranscript: storedTranslatedTranscript || undefined,
-            translatedTranscriptLanguage: storedTranslatedTranscriptLanguage || undefined,
-          };
-        }
+        setIsLoading(true);
+        const foundConsultation = await getConsultationById(id);
         
         if (!foundConsultation) {
             toast({
                 title: "Consultation Not Found",
-                description: "Could not find the requested consultation. It may have been deleted.",
+                description: "Could not find the requested consultation. It may have been deleted or you may not have access.",
                 variant: "destructive"
             });
             router.push('/dashboard/consultations');
@@ -96,8 +75,12 @@ export default function ConsultationDetailPage() {
         setEditableTranscript(foundConsultation.transcript || '');
         
         setIsLoading(false);
-      }, 500);
     }
+  }, [id, getConsultationById, router, toast]);
+
+  useEffect(() => {
+    fetchConsultation();
+
     // Cleanup TTS when component unmounts or id changes
     return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.speaking) {
@@ -105,49 +88,52 @@ export default function ConsultationDetailPage() {
         setIsSpeakingSummary(false);
       }
     };
-  }, [id, router, toast]);
+  }, [id, fetchConsultation]);
 
-  const handleSaveSummary = () => {
+  const handleSaveSummary = async () => {
     if (!consultation) return;
-    console.log("Saving summary:", editableSummary);
-    const updatedConsultation = { ...consultation, summary: editableSummary };
-    setConsultation(updatedConsultation);
-    setIsEditingSummary(false);
-    localStorage.setItem(`consultation-${consultation.id}-summary`, editableSummary);
-    setTranslatedSummary(null);
-    setSummaryDisplayLanguage("original");
-    toast({ title: "Summary Updated", description: "Your changes have been saved." });
+    const success = await updateConsultation(consultation.id, { summary: editableSummary });
+    if (success) {
+      setConsultation(prev => prev ? { ...prev, summary: editableSummary } : null);
+      setIsEditingSummary(false);
+      setTranslatedSummary(null);
+      setSummaryDisplayLanguage("original");
+      toast({ title: "Summary Updated", description: "Your changes have been saved." });
+    } else {
+        toast({ title: "Update Failed", description: "Could not save the summary. Please try again.", variant: "destructive" });
+    }
   };
 
-  const handleSaveTranscript = () => {
+  const handleSaveTranscript = async () => {
      if (!consultation) return;
-    console.log("Saving transcript:", editableTranscript);
-    const updatedConsultation = { ...consultation, transcript: editableTranscript };
-    setConsultation(updatedConsultation);
-    setIsEditingTranscript(false);
-    localStorage.setItem(`consultation-${consultation.id}-transcript`, editableTranscript);
-    setTranslatedOriginalTranscript(null);
-    setOriginalTranscriptDisplayLanguage("original");
-    toast({ title: "Transcript Updated", description: "Your changes have been saved." });
+    const success = await updateConsultation(consultation.id, { transcript: editableTranscript });
+    if(success) {
+        setConsultation(prev => prev ? { ...prev, transcript: editableTranscript } : null);
+        setIsEditingTranscript(false);
+        setTranslatedOriginalTranscript(null);
+        setOriginalTranscriptDisplayLanguage("original");
+        toast({ title: "Transcript Updated", description: "Your changes have been saved." });
+    } else {
+        toast({ title: "Update Failed", description: "Could not save the transcript. Please try again.", variant: "destructive" });
+    }
   };
 
-  const handleDeleteConsultation = () => {
+  const handleDeleteConsultation = async () => {
     if (!consultation) return;
-    console.log("Deleting consultation:", id);
+    
     // Stop any active speech before deleting
     if (typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.speaking) {
         window.speechSynthesis.cancel();
         setIsSpeakingSummary(false);
     }
-    localStorage.removeItem(`consultation-${id}-patientName`);
-    localStorage.removeItem(`consultation-${id}-transcript`);
-    localStorage.removeItem(`consultation-${id}-summary`);
-    localStorage.removeItem(`consultation-${id}-date`);
-    localStorage.removeItem(`consultation-${id}-audioDataUri`);
-    localStorage.removeItem(`consultation-${id}-translatedTranscript`);
-    localStorage.removeItem(`consultation-${id}-translatedTranscriptLanguage`);
-    toast({ title: "Consultation Deleted", description: `Consultation for ${consultation?.patientName} has been removed.` });
-    router.push('/dashboard/consultations');
+
+    const success = await deleteConsultation(id);
+    if(success) {
+        toast({ title: "Consultation Deleted", description: `Consultation for ${consultation?.patientName} has been removed.` });
+        router.push('/dashboard/consultations');
+    } else {
+        toast({ title: "Delete Failed", description: "Could not delete the consultation. Please try again.", variant: "destructive" });
+    }
   };
 
   const handleDownloadConsultation = () => {
@@ -299,7 +285,7 @@ export default function ConsultationDetailPage() {
   }
 
   if (!consultation) {
-    return <div className="text-center py-10">Consultation not found. It may have been deleted or you may not have access.</div>;
+    return <div className="text-center py-10 text-white">Consultation not found. It may have been deleted or you may not have access.</div>;
   }
 
   const summaryTextToDisplay = summaryDisplayLanguage !== 'original' && translatedSummary !== null ? translatedSummary : (consultation.summary || '');
@@ -312,7 +298,7 @@ export default function ConsultationDetailPage() {
         Back to Consultations
       </Button>
 
-      <Card className="shadow-xl mb-8">
+      <Card className="shadow-xl mb-8 bg-card/80">
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <CardTitle className="text-3xl font-bold">{consultation.patientName}</CardTitle>
@@ -546,5 +532,3 @@ export default function ConsultationDetailPage() {
     </div>
   );
 }
-
-    
