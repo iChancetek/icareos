@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -59,20 +60,30 @@ export default function SignUpPage() {
       return;
     }
     setIsSubmitting(true);
-    const success = await signup(email, password, displayName, username); 
-    setIsSubmitting(false);
-
-    if (success) {
-      toast({
-        title: "Signup Successful",
-        description: "Welcome to MediScribe! You are now being redirected.",
-      });
-    } else {
+    try {
+        const success = await signup(email, password, displayName, username); 
+        if (success) {
+            toast({
+                title: "Signup Successful",
+                description: "Welcome to MediScribe! You are now being redirected.",
+            });
+        }
+    } catch(error: any) {
+        let description = "An unknown error occurred during signup. Please try again.";
+        if (error.code === 'auth/email-already-in-use') {
+            description = "An account with this email address already exists.";
+        } else if (error.code === 'auth/weak-password') {
+            description = "The password is too weak. Please choose a stronger password.";
+        } else if (error.message) {
+            description = error.message;
+        }
         toast({
             title: "Signup Failed",
-            description: "An error occurred during signup. Please try again.",
+            description: description,
             variant: "destructive",
         });
+    } finally {
+        setIsSubmitting(false);
     }
   };
   
@@ -243,5 +254,3 @@ export default function SignUpPage() {
     </div>
   );
 }
-
-    
