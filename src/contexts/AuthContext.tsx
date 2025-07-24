@@ -117,20 +117,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const newUsername = username || fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0, 5)}`;
     const newDisplayName = displayName || fbUser.displayName || 'New User';
     
-    const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> = {
+    const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> & {createdAt: any, lastLogin: any} = {
       uid: fbUser.uid,
       email: fbUser.email,
       username: newUsername,
       displayName: newDisplayName,
       photoURL: fbUser.photoURL,
       role: 'user', // Default role
-    };
-    
-    await setDoc(userDocRef, {
-      ...newUserProfile,
       createdAt: serverTimestamp(),
       lastLogin: serverTimestamp(),
-    });
+    };
+    
+    await setDoc(userDocRef, newUserProfile);
 
     return {
       ...newUserProfile,
@@ -193,7 +191,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await signInWithEmailAndPassword(auth, emailIn, passwordIn);
       // Auth state change will handle fetching profile and redirecting.
       return true;
-    } catch (error: any) {
+    } catch (error: any)
+{
       console.error("Firebase Login Error Code:", error.code);
       toast({ title: "Login Failed", description: "Invalid credentials. Please try again.", variant: "destructive" });
       setIsLoading(false);
