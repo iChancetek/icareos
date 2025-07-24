@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import { Inter } from 'next/font/google'; // Using Inter as a clean, readable font
 import './globals.css';
@@ -31,3 +32,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    

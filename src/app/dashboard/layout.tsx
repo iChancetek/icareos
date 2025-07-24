@@ -43,7 +43,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               {children}
             </main>
             <footer className="border-t bg-background/80 p-4 text-center text-sm text-muted-foreground">
-              Powered by ChanceTEK LLC
+              Powered by Generative AI to Enhance Patient Care
             </footer>
           </div>
         </div>
@@ -51,3 +51,5 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    
