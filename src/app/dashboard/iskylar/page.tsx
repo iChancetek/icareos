@@ -32,7 +32,7 @@ export default function ISkylarPage() {
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const startListening = useCallback(() => {
-    if (recognitionRef.current && sessionStarted) {
+    if (recognitionRef.current && sessionStartedRef.current) {
       console.log("Attempting to start listening...");
       try {
         setSessionState('listening');
@@ -43,7 +43,7 @@ export default function ISkylarPage() {
         console.log("Recognition start was suppressed, likely already active:", e);
       }
     }
-  }, [sessionStarted]);
+  }, []);
 
 
   const stopSpeechAndRecognition = useCallback(() => {
@@ -81,7 +81,6 @@ export default function ISkylarPage() {
   const processUserSpeech = useCallback(async (transcript: string) => {
     if (!transcript.trim()) {
       // If transcript is empty, just get ready to listen again.
-      setSessionState('listening');
       startListening();
       return;
     }
@@ -105,7 +104,7 @@ export default function ISkylarPage() {
       setAiResponse(errorMessage);
       speak(errorMessage); 
     }
-  }, [startListening]);
+  }, [startListening]); // handleEndSession is defined later, so it's not a dependency here
 
   const speak = (text: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
@@ -179,7 +178,11 @@ export default function ISkylarPage() {
                 interimTranscript += event.results[i][0].transcript;
             }
         }
-        setUserTranscript(interimTranscript);
+        
+        // Update live transcript for user feedback
+        if (interimTranscript || finalTranscript) {
+          setUserTranscript(finalTranscript || interimTranscript);
+        }
 
         if (finalTranscript) {
             console.log("Final transcript:", finalTranscript);
@@ -192,8 +195,7 @@ export default function ISkylarPage() {
     recognition.onerror = (event: any) => {
       console.error("Speech recognition error:", event.error);
       if (event.error === 'no-speech' || event.error === 'audio-capture') {
-        // This is a common occurrence, just try to restart listening if session is still active
-        // The onend handler will take care of restarting.
+        // This is a common occurrence, the onend handler will take care of restarting.
       } else if (event.error === 'not-allowed') {
         setHasMicPermission(false);
         setSessionStarted(false); // End session if permission is revoked
@@ -271,6 +273,7 @@ export default function ISkylarPage() {
         window.speechSynthesis.cancel(); // Cancel any ongoing speech
         window.speechSynthesis.speak(utterance);
     }
+    setSessionState('idle');
   };
   
   const getSessionIndicatorText = () => {
@@ -380,3 +383,5 @@ export default function ISkylarPage() {
     </div>
   );
 }
+
+    
