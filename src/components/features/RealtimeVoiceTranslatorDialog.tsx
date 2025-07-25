@@ -47,6 +47,8 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
   const effectiveMimeTypeRef = useRef<string>('');
   const { toast } = useToast();
   const ttsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
 
   useEffect(() => {
     if (isOpen && !isPermissionChecked) {
@@ -93,6 +95,10 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       if (typeof window !== 'undefined' && window.speechSynthesis && (window.speechSynthesis.speaking || window.speechSynthesis.pending)) {
         console.log("RealtimeVoiceTranslator: Unmounting/closing, cancelling any active speech.");
         window.speechSynthesis.cancel();
+      }
+       if (utteranceRef.current) {
+        utteranceRef.current.onend = null;
+        utteranceRef.current = null;
       }
       setIsManuallyPlayingTTS(false);
     };
@@ -362,44 +368,40 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
         return;
       }
 
-      // Cancel any previous speech and clear existing timeout
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-            console.log("RealtimeVoiceTranslator: Cancelling existing/pending speech before new utterance.");
-            window.speechSynthesis.cancel();
-        }
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+          console.log("RealtimeVoiceTranslator: Cancelling existing/pending speech before new utterance.");
+          window.speechSynthesis.cancel();
       }
       if (ttsTimeoutRef.current) {
         clearTimeout(ttsTimeoutRef.current);
-        ttsTimeoutRef.current = null;
       }
+      if (utteranceRef.current) {
+        utteranceRef.current.onend = null;
+      }
+
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang === 'English' ? 'en-US' : 'es-ES';
+      utteranceRef.current = utterance;
       
-      const ttsTimeoutDuration = 20000; // 20 seconds
+      const ttsTimeoutDuration = 20000;
       ttsTimeoutRef.current = setTimeout(() => {
         console.warn(`RealtimeVoiceTranslator: TTS playback timed out for lang: ${lang} after ${ttsTimeoutDuration}ms. Cancelling speech.`);
-        if (typeof window !== 'undefined' && window.speechSynthesis) {
-            window.speechSynthesis.cancel(); 
-        }
-        ttsTimeoutRef.current = null;
+        window.speechSynthesis.cancel(); 
         reject(new Error("TTSPlaybackTimeout"));
       }, ttsTimeoutDuration);
 
       utterance.onend = () => {
         console.log("RealtimeVoiceTranslator: TTS 'onend' event fired for lang:", lang);
         if (ttsTimeoutRef.current) clearTimeout(ttsTimeoutRef.current);
-        ttsTimeoutRef.current = null;
         resolve();
       };
 
       utterance.onerror = (event) => {
         console.error("RealtimeVoiceTranslator: Speech synthesis 'onerror' event:", event);
         if (ttsTimeoutRef.current) clearTimeout(ttsTimeoutRef.current);
-        ttsTimeoutRef.current = null;
         let errorMsg = `Could not play the audio in ${lang}.`;
-        if (event.error && typeof event.error === 'string') { // DOMError has 'name' typically
+        if (event.error && typeof event.error === 'string') {
             errorMsg += ` Error: ${event.error}`;
         } else if (event.error && typeof (event.error as any).name === 'string'){
             errorMsg += ` Error: ${(event.error as any).name}`;
@@ -408,16 +410,8 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
         reject(new Error(typeof event.error === 'string' ? event.error : "TTSPlaybackError")); 
       };
       
-      try {
-         console.log("RealtimeVoiceTranslator: Calling speechSynthesis.speak() for lang:", utterance.lang);
-         window.speechSynthesis.speak(utterance);
-      } catch (e: any) {
-        if (ttsTimeoutRef.current) clearTimeout(ttsTimeoutRef.current);
-        ttsTimeoutRef.current = null;
-        console.error("RealtimeVoiceTranslator: Exception during speechSynthesis.speak() setup/call:", e);
-        toast({ title: "TTS Playback Failed", description: `An unexpected error occurred trying to play audio. Error: ${e.message || String(e)}`, variant: "destructive" });
-        reject(e); 
-      }
+      // A brief delay can sometimes help prevent race conditions in browsers
+      setTimeout(() => window.speechSynthesis.speak(utterance), 100);
     });
   };
 
@@ -430,7 +424,6 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       await playTTSSound(translatedText, targetLanguageToSpeak);
     } catch (error) {
       console.error("Error during manual TTS playback:", error);
-      // Toast for specific TTS errors is handled within playTTSSound or its caller.
     } finally {
       setIsManuallyPlayingTTS(false);
     }
@@ -439,10 +432,6 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
   const handleStopManualTTS = () => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
-    }
-    if (ttsTimeoutRef.current) {
-      clearTimeout(ttsTimeoutRef.current);
-      ttsTimeoutRef.current = null;
     }
     setIsManuallyPlayingTTS(false);
   };
@@ -501,7 +490,9 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
                 console.log("RealtimeVoiceTranslator: Speech synthesis cancelled on dialog close.");
             }
         }
-        if (ttsTimeoutRef.current) clearTimeout(ttsTimeoutRef.current);
+        if (utteranceRef.current) {
+            utteranceRef.current.onend = null;
+        }
         setIsManuallyPlayingTTS(false); 
         
         if (isPermissionChecked && !hasMicPermission && !isOpen) { 
@@ -630,5 +621,3 @@ interface BlobEvent extends Event {
   readonly data: Blob;
   readonly timecode: number;
 }
-
-    

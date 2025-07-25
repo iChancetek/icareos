@@ -37,7 +37,7 @@ export default function ISkylarPage() {
       window.speechSynthesis.cancel();
     }
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      recognitionRef.current.abort(); // Use abort for immediate stop
     }
     setSessionState('idle');
   }, []);
@@ -48,6 +48,7 @@ export default function ISkylarPage() {
       recognitionRef.current.onresult = null;
       recognitionRef.current.onend = null;
       recognitionRef.current.onerror = null;
+      recognitionRef.current.onstart = null;
       recognitionRef.current = null;
     }
      if (utteranceRef.current) {
@@ -66,6 +67,7 @@ export default function ISkylarPage() {
   const processUserSpeech = async (transcript: string) => {
     if (!transcript.trim()) {
       setSessionState('idle');
+      // If idle, the onend handler of recognition should restart listening
       return;
     }
     
@@ -80,8 +82,7 @@ export default function ISkylarPage() {
       console.error("Error with iSkylar flow:", error);
       const errorMessage = "I'm sorry, I'm having a little trouble connecting right now. Let's try again in a moment.";
       setAiResponse(errorMessage);
-      speak(errorMessage);
-      setSessionState('idle');
+      speak(errorMessage); // It will try to speak the error and then go back to listening
     }
   };
 
@@ -92,19 +93,16 @@ export default function ISkylarPage() {
         return;
     }
 
-    // Cancel any ongoing speech
     if (window.speechSynthesis.speaking) {
         window.speechSynthesis.cancel();
     }
     
     setSessionState('speaking');
-
     const utterance = new SpeechSynthesisUtterance(text);
-    // Find a suitable female voice
     const voices = window.speechSynthesis.getVoices();
     const femaleVoice = voices.find(v => v.name.includes('Female') && v.lang.startsWith('en')) || 
                         voices.find(v => v.lang.startsWith('en-US')) ||
-                        voices[0];
+                        voices.find(v => v.default);
     
     if (femaleVoice) {
       utterance.voice = femaleVoice;
@@ -114,17 +112,27 @@ export default function ISkylarPage() {
     utterance.rate = 1;
 
     utterance.onend = () => {
-        console.log("iSkylar finished speaking.");
-        setSessionState('idle');
+        console.log("iSkylar finished speaking. Restarting recognition loop.");
+        setSessionState('idle'); 
         // Restart listening loop if session is still active
         if (sessionStarted && recognitionRef.current) {
-           setTimeout(() => recognitionRef.current.start(), 250);
+           // Short delay to avoid capturing the end of the TTS audio
+           setTimeout(() => {
+              if(recognitionRef.current) {
+                try {
+                  recognitionRef.current.start();
+                } catch(e) {
+                  // Catch error if it's already started, which can happen.
+                  console.log("Recognition start suppressed, likely already active.");
+                }
+              }
+           }, 250);
         }
     };
     
     utteranceRef.current = utterance;
     window.speechSynthesis.speak(utterance);
-};
+  };
 
 
   const initializeSpeechRecognition = () => {
@@ -137,10 +145,13 @@ export default function ISkylarPage() {
       });
       return;
     }
+    if(recognitionRef.current) {
+        cleanupSession();
+    }
 
     recognitionRef.current = new SpeechRecognition();
     const recognition = recognitionRef.current;
-    recognition.continuous = false;
+    recognition.continuous = false; // Process after each pause
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
@@ -159,7 +170,8 @@ export default function ISkylarPage() {
 
         if (event.results[0].isFinal) {
             console.log("Final transcript:", currentTranscript);
-            // Process the final transcript
+            // Stop listening explicitly before processing
+            recognition.stop();
             processUserSpeech(currentTranscript);
         }
     };
@@ -167,26 +179,34 @@ export default function ISkylarPage() {
     recognition.onerror = (event: any) => {
       console.error("Speech recognition error:", event.error);
       if (event.error === 'no-speech' || event.error === 'audio-capture') {
-        toast({ title: "No speech detected", description: "I didn't catch that, please try again.", variant: "default" });
+        // This is a common occurrence, just let it restart on 'onend'
       } else if (event.error === 'not-allowed') {
         setHasMicPermission(false);
+        setSessionStarted(false); // End session if permission is revoked
+        toast({ title: "Permission Denied", description: "Microphone access was denied. The session has ended.", variant: "destructive" });
       } else {
         toast({ title: "Voice Recognition Error", description: `An error occurred: ${event.error}`, variant: "destructive" });
       }
     };
 
     recognition.onend = () => {
-      console.log("Recognition ended.");
-      if (sessionState === 'listening') { // If it ended without processing, go back to idle
+      console.log("Recognition ended. Current state:", sessionState);
+      // Only restart if the session is supposed to be active and we are not in the middle of processing/speaking.
+      if (sessionStarted && sessionState !== 'processing' && sessionState !== 'speaking') {
           setSessionState('idle');
-          if(sessionStarted) {
-             // Restart listening if we are still in an active session and didn't stop manually
-             setTimeout(() => recognitionRef.current?.start(), 100);
+          try {
+            setTimeout(() => recognitionRef.current?.start(), 100);
+          } catch(e) {
+             console.log("Recognition restart suppressed, likely due to session ending.");
           }
       }
     };
 
-    recognition.start();
+    try {
+      recognition.start();
+    } catch (e) {
+      console.error("Error starting recognition initially:", e);
+    }
   };
 
 
@@ -199,21 +219,23 @@ export default function ISkylarPage() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         setHasMicPermission(true);
-        stream.getTracks().forEach(track => track.stop()); // Release immediately
+        stream.getTracks().forEach(track => track.stop());
 
         setSessionStarted(true);
         setUserTranscript('');
         setAiResponse('');
         const welcomeMessage = `Hello ${user?.displayName || 'there'}. I'm iSkylar. How are you feeling today?`;
-        speak(welcomeMessage); // iSkylar speaks first
         
-        // Defer starting recognition until after iSkylar speaks
-         const checkSpeechEnd = setInterval(() => {
-            if (!window.speechSynthesis.speaking) {
-                clearInterval(checkSpeechEnd);
-                initializeSpeechRecognition();
-            }
-        }, 100);
+        // Wait for voices to be loaded by browser
+        if (window.speechSynthesis.getVoices().length === 0) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                speak(welcomeMessage);
+            };
+        } else {
+            speak(welcomeMessage);
+        }
+
+        initializeSpeechRecognition();
 
     } catch (error) {
         console.error("Error getting mic permission:", error);
@@ -223,15 +245,18 @@ export default function ISkylarPage() {
   };
 
   const handleEndSession = () => {
-    setSessionStarted(false);
-    cleanupSession();
     const goodbyeMessage = "Take care. I’m here whenever you need me.";
+    setSessionStarted(false); // This will prevent listening loop from restarting
+    cleanupSession();
     setUserTranscript('');
     setAiResponse(goodbyeMessage);
-    speak(goodbyeMessage);
+    // Don't use our controlled 'speak' function here to avoid the restart logic
+    const utterance = new SpeechSynthesisUtterance(goodbyeMessage);
+    window.speechSynthesis.speak(utterance);
   };
   
   const getSessionIndicatorText = () => {
+    if (!sessionStarted) return 'Click ‘Start Session’ to begin.';
     switch (sessionState) {
         case 'listening':
             return 'Listening...';
@@ -240,18 +265,20 @@ export default function ISkylarPage() {
         case 'speaking':
             return 'iSkylar is speaking...';
         default:
-            return userTranscript ? 'Tap the mic to speak again.' : 'Start speaking to begin your session.';
+             if (userTranscript) return 'Tap the mic to speak again.';
+             return 'I am ready to listen.';
     }
   }
   
   const getMicButton = () => {
     let animationClass = '';
     let icon = <Mic className="h-12 w-12" />;
+    let isMicDisabled = !sessionStarted || (sessionState !== 'idle' && sessionState !== 'listening');
 
     switch(sessionState) {
         case 'listening':
             animationClass = 'animate-pulse-strong';
-            icon = <Mic className="h-12 w-12" />;
+            icon = <Mic className="h-12 w-12 text-green-300" />;
             break;
         case 'processing':
             animationClass = 'animate-spin';
@@ -259,11 +286,23 @@ export default function ISkylarPage() {
             break;
         case 'speaking':
             animationClass = 'animate-pulse-gentle';
-            icon = <Bot className="h-12 w-12" />;
+            icon = <Bot className="h-12 w-12 text-purple-300" />;
             break;
         default: 
             icon = <Mic className="h-12 w-12" />;
             break;
+    }
+    
+    const handleMicClick = () => {
+      if (sessionState === 'listening' && recognitionRef.current) {
+        recognitionRef.current.stop();
+      } else if (sessionState === 'idle' && recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+        } catch(e) {
+           console.log("Could not start recognition on click, likely already starting.");
+        }
+      }
     }
 
     return (
@@ -272,13 +311,9 @@ export default function ISkylarPage() {
             <Button 
                 variant="default" 
                 size="icon" 
-                className="relative h-24 w-24 rounded-full bg-purple-500 shadow-lg hover:bg-purple-600"
-                onClick={() => {
-                   if(recognitionRef.current) {
-                      recognitionRef.current.start();
-                   }
-                }}
-                disabled={sessionState !== 'idle'}
+                className="relative h-24 w-24 rounded-full bg-purple-500 shadow-lg hover:bg-purple-600 disabled:bg-slate-600 disabled:opacity-70"
+                onClick={handleMicClick}
+                disabled={isMicDisabled}
               >
                 {icon}
             </Button>
@@ -296,7 +331,7 @@ export default function ISkylarPage() {
                <p className="text-lg text-slate-100 min-h-[6rem]">{aiResponse}</p>
             </div>
             
-            <div className="flex flex-col items-center justify-center gap-4">
+            <div className="flex flex-col items-center justify-center gap-4 my-4">
                 {getMicButton()}
                 <p className="text-slate-300 h-6">{getSessionIndicatorText()}</p>
             </div>
@@ -338,7 +373,7 @@ export default function ISkylarPage() {
             >
               Start Session
             </Button>
-            <p className="mt-4 text-sm text-slate-400">Click ‘Start Session’ to begin.</p>
+            <p className="mt-4 text-sm text-slate-400">{getSessionIndicatorText()}</p>
           </>
         )}
       </main>
