@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Stethoscope, UserCircle, LogOut, Settings, Menu } from 'lucide-react';
+import { Stethoscope, UserCircle, LogOut, Settings, Menu, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -78,6 +78,14 @@ export default function AppHeader() {
                 <span>Settings</span>
               </Link>
             </DropdownMenuItem>
+            {user?.role === 'admin' && (
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/admin">
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  <span>Admin Panel</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" />
