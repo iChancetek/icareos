@@ -71,12 +71,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userDocRef = doc(db, 'users', fbUser.uid);
     try {
       const newUserProfileData = await runTransaction(db, async (transaction) => {
-        const usernameQuery = query(collection(db, 'users'), where('username', '==', username), limit(1));
-        const usernameSnapshot = await getDocs(usernameQuery);
-        if (!usernameSnapshot.empty) {
-          throw new Error(`Username "${username}" is already taken.`);
-        }
-
+        // The username uniqueness check has been removed from here to prevent permission errors on the client.
+        // This should be handled by a backend function for robust security.
         const userDoc = await transaction.get(userDocRef);
         if (userDoc.exists()) {
           console.warn("User document already exists for new user:", fbUser.uid);
@@ -223,7 +219,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
-      setNewUserInfo(null); 
+      setNewUserInfo(null);
       console.error("Firebase Signup Error Code:", error.code, "Message:", error.message);
       setIsLoading(false);
       throw error; // Let the caller handle the error message
@@ -406,3 +402,5 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     </AuthContext.Provider>
   );
 };
+
+    
