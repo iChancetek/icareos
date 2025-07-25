@@ -3,26 +3,27 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow users to create and manage their own profile documents.
+
+    // Helper function to check if a user is an admin
+    function isAdmin(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId)) &&
+             get(/databases/$(database)/documents/users/$(userId)).data.role == 'admin';
+    }
+
+    // Rules for the 'users' collection
     match /users/{userId} {
-      // A user can create their own profile document if the document ID matches their user ID
-      // and they are providing the necessary initial data.
-      allow create: if request.auth != null && request.auth.uid == userId;
-      
-      // A user can read, update, or delete their own profile document.
-      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      // Allow create for any new user (for signup)
+      allow create: if request.auth != null;
+      // Allow read and update only for the document owner or an admin
+      allow read, update: if request.auth.uid == userId || isAdmin(request.auth.uid);
+      // Allow delete only for admins
+      allow delete: if isAdmin(request.auth.uid);
     }
 
-    // Rules for consultations
-    match /consultations/{consultationId} {
-      // For now, let's assume any authenticated user can manage consultations.
-      // In a production app, you would restrict this to specific roles (e.g., doctors).
-      allow read, write: if request.auth != null;
-    }
-
-    // Fallback rule: deny all other access
-    match /{document=**} {
-      allow read, write: if false;
+    // Rules for the 'iscribes' collection
+    match /iscribes/{iscribeId} {
+      // Allow read, create, update, delete for the document owner or an admin
+      allow read, create, update, delete: if request.auth.uid == request.resource.data.userId || isAdmin(request.auth.uid);
     }
   }
 }
