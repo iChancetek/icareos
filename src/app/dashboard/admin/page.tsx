@@ -1,14 +1,14 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { Loader2, ShieldCheck, Users, FileText, MoreHorizontal, PlusCircle, UserPlus, Edit, KeyRound, Trash2 } from 'lucide-react';
+import { Loader2, ShieldCheck, Users, FileText, MoreHorizontal, UserPlus, Edit, KeyRound, Trash2 } from 'lucide-react';
 import type { User } from '@/contexts/AuthContext';
 import type { Consultation } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,7 +53,7 @@ interface AdminConsultation extends Consultation {
 
 
 function AdminDashboard() {
-    const { user, getAllUsers, getAllConsultations, isLoading: authIsLoading } = useAuth();
+    const { user, getAllUsers, getAllConsultations, updateUserByAdmin, isLoading: authIsLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
 
@@ -75,6 +75,39 @@ function AdminDashboard() {
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
     const [isDeletingUser, setIsDeletingUser] = useState(false);
 
+    // State for Edit User Dialog
+    const [userToEdit, setUserToEdit] = useState<User | null>(null);
+    const [editUserForm, setEditUserForm] = useState<{ role: User['role'], accountStatus: User['accountStatus'] }>({ role: 'user', accountStatus: 'active' });
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+    const fetchAdminData = useCallback(async () => {
+        setIsLoadingData(true);
+        try {
+            const [users, consultations] = await Promise.all([
+                getAllUsers(),
+                getAllConsultations()
+            ]);
+
+            const userMap = new Map(users.map(u => [u.uid, u.displayName]));
+            const consultationsWithUserNames = consultations.map(c => ({
+                ...c,
+                userName: userMap.get(c.userId) || 'Unknown User'
+            }));
+            
+            setAllUsers(users);
+            setAllConsultations(consultationsWithUserNames);
+
+        } catch (error) {
+            console.error("Error fetching admin data:", error);
+             toast({
+                title: "Error Fetching Data",
+                description: "Could not retrieve administrator data from the server.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsLoadingData(false);
+        }
+    }, [getAllUsers, getAllConsultations, toast]);
 
     useEffect(() => {
         if (authIsLoading) return;
@@ -83,33 +116,43 @@ function AdminDashboard() {
             return;
         }
 
-        async function fetchData() {
-            setIsLoadingData(true);
-            try {
-                const [users, consultations] = await Promise.all([
-                    getAllUsers(),
-                    getAllConsultations()
-                ]);
+        fetchAdminData();
+    }, [user, authIsLoading, router, fetchAdminData]);
 
-                const userMap = new Map(users.map(u => [u.uid, u.displayName]));
-                const consultationsWithUserNames = consultations.map(c => ({
-                    ...c,
-                    userName: userMap.get(c.userId) || 'Unknown User'
-                }));
-                
-                setAllUsers(users);
-                setAllConsultations(consultationsWithUserNames);
+    const handleOpenEditDialog = (targetUser: User) => {
+        setUserToEdit(targetUser);
+        setEditUserForm({
+            role: targetUser.role,
+            accountStatus: targetUser.accountStatus,
+        });
+    };
+    
+    const handleSaveUserEdit = async () => {
+        if (!userToEdit) return;
+        setIsSavingEdit(true);
 
-            } catch (error) {
-                console.error("Error fetching admin data:", error);
-            } finally {
-                setIsLoadingData(false);
-            }
+        const success = await updateUserByAdmin(userToEdit.uid, {
+            role: editUserForm.role,
+            accountStatus: editUserForm.accountStatus,
+        });
+
+        if (success) {
+            toast({
+                title: "User Updated",
+                description: `${userToEdit.displayName}'s profile has been updated.`,
+            });
+            // Refresh local data to show changes
+            fetchAdminData();
+            setUserToEdit(null);
+        } else {
+            toast({
+                title: "Update Failed",
+                description: `Could not update ${userToEdit.displayName}'s profile. Please try again.`,
+                variant: "destructive",
+            });
         }
-
-        fetchData();
-
-    }, [user, authIsLoading, router, getAllUsers, getAllConsultations]);
+        setIsSavingEdit(false);
+    };
     
     const handleCreateUserSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -298,7 +341,7 @@ function AdminDashboard() {
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
                                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                            <DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleOpenEditDialog(u)}>
                                                                 <Edit className="mr-2 h-4 w-4" /> Edit User
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem onClick={() => handlePasswordReset(u)}>
@@ -365,13 +408,66 @@ function AdminDashboard() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteUser} disabled={isDeletingUser}>
+                        <AlertDialogAction onClick={handleDeleteUser} disabled={isDeletingUser} className="bg-destructive hover:bg-destructive/90">
                             {isDeletingUser && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Delete User
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            <Dialog open={!!userToEdit} onOpenChange={(open) => !open && setUserToEdit(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit User: {userToEdit?.displayName}</DialogTitle>
+                        <DialogDescription>
+                            Modify the user's role and account status.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Email</Label>
+                            <Input value={userToEdit?.email || ''} readOnly className="col-span-3 bg-muted/50" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="role-edit" className="text-right">Role</Label>
+                            <Select
+                                value={editUserForm.role}
+                                onValueChange={(value) => setEditUserForm(prev => ({ ...prev, role: value as User['role'] }))}
+                            >
+                                <SelectTrigger id="role-edit" className="col-span-3">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="user">User</SelectItem>
+                                    <SelectItem value="admin">Admin</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                         <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="status-edit" className="text-right">Status</Label>
+                            <Select
+                                value={editUserForm.accountStatus}
+                                onValueChange={(value) => setEditUserForm(prev => ({ ...prev, accountStatus: value as User['accountStatus'] }))}
+                            >
+                                <SelectTrigger id="status-edit" className="col-span-3">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="disabled">Disabled</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setUserToEdit(null)}>Cancel</Button>
+                        <Button onClick={handleSaveUserEdit} disabled={isSavingEdit}>
+                            {isSavingEdit && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
@@ -407,5 +503,3 @@ export default function AdminPage() {
 
     return <AdminDashboard />;
 }
-
-    

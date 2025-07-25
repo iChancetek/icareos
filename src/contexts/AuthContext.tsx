@@ -13,7 +13,7 @@ import {
   signInWithPopup,
   type User as FirebaseUser,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, updateDoc, runTransaction, collection, getDocs, query, where, limit, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc, runTransaction, collection, getDocs, query, where, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { Consultation } from '@/types';
 
@@ -49,6 +49,7 @@ interface AuthContextType {
   // Admin methods
   getAllUsers: () => Promise<User[]>;
   getAllConsultations: () => Promise<Consultation[]>;
+  updateUserByAdmin: (uid: string, updates: { role?: User['role'], accountStatus?: User['accountStatus'] }) => Promise<boolean>;
 }
 
 interface NewUserInfo {
@@ -219,10 +220,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
-      setNewUserInfo(null);
-      console.error("Firebase Signup Error Code:", error.code, "Message:", error.message);
-      setIsLoading(false);
-      throw error; // Let the caller handle the error message
+        setNewUserInfo(null); // Clear temp info on failure
+        setIsLoading(false);
+        throw error; // Let the caller handle the error message to display a toast
     }
   };
 
@@ -355,6 +355,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const data = doc.data();
             return {
                 ...data,
+                uid: doc.id,
                 createdAt: data.createdAt?.toDate() || null,
                 lastLogin: data.lastLogin?.toDate() || null,
             } as User;
@@ -364,6 +365,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return [];
     }
   }, [user]);
+
+  const updateUserByAdmin = async (uid: string, updates: { role?: User['role'], accountStatus?: User['accountStatus'] }): Promise<boolean> => {
+    if (user?.role !== 'admin') {
+      console.error("Update attempt by non-admin user.");
+      return false;
+    }
+    if (!uid) {
+        console.error("No user ID provided for update.");
+        return false;
+    }
+    try {
+      const userDocRef = doc(db, 'users', uid);
+      await updateDoc(userDocRef, updates);
+      return true;
+    } catch (error) {
+      console.error("Error updating user by admin:", error);
+      return false;
+    }
+  };
 
   const getAllConsultations = useCallback(async (): Promise<Consultation[]> => {
     if (user?.role !== 'admin') return [];
@@ -397,10 +417,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       deleteConsultation,
       getAllUsers,
       getAllConsultations,
+      updateUserByAdmin,
     }}>
       {children}
     </AuthContext.Provider>
   );
 };
-
-    
