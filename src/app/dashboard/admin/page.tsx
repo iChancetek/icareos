@@ -51,6 +51,12 @@ interface AdminIScribe extends IScribe {
     userName?: string;
 }
 
+type EditUserForm = {
+    username: string;
+    role: User['role'];
+    accountStatus: User['accountStatus'];
+};
+
 
 function AdminDashboard() {
     const { user, getAllUsers, getAllIScribes, updateUserByAdmin, deleteUserByAdmin, isLoading: authIsLoading } = useAuth();
@@ -77,7 +83,7 @@ function AdminDashboard() {
 
     // State for Edit User Dialog
     const [userToEdit, setUserToEdit] = useState<User | null>(null);
-    const [editUserForm, setEditUserForm] = useState<{ role: User['role'], accountStatus: User['accountStatus'] }>({ role: 'user', accountStatus: 'active' });
+    const [editUserForm, setEditUserForm] = useState<EditUserForm>({ username: '', role: 'user', accountStatus: 'active' });
     const [isSavingEdit, setIsSavingEdit] = useState(false);
 
     const fetchAdminData = useCallback(async () => {
@@ -122,8 +128,9 @@ function AdminDashboard() {
     const handleOpenEditDialog = (targetUser: User) => {
         setUserToEdit(targetUser);
         setEditUserForm({
+            username: targetUser.username || '',
             role: targetUser.role,
-            accountStatus: targetUser.accountStatus || 'active', // Default to 'active' if undefined
+            accountStatus: targetUser.accountStatus || 'active',
         });
     };
     
@@ -131,9 +138,10 @@ function AdminDashboard() {
         if (!userToEdit) return;
         setIsSavingEdit(true);
 
-        const updatePayload: { role: User['role'], accountStatus: User['accountStatus'] } = {
-            role: editUserForm.role || 'user',
-            accountStatus: editUserForm.accountStatus || 'active',
+        const updatePayload: Partial<User> = {
+            username: editUserForm.username,
+            role: editUserForm.role,
+            accountStatus: editUserForm.accountStatus,
         };
 
         const success = await updateUserByAdmin(userToEdit.uid, updatePayload);
@@ -317,6 +325,7 @@ function AdminDashboard() {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Display Name</TableHead>
+                                            <TableHead>Username</TableHead>
                                             <TableHead>Email</TableHead>
                                             <TableHead>Role</TableHead>
                                             <TableHead>Status</TableHead>
@@ -329,6 +338,7 @@ function AdminDashboard() {
                                         {allUsers.map((u) => (
                                             <TableRow key={u.uid}>
                                                 <TableCell className="font-medium">{u.displayName}</TableCell>
+                                                <TableCell>{u.username}</TableCell>
                                                 <TableCell>{u.email}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={u.role === 'admin' ? 'destructive' : 'secondary'} className="capitalize">
@@ -431,13 +441,22 @@ function AdminDashboard() {
                     <DialogHeader>
                         <DialogTitle>Edit User: {userToEdit?.displayName}</DialogTitle>
                         <DialogDescription>
-                            Modify the user's role and account status.
+                            Modify the user's username, role, and account status.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right">Email</Label>
                             <Input value={userToEdit?.email || ''} readOnly className="col-span-3 bg-muted/50" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="username-edit" className="text-right">Username</Label>
+                             <Input 
+                                id="username-edit"
+                                value={editUserForm.username}
+                                onChange={(e) => setEditUserForm(prev => ({...prev, username: e.target.value}))}
+                                className="col-span-3"
+                            />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="role-edit" className="text-right">Role</Label>
@@ -514,5 +533,3 @@ export default function AdminPage() {
 
     return <AdminDashboard />;
 }
-
-    

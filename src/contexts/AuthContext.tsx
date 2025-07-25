@@ -50,7 +50,7 @@ interface AuthContextType {
   // Admin methods
   getAllUsers: () => Promise<User[]>;
   getAllIScribes: () => Promise<IScribe[]>;
-  updateUserByAdmin: (uid: string, updates: { role?: User['role'], accountStatus?: User['accountStatus'] }) => Promise<boolean>;
+  updateUserByAdmin: (uid: string, updates: Partial<User>) => Promise<boolean>;
   deleteUserByAdmin: (uid: string) => Promise<{ success: boolean; message: string }>;
 }
 
@@ -367,7 +367,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user]);
 
-  const updateUserByAdmin = async (uid: string, updates: { role?: User['role'], accountStatus?: User['accountStatus'] }): Promise<boolean> => {
+  const updateUserByAdmin = async (uid: string, updates: Partial<User>): Promise<boolean> => {
     if (user?.role !== 'admin') {
       console.error("Update attempt by non-admin user.");
       return false;
