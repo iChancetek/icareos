@@ -4,8 +4,7 @@
 import { useState, useEffect, useRef, useCallback }from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mic, Bot, Loader2, StopCircle } from 'lucide-react';
+import { Bot, Loader2, Mic, StopCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { askISkylar } from '@/ai/flows/iskylar-assistant-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -81,7 +80,14 @@ export default function ISkylarPage() {
       setSessionState('idle');
       // If transcript is empty, just get ready to listen again. 
       // The onend handler of the recognition will restart it.
+      startListening();
       return;
+    }
+
+    // Voice command to end session
+    if (transcript.trim().toLowerCase().includes("end session") || transcript.trim().toLowerCase().includes("end conversation")) {
+        handleEndSession();
+        return;
     }
     
     setSessionState('processing');
@@ -122,6 +128,7 @@ export default function ISkylarPage() {
 
     utterance.onend = () => {
         console.log("iSkylar finished speaking. Restarting recognition loop.");
+        setUserTranscript(''); // Clear user transcript after iSkylar responds
         setSessionState('idle'); 
         // Directly call startListening to ensure the mic turns back on reliably.
         startListening();
@@ -169,7 +176,7 @@ export default function ISkylarPage() {
 
         if (event.results[0].isFinal) {
             console.log("Final transcript:", currentTranscript);
-            recognition.stop();
+            // No need to stop here, onend will fire. We process speech with the final result.
             processUserSpeech(currentTranscript);
         }
     };
@@ -177,7 +184,12 @@ export default function ISkylarPage() {
     recognition.onerror = (event: any) => {
       console.error("Speech recognition error:", event.error);
       if (event.error === 'no-speech' || event.error === 'audio-capture') {
-        setSessionState('idle');
+        // This is a common occurrence, just try to restart listening if session is still active
+        if (sessionStarted) {
+            startListening();
+        } else {
+            setSessionState('idle');
+        }
       } else if (event.error === 'not-allowed') {
         setHasMicPermission(false);
         setSessionStarted(false); // End session if permission is revoked
@@ -190,11 +202,12 @@ export default function ISkylarPage() {
 
     recognition.onend = () => {
       console.log("Recognition ended. Current session state:", sessionState);
-      if (sessionState === 'listening') {
-        setSessionState('idle');
+       // Only restart listening if we are not actively processing or speaking
+      if (sessionStarted && sessionState !== 'processing' && sessionState !== 'speaking') {
+        startListening();
       }
     };
-  }, [toast, processUserSpeech, sessionState]);
+  }, [toast, processUserSpeech, sessionState, sessionStarted, startListening]);
 
 
   const handleStartSession = async () => {
@@ -211,7 +224,7 @@ export default function ISkylarPage() {
         setSessionStarted(true);
         setUserTranscript('');
         setAiResponse('');
-        const welcomeMessage = `Hello ${user?.displayName || 'there'}. I'm iSkylar. How are you feeling today?`;
+        const welcomeMessage = `Hi ${user?.displayName?.split(' ')[0] || 'there'}. I'm iSkylar. How are you feeling today?`;
         
         initializeSpeechRecognition();
 
@@ -238,8 +251,11 @@ export default function ISkylarPage() {
     setUserTranscript('');
     setAiResponse(goodbyeMessage);
     // Don't use our controlled 'speak' function here to avoid the restart logic
-    const utterance = new SpeechSynthesisUtterance(goodbyeMessage);
-    window.speechSynthesis.speak(utterance);
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+        const utterance = new SpeechSynthesisUtterance(goodbyeMessage);
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+    }
   };
   
   const getSessionIndicatorText = () => {
@@ -252,15 +268,13 @@ export default function ISkylarPage() {
         case 'speaking':
             return 'iSkylar is speaking...';
         default:
-             if (userTranscript) return 'Tap the mic to speak again.';
              return 'I am ready to listen.';
     }
   }
   
-  const getMicButton = () => {
+  const getVisualizer = () => {
     let animationClass = '';
-    let icon = <Mic className="h-12 w-12" />;
-    let isMicDisabled = !sessionStarted || (sessionState !== 'idle' && sessionState !== 'listening');
+    let icon = <Mic className="h-12 w-12 text-slate-400" />;
 
     switch(sessionState) {
         case 'listening':
@@ -276,32 +290,18 @@ export default function ISkylarPage() {
             icon = <Bot className="h-12 w-12 text-purple-300" />;
             break;
         default: 
-            icon = <Mic className="h-12 w-12" />;
+            icon = <Mic className="h-12 w-12 text-slate-400" />;
             break;
-    }
-    
-    const handleMicClick = () => {
-        if (!sessionStarted) return;
-
-        if (sessionState === 'listening' && recognitionRef.current) {
-            recognitionRef.current.stop();
-        } else if (sessionState === 'idle') {
-            startListening();
-        }
     }
 
     return (
          <div className="relative">
             <div className={`absolute -inset-4 rounded-full bg-purple-400/50 blur-xl ${animationClass}`}></div>
-            <Button 
-                variant="default" 
-                size="icon" 
-                className="relative h-24 w-24 rounded-full bg-purple-500 shadow-lg hover:bg-purple-600 disabled:bg-slate-600 disabled:opacity-70"
-                onClick={handleMicClick}
-                disabled={isMicDisabled}
+            <div 
+                className="relative flex items-center justify-center h-24 w-24 rounded-full bg-purple-500/30 shadow-lg"
               >
                 {icon}
-            </Button>
+            </div>
         </div>
     )
   }
@@ -317,7 +317,7 @@ export default function ISkylarPage() {
             </div>
             
             <div className="flex flex-col items-center justify-center gap-4 my-4">
-                {getMicButton()}
+                {getVisualizer()}
                 <p className="text-slate-300 h-6">{getSessionIndicatorText()}</p>
             </div>
 
