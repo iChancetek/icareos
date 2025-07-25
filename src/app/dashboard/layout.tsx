@@ -1,7 +1,8 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import AppHeader from '@/components/layout/AppHeader';
@@ -19,6 +20,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   
   const [greetingAudio, setGreetingAudio] = useState<string | null>(null);
   const audioPlayerRef = useRef<HTMLAudioElement>(null);
+  const [greetingPlayed, setGreetingPlayed] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -26,25 +28,25 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, isLoading, router]);
   
-  // AI Voice Greeting Effect
+  // AI Voice Greeting Generation
   useEffect(() => {
-    const playGreeting = async () => {
-      if (user?.displayName && sessionStorage.getItem('greetingPlayed') !== 'true') {
+    const generateGreeting = async () => {
+      if (user?.displayName && sessionStorage.getItem('greetingGenerated') !== 'true') {
         try {
           console.log("DashboardLayout: Generating AI welcome greeting...");
-          sessionStorage.setItem('greetingPlayed', 'true');
+          sessionStorage.setItem('greetingGenerated', 'true'); // Mark as generated
           const greetingText = `Welcome back, ${user.displayName}. I hope you're feeling well today.`;
           
           const response = await textToSpeech({ text: greetingText, voice: 'Algenib' });
           
           if (response.audioDataUri) {
             setGreetingAudio(response.audioDataUri);
-            console.log("DashboardLayout: AI greeting audio received.");
+            console.log("DashboardLayout: AI greeting audio received and is ready to be played on user interaction.");
           } else {
              console.warn("DashboardLayout: AI greeting TTS flow returned an empty audio URI.");
           }
         } catch (error) {
-          console.error("DashboardLayout: Failed to generate or play AI greeting:", error);
+          console.error("DashboardLayout: Failed to generate AI greeting:", error);
            toast({
                 title: "AI Greeting Failed",
                 description: "Could not generate the welcome message.",
@@ -53,24 +55,36 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         }
       } else {
          if (user?.displayName) {
-            console.log("DashboardLayout: AI welcome greeting already played this session.");
+            console.log("DashboardLayout: AI welcome greeting already generated this session.");
          }
       }
     };
 
     if (isAuthenticated && !isLoading) {
-      playGreeting();
+      generateGreeting();
     }
   }, [isAuthenticated, isLoading, user, toast]);
 
-  useEffect(() => {
-    if (greetingAudio && audioPlayerRef.current) {
+  const handleFirstInteraction = useCallback(() => {
+    if (greetingAudio && audioPlayerRef.current && !greetingPlayed) {
       audioPlayerRef.current.play().catch(error => {
-        console.error("DashboardLayout: Audio playback failed. This may be due to browser autoplay restrictions.", error);
-        // We don't toast here as it can be intrusive. The app functions without the greeting.
+        console.error("DashboardLayout: Audio playback failed. This may be due to browser autoplay restrictions still being in effect.", error);
       });
+      setGreetingPlayed(true); // Ensure it only plays once
+      // Clean up the event listener after it has been used
+      window.removeEventListener('click', handleFirstInteraction);
     }
-  }, [greetingAudio]);
+  }, [greetingAudio, greetingPlayed]);
+
+  useEffect(() => {
+    if (greetingAudio && !greetingPlayed) {
+      window.addEventListener('click', handleFirstInteraction);
+    }
+  
+    return () => {
+      window.removeEventListener('click', handleFirstInteraction);
+    };
+  }, [greetingAudio, greetingPlayed, handleFirstInteraction]);
 
 
   if (isLoading) {
@@ -101,7 +115,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </div>
-       {greetingAudio && <audio ref={audioPlayerRef} src={greetingAudio} className="hidden" />}
+       {greetingAudio && <audio ref={audioPlayerRef} src={greetingAudio} className="hidden" preload="auto" />}
     </SidebarProvider>
   );
 }
