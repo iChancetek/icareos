@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Dispatch, SetStateAction } from 'react';
@@ -17,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { transcribeAudio } from '@/ai/flows/transcribe-audio';
 import { translateText } from '@/ai/flows/translate-text-flow';
-import { summarizeIScribe } from '@/ai/flows/summarize-iscribe'; // Added
+import { summarizeIScribe } from '@/ai/flows/summarize-consultation';
 import { Progress } from '@/components/ui/progress';
 
 interface RealtimeVoiceTranslatorDialogProps {
