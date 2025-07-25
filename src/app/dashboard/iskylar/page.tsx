@@ -35,6 +35,7 @@ export default function ISkylarPage() {
     if (recognitionRef.current && sessionStarted) {
       console.log("Attempting to start listening...");
       try {
+        setSessionState('listening');
         recognitionRef.current.start();
       } catch (e) {
         // This error ("already started") is common if the browser's implementation calls onend and then we call start() again.
@@ -80,8 +81,8 @@ export default function ISkylarPage() {
   const processUserSpeech = useCallback(async (transcript: string) => {
     if (!transcript.trim()) {
       // If transcript is empty, just get ready to listen again.
-      // The onend handler of the recognition will restart it if the session is active.
-      setSessionState('idle'); 
+      setSessionState('listening');
+      startListening();
       return;
     }
 
@@ -104,7 +105,7 @@ export default function ISkylarPage() {
       setAiResponse(errorMessage);
       speak(errorMessage); 
     }
-  }, []);
+  }, [startListening]);
 
   const speak = (text: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
@@ -131,7 +132,6 @@ export default function ISkylarPage() {
     utterance.onend = () => {
         console.log("iSkylar finished speaking. Restarting recognition loop.");
         setUserTranscript(''); // Clear user transcript after iSkylar responds
-        setSessionState('idle'); 
         // Directly call startListening to ensure the mic turns back on reliably.
         startListening();
     };
@@ -205,13 +205,24 @@ export default function ISkylarPage() {
     };
 
     recognition.onend = () => {
-      console.log("Recognition ended. Current session state:", sessionState);
+      console.log("Recognition ended. Current session state:", sessionStateRef.current);
        // Only restart listening if the session is still active and we are not in the middle of processing or speaking.
-      if (sessionStarted && sessionState !== 'processing' && sessionState !== 'speaking') {
+      if (sessionStartedRef.current && sessionStateRef.current !== 'processing' && sessionStateRef.current !== 'speaking') {
         startListening();
       }
     };
-  }, [toast, processUserSpeech, sessionState, sessionStarted, startListening]);
+  }, [toast, processUserSpeech, startListening]);
+
+  // Refs to hold the current state for use inside callbacks that might have stale closures
+  const sessionStateRef = useRef(sessionState);
+  useEffect(() => {
+    sessionStateRef.current = sessionState;
+  }, [sessionState]);
+
+  const sessionStartedRef = useRef(sessionStarted);
+  useEffect(() => {
+    sessionStartedRef.current = sessionStarted;
+  }, [sessionStarted]);
 
 
   const handleStartSession = async () => {
@@ -369,5 +380,3 @@ export default function ISkylarPage() {
     </div>
   );
 }
-
-    
