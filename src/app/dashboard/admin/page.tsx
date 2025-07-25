@@ -358,7 +358,7 @@ function AdminDashboard() {
                                                 <TableCell>
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
-                                                            <Button aria-haspopup="true" size="icon" variant="ghost" disabled={user?.uid === u.uid}>
+                                                            <Button aria-haspopup="true" size="icon" variant="ghost" disabled={user?.uid === u.uid || u.role === 'admin'}>
                                                                 <MoreHorizontal className="h-4 w-4" />
                                                                 <span className="sr-only">Toggle menu</span>
                                                             </Button>
