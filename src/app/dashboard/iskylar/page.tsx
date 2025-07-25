@@ -32,6 +32,20 @@ export default function ISkylarPage() {
   const recognitionRef = useRef<any>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
+  const startListening = useCallback(() => {
+    if (recognitionRef.current && sessionStarted) {
+      console.log("Attempting to start listening...");
+      try {
+        recognitionRef.current.start();
+        setSessionState('listening');
+      } catch (e) {
+        // This can happen if it's already started, which is fine.
+        console.log("Recognition start was suppressed, likely already active.");
+      }
+    }
+  }, [sessionStarted]);
+
+
   const stopSpeechAndRecognition = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel();
@@ -66,8 +80,7 @@ export default function ISkylarPage() {
 
   const processUserSpeech = async (transcript: string) => {
     if (!transcript.trim()) {
-      setSessionState('idle');
-      // If idle, the onend handler of recognition should restart listening
+      startListening(); // If transcript is empty, just start listening again.
       return;
     }
     
@@ -89,7 +102,7 @@ export default function ISkylarPage() {
   const speak = (text: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
         toast({ title: "TTS Not Supported", description: "Your browser doesn't support speech synthesis.", variant: "destructive" });
-        setSessionState('idle');
+        startListening();
         return;
     }
 
@@ -113,21 +126,8 @@ export default function ISkylarPage() {
 
     utterance.onend = () => {
         console.log("iSkylar finished speaking. Restarting recognition loop.");
-        setSessionState('idle'); 
-        // Restart listening loop if session is still active
-        if (sessionStarted && recognitionRef.current) {
-           // Short delay to avoid capturing the end of the TTS audio
-           setTimeout(() => {
-              if(recognitionRef.current) {
-                try {
-                  recognitionRef.current.start();
-                } catch(e) {
-                  // Catch error if it's already started, which can happen.
-                  console.log("Recognition start suppressed, likely already active.");
-                }
-              }
-           }, 250);
-        }
+        // Directly call startListening to ensure the mic turns back on.
+        startListening();
     };
     
     utteranceRef.current = utterance;
@@ -135,7 +135,7 @@ export default function ISkylarPage() {
   };
 
 
-  const initializeSpeechRecognition = () => {
+  const initializeSpeechRecognition = useCallback(() => {
     if (!SpeechRecognition) {
       toast({
         title: "Browser Not Supported",
@@ -170,8 +170,7 @@ export default function ISkylarPage() {
 
         if (event.results[0].isFinal) {
             console.log("Final transcript:", currentTranscript);
-            // Stop listening explicitly before processing
-            recognition.stop();
+            // Don't stop listening here, let onend handle it. Process the speech.
             processUserSpeech(currentTranscript);
         }
     };
@@ -179,7 +178,7 @@ export default function ISkylarPage() {
     recognition.onerror = (event: any) => {
       console.error("Speech recognition error:", event.error);
       if (event.error === 'no-speech' || event.error === 'audio-capture') {
-        // This is a common occurrence, just let it restart on 'onend'
+        // This is a common occurrence, onend will handle restart
       } else if (event.error === 'not-allowed') {
         setHasMicPermission(false);
         setSessionStarted(false); // End session if permission is revoked
@@ -190,24 +189,17 @@ export default function ISkylarPage() {
     };
 
     recognition.onend = () => {
-      console.log("Recognition ended. Current state:", sessionState);
-      // Only restart if the session is supposed to be active and we are not in the middle of processing/speaking.
-      if (sessionStarted && sessionState !== 'processing' && sessionState !== 'speaking') {
-          setSessionState('idle');
-          try {
-            setTimeout(() => recognitionRef.current?.start(), 100);
-          } catch(e) {
-             console.log("Recognition restart suppressed, likely due to session ending.");
-          }
+      console.log("Recognition ended. Current session state:", sessionState);
+      // The restart logic is now handled by the 'speak' function's onend
+      // or by calling startListening() directly. This handler is now mostly for cleanup and error states.
+      if (sessionState === 'listening') {
+        // If it was listening and just stopped (e.g. no speech), restart it.
+         if (sessionStarted) {
+           startListening();
+         }
       }
     };
-
-    try {
-      recognition.start();
-    } catch (e) {
-      console.error("Error starting recognition initially:", e);
-    }
-  };
+  }, [cleanupSession, processUserSpeech, startListening, sessionState, sessionStarted, toast]);
 
 
   const handleStartSession = async () => {
@@ -380,3 +372,5 @@ export default function ISkylarPage() {
     </div>
   );
 }
+
+    
