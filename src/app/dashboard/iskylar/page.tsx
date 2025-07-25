@@ -37,10 +37,8 @@ export default function ISkylarPage() {
       console.log("Attempting to start listening...");
       try {
         recognitionRef.current.start();
-        setSessionState('listening');
       } catch (e) {
-        // This can happen if it's already started, which is fine.
-        console.log("Recognition start was suppressed, likely already active.");
+        console.log("Recognition start was suppressed, likely already active:", e);
       }
     }
   }, [sessionStarted]);
@@ -80,7 +78,9 @@ export default function ISkylarPage() {
 
   const processUserSpeech = async (transcript: string) => {
     if (!transcript.trim()) {
-      startListening(); // If transcript is empty, just start listening again.
+      setSessionState('idle');
+      // If transcript is empty, just get ready to listen again. 
+      // The onend handler of the recognition will restart it.
       return;
     }
     
@@ -95,19 +95,15 @@ export default function ISkylarPage() {
       console.error("Error with iSkylar flow:", error);
       const errorMessage = "I'm sorry, I'm having a little trouble connecting right now. Let's try again in a moment.";
       setAiResponse(errorMessage);
-      speak(errorMessage); // It will try to speak the error and then go back to listening
+      speak(errorMessage); 
     }
   };
 
   const speak = (text: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
         toast({ title: "TTS Not Supported", description: "Your browser doesn't support speech synthesis.", variant: "destructive" });
-        startListening();
+        setSessionState('idle');
         return;
-    }
-
-    if (window.speechSynthesis.speaking) {
-        window.speechSynthesis.cancel();
     }
     
     setSessionState('speaking');
@@ -126,11 +122,14 @@ export default function ISkylarPage() {
 
     utterance.onend = () => {
         console.log("iSkylar finished speaking. Restarting recognition loop.");
-        // Directly call startListening to ensure the mic turns back on.
+        setSessionState('idle'); 
+        // Directly call startListening to ensure the mic turns back on reliably.
         startListening();
     };
     
     utteranceRef.current = utterance;
+    // Cancel any previous speech to be safe
+    window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
   };
 
@@ -146,7 +145,7 @@ export default function ISkylarPage() {
       return;
     }
     if(recognitionRef.current) {
-        cleanupSession();
+        return; // Already initialized
     }
 
     recognitionRef.current = new SpeechRecognition();
@@ -170,7 +169,7 @@ export default function ISkylarPage() {
 
         if (event.results[0].isFinal) {
             console.log("Final transcript:", currentTranscript);
-            // Don't stop listening here, let onend handle it. Process the speech.
+            recognition.stop();
             processUserSpeech(currentTranscript);
         }
     };
@@ -178,28 +177,24 @@ export default function ISkylarPage() {
     recognition.onerror = (event: any) => {
       console.error("Speech recognition error:", event.error);
       if (event.error === 'no-speech' || event.error === 'audio-capture') {
-        // This is a common occurrence, onend will handle restart
+        setSessionState('idle');
       } else if (event.error === 'not-allowed') {
         setHasMicPermission(false);
         setSessionStarted(false); // End session if permission is revoked
         toast({ title: "Permission Denied", description: "Microphone access was denied. The session has ended.", variant: "destructive" });
       } else {
         toast({ title: "Voice Recognition Error", description: `An error occurred: ${event.error}`, variant: "destructive" });
+        setSessionState('idle');
       }
     };
 
     recognition.onend = () => {
       console.log("Recognition ended. Current session state:", sessionState);
-      // The restart logic is now handled by the 'speak' function's onend
-      // or by calling startListening() directly. This handler is now mostly for cleanup and error states.
       if (sessionState === 'listening') {
-        // If it was listening and just stopped (e.g. no speech), restart it.
-         if (sessionStarted) {
-           startListening();
-         }
+        setSessionState('idle');
       }
     };
-  }, [cleanupSession, processUserSpeech, startListening, sessionState, sessionStarted, toast]);
+  }, [toast, processUserSpeech, sessionState]);
 
 
   const handleStartSession = async () => {
@@ -218,6 +213,8 @@ export default function ISkylarPage() {
         setAiResponse('');
         const welcomeMessage = `Hello ${user?.displayName || 'there'}. I'm iSkylar. How are you feeling today?`;
         
+        initializeSpeechRecognition();
+
         // Wait for voices to be loaded by browser
         if (window.speechSynthesis.getVoices().length === 0) {
             window.speechSynthesis.onvoiceschanged = () => {
@@ -226,8 +223,6 @@ export default function ISkylarPage() {
         } else {
             speak(welcomeMessage);
         }
-
-        initializeSpeechRecognition();
 
     } catch (error) {
         console.error("Error getting mic permission:", error);
@@ -286,15 +281,13 @@ export default function ISkylarPage() {
     }
     
     const handleMicClick = () => {
-      if (sessionState === 'listening' && recognitionRef.current) {
-        recognitionRef.current.stop();
-      } else if (sessionState === 'idle' && recognitionRef.current) {
-        try {
-          recognitionRef.current.start();
-        } catch(e) {
-           console.log("Could not start recognition on click, likely already starting.");
+        if (!sessionStarted) return;
+
+        if (sessionState === 'listening' && recognitionRef.current) {
+            recognitionRef.current.stop();
+        } else if (sessionState === 'idle') {
+            startListening();
         }
-      }
     }
 
     return (
@@ -372,5 +365,3 @@ export default function ISkylarPage() {
     </div>
   );
 }
-
-    
