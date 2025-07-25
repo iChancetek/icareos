@@ -74,8 +74,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userDocRef = doc(db, 'users', fbUser.uid);
     try {
       const newUserProfileData = await runTransaction(db, async (transaction) => {
-        // The username uniqueness check has been removed from here to prevent permission errors on the client.
-        // This should be handled by a backend function for robust security.
         const userDoc = await transaction.get(userDocRef);
         if (userDoc.exists()) {
           console.warn("User document already exists for new user:", fbUser.uid);
@@ -103,6 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         transaction.set(userDocRef, newUserProfile);
         
+        // This is the important part: return the complete user profile immediately
         return {
           ...newUserProfile,
           createdAt: new Date(),
@@ -128,15 +127,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           if (!userDoc.exists()) {
             console.log("New user detected, creating profile...");
+            // For Google Sign-In, use their provided name. For email/pass, use our temp state.
             const profileData = newUserInfo || { 
               displayName: fbUser.displayName || "New User", 
               username: fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0,5)}` 
             };
             const userProfile = await createUserProfile(fbUser, profileData.displayName, profileData.username);
-            if (userProfile) {
-              setUser(userProfile);
-            }
-            setNewUserInfo(null);
+            setUser(userProfile); // Set the full user profile immediately
+            setNewUserInfo(null); // Clear temp info
           } else {
             const userData = userDoc.data();
             if (userData.accountStatus === 'disabled') {
@@ -217,6 +215,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (emailIn: string, passwordIn: string, displayNameIn: string, usernameIn: string): Promise<boolean> => {
     setIsLoading(true);
     try {
+      // Store user info before creating account, so onAuthStateChanged can use it.
       setNewUserInfo({ displayName: displayNameIn, username: usernameIn });
       await createUserWithEmailAndPassword(auth, emailIn, passwordIn);
       // onAuthStateChanged will handle the rest
@@ -454,5 +453,3 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     </AuthContext.Provider>
   );
 };
-
-    
