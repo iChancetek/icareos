@@ -53,7 +53,7 @@ interface AdminConsultation extends Consultation {
 
 
 function AdminDashboard() {
-    const { user, getAllUsers, getAllConsultations, updateUserByAdmin, isLoading: authIsLoading } = useAuth();
+    const { user, getAllUsers, getAllConsultations, updateUserByAdmin, deleteUserByAdmin, isLoading: authIsLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
 
@@ -131,7 +131,6 @@ function AdminDashboard() {
         if (!userToEdit) return;
         setIsSavingEdit(true);
 
-        // Ensure payload is clean and has no undefined values
         const updatePayload: { role: User['role'], accountStatus: User['accountStatus'] } = {
             role: editUserForm.role || 'user',
             accountStatus: editUserForm.accountStatus || 'active',
@@ -144,8 +143,7 @@ function AdminDashboard() {
                 title: "User Updated",
                 description: `${userToEdit.displayName}'s profile has been updated.`,
             });
-            // Refresh local data to show changes
-            fetchAdminData();
+            fetchAdminData(); // Refresh local data to show changes
             setUserToEdit(null);
         } else {
             toast({
@@ -163,7 +161,7 @@ function AdminDashboard() {
         console.log("Admin Panel: Attempting to create user with data:", newUserForm);
         toast({
             title: "Feature In Development",
-            description: "User creation requires back-end integration with the Firebase Admin SDK, which is not yet implemented.",
+            description: "User creation requires back-end integration, which is not yet implemented.",
             variant: "default",
             duration: 6000
         });
@@ -176,7 +174,7 @@ function AdminDashboard() {
         console.log("Admin Panel: Attempting to reset password for user:", targetUser.email);
         toast({
             title: "Feature In Development",
-            description: "Password reset requires back-end integration with the Firebase Admin SDK.",
+            description: "Password reset requires back-end integration.",
             variant: "default",
             duration: 6000
         });
@@ -185,13 +183,23 @@ function AdminDashboard() {
     const handleDeleteUser = async () => {
         if (!userToDelete) return;
         setIsDeletingUser(true);
-        console.log("Admin Panel: Attempting to delete user:", userToDelete.email);
-        toast({
-            title: "Feature In Development",
-            description: `Deleting users requires back-end integration. Cannot delete ${userToDelete.displayName}.`,
-            variant: "default",
-            duration: 6000
-        });
+        
+        const result = await deleteUserByAdmin(userToDelete.uid);
+
+        if (result.success) {
+            toast({
+                title: "User Deleted",
+                description: `The account for ${userToDelete.displayName} has been permanently deleted.`,
+            });
+            fetchAdminData(); // Refresh the user list
+        } else {
+            toast({
+                title: "Deletion Failed",
+                description: result.message || "An unknown error occurred. Please try again.",
+                variant: "destructive",
+            });
+        }
+
         setIsDeletingUser(false);
         setUserToDelete(null);
     };
@@ -337,7 +345,7 @@ function AdminDashboard() {
                                                 <TableCell>
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
-                                                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                            <Button aria-haspopup="true" size="icon" variant="ghost" disabled={user?.uid === u.uid}>
                                                                 <MoreHorizontal className="h-4 w-4" />
                                                                 <span className="sr-only">Toggle menu</span>
                                                             </Button>
@@ -406,7 +414,7 @@ function AdminDashboard() {
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                             This action cannot be undone. This will permanently delete the account for 
-                            <span className="font-bold"> {userToDelete?.displayName}</span> and all associated data.
+                            <span className="font-bold"> {userToDelete?.displayName}</span> and all associated data from Firebase Authentication and Firestore.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -506,3 +514,5 @@ export default function AdminPage() {
 
     return <AdminDashboard />;
 }
+
+    

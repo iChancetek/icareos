@@ -14,8 +14,9 @@ import {
   type User as FirebaseUser,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc, runTransaction, collection, getDocs, query, where, deleteDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, functions } from '@/lib/firebase';
 import type { Consultation } from '@/types';
+import { httpsCallable } from 'firebase/functions';
 
 // Define our custom User type based on the project brief
 export interface User {
@@ -50,6 +51,7 @@ interface AuthContextType {
   getAllUsers: () => Promise<User[]>;
   getAllConsultations: () => Promise<Consultation[]>;
   updateUserByAdmin: (uid: string, updates: { role?: User['role'], accountStatus?: User['accountStatus'] }) => Promise<boolean>;
+  deleteUserByAdmin: (uid: string) => Promise<{ success: boolean; message: string }>;
 }
 
 interface NewUserInfo {
@@ -393,6 +395,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const deleteUserByAdmin = async (uid: string): Promise<{ success: boolean; message: string }> => {
+    if (user?.role !== 'admin') {
+      return { success: false, message: "You are not authorized to perform this action." };
+    }
+    if (user.uid === uid) {
+      return { success: false, message: "Administrators cannot delete their own accounts." };
+    }
+    try {
+      // It's critical that the 'deleteUser' function exists and is deployed in your Firebase project.
+      const deleteUserFunction = httpsCallable(functions, 'deleteUser');
+      const result = await deleteUserFunction({ uid });
+      const data = result.data as { success: boolean; message: string };
+      return data;
+    } catch (error: any) {
+      console.error("Error calling deleteUser cloud function:", error);
+      return { success: false, message: error.message || "An unknown error occurred while calling the cloud function." };
+    }
+  };
+
   const getAllConsultations = useCallback(async (): Promise<Consultation[]> => {
     if (user?.role !== 'admin') return [];
     try {
@@ -426,8 +447,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       getAllUsers,
       getAllConsultations,
       updateUserByAdmin,
+      deleteUserByAdmin,
     }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
+    
