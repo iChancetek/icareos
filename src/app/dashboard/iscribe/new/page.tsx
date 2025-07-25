@@ -12,12 +12,14 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
 import { transcribeAudio } from '@/ai/flows/transcribe-audio';
-import { summarizeIScribe } from '@/ai/flows/summarize-iscribe';
+import summarize from '@/ai/flows/summarize-iscribe';
+
 import { translateText } from '@/ai/flows/translate-text-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { sendDataToHubSpot } from '@/services/hubspotService';
 import type { IScribe } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 type RecordingState = 'idle' | 'recording' | 'processing' | 'success' | 'error';
 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { ReactNode } from 'react';
@@ -97,7 +96,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               {children}
             </main>
             <footer className="border-t bg-background/80 p-4 text-center text-sm text-muted-foreground">
-              Powered by Generative AI to Enhance Patient Care
+              Developed by iSynera LLC | ChanceTEK LLC
             </footer>
           </div>
         </div>
