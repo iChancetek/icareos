@@ -37,6 +37,8 @@ export default function ISkylarPage() {
       try {
         recognitionRef.current.start();
       } catch (e) {
+        // This error ("already started") is common if the browser's implementation calls onend and then we call start() again.
+        // It's generally safe to ignore.
         console.log("Recognition start was suppressed, likely already active:", e);
       }
     }
@@ -75,12 +77,11 @@ export default function ISkylarPage() {
     };
   }, [cleanupSession]);
 
-  const processUserSpeech = async (transcript: string) => {
+  const processUserSpeech = useCallback(async (transcript: string) => {
     if (!transcript.trim()) {
-      setSessionState('idle');
-      // If transcript is empty, just get ready to listen again. 
-      // The onend handler of the recognition will restart it.
-      startListening();
+      // If transcript is empty, just get ready to listen again.
+      // The onend handler of the recognition will restart it if the session is active.
+      setSessionState('idle'); 
       return;
     }
 
@@ -103,7 +104,7 @@ export default function ISkylarPage() {
       setAiResponse(errorMessage);
       speak(errorMessage); 
     }
-  };
+  }, []);
 
   const speak = (text: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
@@ -116,6 +117,7 @@ export default function ISkylarPage() {
     const utterance = new SpeechSynthesisUtterance(text);
     const voices = window.speechSynthesis.getVoices();
     const femaleVoice = voices.find(v => v.name.includes('Female') && v.lang.startsWith('en')) || 
+                        voices.find(v => v.lang.startsWith('en-US') && v.name.includes('Google')) ||
                         voices.find(v => v.lang.startsWith('en-US')) ||
                         voices.find(v => v.default);
     
@@ -167,17 +169,23 @@ export default function ISkylarPage() {
     };
     
     recognition.onresult = (event: any) => {
-        const currentTranscript = Array.from(event.results)
-          .map((result: any) => result[0])
-          .map((result) => result.transcript)
-          .join('');
-        
-        setUserTranscript(currentTranscript);
+        let finalTranscript = '';
+        let interimTranscript = '';
 
-        if (event.results[0].isFinal) {
-            console.log("Final transcript:", currentTranscript);
-            // No need to stop here, onend will fire. We process speech with the final result.
-            processUserSpeech(currentTranscript);
+        for (let i = 0; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+            } else {
+                interimTranscript += event.results[i][0].transcript;
+            }
+        }
+        setUserTranscript(interimTranscript);
+
+        if (finalTranscript) {
+            console.log("Final transcript:", finalTranscript);
+            // Stop listening explicitly to prevent it from continuing while we process
+            recognition.stop(); 
+            processUserSpeech(finalTranscript);
         }
     };
 
@@ -185,11 +193,7 @@ export default function ISkylarPage() {
       console.error("Speech recognition error:", event.error);
       if (event.error === 'no-speech' || event.error === 'audio-capture') {
         // This is a common occurrence, just try to restart listening if session is still active
-        if (sessionStarted) {
-            startListening();
-        } else {
-            setSessionState('idle');
-        }
+        // The onend handler will take care of restarting.
       } else if (event.error === 'not-allowed') {
         setHasMicPermission(false);
         setSessionStarted(false); // End session if permission is revoked
@@ -202,7 +206,7 @@ export default function ISkylarPage() {
 
     recognition.onend = () => {
       console.log("Recognition ended. Current session state:", sessionState);
-       // Only restart listening if we are not actively processing or speaking
+       // Only restart listening if the session is still active and we are not in the middle of processing or speaking.
       if (sessionStarted && sessionState !== 'processing' && sessionState !== 'speaking') {
         startListening();
       }
@@ -253,7 +257,7 @@ export default function ISkylarPage() {
     // Don't use our controlled 'speak' function here to avoid the restart logic
     if (typeof window !== 'undefined' && window.speechSynthesis) {
         const utterance = new SpeechSynthesisUtterance(goodbyeMessage);
-        window.speechSynthesis.cancel();
+        window.speechSynthesis.cancel(); // Cancel any ongoing speech
         window.speechSynthesis.speak(utterance);
     }
   };
@@ -365,3 +369,5 @@ export default function ISkylarPage() {
     </div>
   );
 }
+
+    
