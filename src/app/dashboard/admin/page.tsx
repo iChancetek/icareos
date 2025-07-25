@@ -414,7 +414,7 @@ function AdminDashboard() {
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                             This action cannot be undone. This will permanently delete the account for 
-                            <span className="font-bold"> {userToDelete?.displayName}</span> and all associated data. This action requires backend integration with a Firebase Cloud Function.
+                            <span className="font-bold"> {userToDelete?.displayName}</span> and all associated data. This action is irreversible.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -514,3 +514,5 @@ export default function AdminPage() {
 
     return <AdminDashboard />;
 }
+
+    

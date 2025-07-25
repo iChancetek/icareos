@@ -410,7 +410,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return data;
     } catch (error: any) {
       console.error("Error calling deleteUser cloud function:", error);
-      return { success: false, message: error.message || "An unknown error occurred while calling the cloud function." };
+      const errorMessage = error.details?.message || error.message || "An unknown error occurred while calling the cloud function.";
+      return { success: false, message: errorMessage };
     }
   };
 
@@ -454,3 +455,4 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+    
