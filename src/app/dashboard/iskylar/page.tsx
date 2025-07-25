@@ -267,9 +267,20 @@ export default function ISkylarPage() {
     cleanupSession();
     setUserTranscript('');
     setAiResponse(goodbyeMessage);
-    // Don't use our controlled 'speak' function here to avoid the restart logic
+    
     if (typeof window !== 'undefined' && window.speechSynthesis) {
         const utterance = new SpeechSynthesisUtterance(goodbyeMessage);
+        const voices = window.speechSynthesis.getVoices();
+        const femaleVoice = voices.find(v => v.name.includes('Female') && v.lang.startsWith('en')) || 
+                            voices.find(v => v.lang.startsWith('en-US') && v.name.includes('Google')) ||
+                            voices.find(v => v.lang.startsWith('en-US')) ||
+                            voices.find(v => v.default);
+        if (femaleVoice) {
+            utterance.voice = femaleVoice;
+        }
+        utterance.pitch = 1.1;
+        utterance.rate = 1;
+        
         window.speechSynthesis.cancel(); // Cancel any ongoing speech
         window.speechSynthesis.speak(utterance);
     }
