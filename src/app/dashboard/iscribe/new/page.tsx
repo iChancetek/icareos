@@ -12,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
 import { transcribeAudio } from '@/ai/flows/transcribe-audio';
-import summarize from '@/ai/flows/summarize-iscribe';
+import { summarizeConsultation as summarizeIScribe } from '@/ai/flows/summarize-consultation';
 
 import { translateText } from '@/ai/flows/translate-text-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -366,7 +366,7 @@ export default function NewIScribePage() {
 
       console.log("NewIScribe: New iscribe ID generated:", newIScribeId, "Navigating...");
       
-      setTimeout(() => router.push(`/dashboard/iscribes/${newIScribeId}`), 1500);
+      setTimeout(() => router.push(`/dashboard/iscribe/${newIScribeId}`), 1500);
 
     } catch (error) {
       console.error("NewIScribe: Processing error details during save/AI calls:", error);
