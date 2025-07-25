@@ -15,11 +15,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useSidebar } from '@/components/ui/sidebar'; 
-import { useState, useEffect } from 'react'; // Added for mounted state
+import { useState, useEffect } from 'react';
 
 export default function AppHeader() {
   const { user, logout } = useAuth();
-  const { toggleSidebar, isMobile: headerIsMobileFromHook } = useSidebar(); // Renamed to avoid conflict
+  const { toggleSidebar, isMobile: headerIsMobileFromHook } = useSidebar();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -41,6 +41,12 @@ export default function AppHeader() {
         <span className="hidden font-bold sm:inline-block">MediScribe</span>
       </Link>
       <div className="ml-auto flex items-center gap-4">
+        <div className="hidden sm:flex flex-col items-end text-right">
+            <p className="text-sm font-medium leading-none text-foreground">{user?.displayName || 'Medical Professional'}</p>
+            <p className="text-xs leading-none text-muted-foreground">
+                {user?.role === 'admin' ? 'Administrator' : 'User'}
+            </p>
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
@@ -83,5 +89,3 @@ export default function AppHeader() {
     </header>
   );
 }
-
-    
