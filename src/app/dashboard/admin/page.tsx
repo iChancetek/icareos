@@ -143,7 +143,7 @@ function AdminDashboard() {
                 title: "User Updated",
                 description: `${userToEdit.displayName}'s profile has been updated.`,
             });
-            fetchAdminData(); // Refresh local data to show changes
+            await fetchAdminData(); // Refresh local data to show changes
             setUserToEdit(null);
         } else {
             toast({
@@ -189,9 +189,9 @@ function AdminDashboard() {
         if (result.success) {
             toast({
                 title: "User Deleted",
-                description: `The account for ${userToDelete.displayName} has been permanently deleted.`,
+                description: result.message || `The account for ${userToDelete.displayName} has been permanently deleted.`,
             });
-            fetchAdminData(); // Refresh the user list
+            await fetchAdminData(); // Refresh the user list
         } else {
             toast({
                 title: "Deletion Failed",
@@ -414,7 +414,7 @@ function AdminDashboard() {
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                             This action cannot be undone. This will permanently delete the account for 
-                            <span className="font-bold"> {userToDelete?.displayName}</span> and all associated data from Firebase Authentication and Firestore.
+                            <span className="font-bold"> {userToDelete?.displayName}</span> and all associated data. This action requires backend integration with a Firebase Cloud Function.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -514,5 +514,3 @@ export default function AdminPage() {
 
     return <AdminDashboard />;
 }
-
-    
