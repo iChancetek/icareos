@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { transcribeAudio } from '@/ai/flows/transcribe-audio';
 import { translateText } from '@/ai/flows/translate-text-flow';
-import { summarizeConsultation } from '@/ai/flows/summarize-consultation'; // Added
+import { summarizeIScribe } from '@/ai/flows/summarize-iscribe'; // Added
 import { Progress } from '@/components/ui/progress';
 
 interface RealtimeVoiceTranslatorDialogProps {
@@ -306,7 +306,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       // Summarization Step
       setProcessingStep("summarizing");
       console.log(`RealtimeVoiceTranslator: Summarizing original transcript. Text: "${originalTranscript.substring(0, 50)}..."`);
-      const summaryResult = await summarizeConsultation({ transcript: originalTranscript });
+      const summaryResult = await summarizeIScribe({ transcript: originalTranscript });
       if (!summaryResult || typeof summaryResult.summary !== 'string') {
         console.error("RealtimeVoiceTranslator: Invalid summary result from AI flow.", summaryResult);
         throw new Error(`Summarization service returned invalid data.`);

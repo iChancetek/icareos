@@ -1,7 +1,7 @@
 
-export interface Consultation {
+export interface IScribe {
   id: string;
-  userId: string; // ID of the user who created the consultation
+  userId: string; // ID of the user who created the iscribe
   patientName: string;
   date: string; // ISO string date
   status: 'Recorded' | 'Transcribing' | 'Summarizing' | 'Completed' | 'Failed';

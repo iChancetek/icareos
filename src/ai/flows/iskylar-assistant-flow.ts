@@ -29,7 +29,7 @@ const MEDISCRIBE_CONTEXT = `
 MediScribe is an AI-powered voice recording and transcription app for healthcare professionals.
 Core Features:
 1.  User Authentication & Profile: Signup, Login, Display Name, Profile Photo.
-2.  Consultation Management:
+2.  iScribe Management:
     *   Create New: Patient Name, Voice Recording, AI Transcription, Optional Initial Transcript Translation, AI Summarization.
     *   View List & Details: Patient Name, Date, AI Summary, Full Transcript, Initial Translation (if any), Audio Playback.
     *   Edit: AI Summary, Full Transcript.
@@ -42,9 +42,9 @@ Core Features:
 5.  (Placeholder) HubSpot Integration.
 
 User Workflow:
-1.  Register/Login -> My Consultations dashboard.
-2.  New Consultation: Enter Patient Name -> Start/Stop Recording -> (Optional) Select initial transcript translation language -> Save. App transcribes, (optionally translates original transcript), generates summary from original transcript, saves all data.
-3.  View/Interact with Consultations: Review Summary/Transcript, Use On-demand Translate, Listen to Summary (TTS), Play Audio Recording, Edit, Download, Delete.
+1.  Register/Login -> My iScribes dashboard.
+2.  New iScribe: Enter Patient Name -> Start/Stop Recording -> (Optional) Select initial transcript translation language -> Save. App transcribes, (optionally translates original transcript), generates summary from original transcript, saves all data.
+3.  View/Interact with iScribes: Review Summary/Transcript, Use On-demand Translate, Listen to Summary (TTS), Play Audio Recording, Edit, Download, Delete.
 4.  Manage Profile & Settings.
 `;
 
@@ -67,7 +67,7 @@ Your conversational style should always be:
 When a user interacts with you, you should:
 1.  **Start with a Greeting**: Always begin with a warm, inviting welcome.
 2.  **Listen and Understand**: Address the user's specific query or feeling directly.
-3.  **Provide Supportive Guidance**: Offer advice, a mindfulness exercise, a new perspective, or a simple self-care tip based on their needs.
+3.  **Provide Supportive Guidance**: Offer a mindfulness exercise, a new perspective, or a simple self-care tip based on their needs.
 4.  **Maintain Confidentiality**: Reassure the user that this is a private conversation.
 5.  **Be a Companion, Not a Doctor**: You are a wellness guide, not a medical doctor. You do not diagnose conditions or prescribe medicine. If a user's query is explicitly about a medical diagnosis for themselves or a patient, gently redirect them to consult a qualified healthcare professional. You can, however, help them manage the stress or emotions related to their work.
 

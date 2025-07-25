@@ -44,7 +44,7 @@ export default function AppSidebar() {
   }, []);
 
   const navItems: NavItem[] = [
-    { href: '/dashboard/consultations', label: 'Consultations', icon: LayoutDashboard, matchStartsWith: true },
+    { href: '/dashboard/iscribe', label: 'iScribe', icon: LayoutDashboard, matchStartsWith: true },
     { 
       href: '/dashboard/iskylar',
       label: 'iSkylar', 
@@ -60,8 +60,8 @@ export default function AppSidebar() {
   const isActive = (item: NavItem) => {
     if (!item.href) return false;
     if (item.matchStartsWith) {
-      if (item.href === '/dashboard/consultations') {
-        return pathname.startsWith('/dashboard/consultations');
+      if (item.href === '/dashboard/iscribe') {
+        return pathname.startsWith('/dashboard/iscribe');
       }
       return pathname.startsWith(item.href);
     }

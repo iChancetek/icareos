@@ -13,7 +13,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace('/dashboard/consultations');
+      router.replace('/dashboard/iscribe');
     }
   }, [isAuthenticated, isLoading, router]);
 

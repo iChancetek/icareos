@@ -15,7 +15,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc, runTransaction, collection, getDocs, query, where, deleteDoc } from 'firebase/firestore';
 import { auth, db, functions } from '@/lib/firebase';
-import type { Consultation } from '@/types';
+import type { IScribe } from '@/types';
 import { httpsCallable } from 'firebase/functions';
 
 // Define our custom User type based on the project brief
@@ -41,15 +41,15 @@ interface AuthContextType {
   user: User | null;
   firebaseUser: FirebaseUser | null;
   updateUserProfile: (updates: { displayName?: string, photoURL?: string }) => Promise<boolean>;
-  // Consultation methods
-  saveConsultation: (consultationData: Omit<Consultation, 'id' | 'userId'>) => Promise<string | null>;
-  getUserConsultations: () => Promise<Consultation[]>;
-  getConsultationById: (id: string) => Promise<Consultation | null>;
-  updateConsultation: (id: string, updates: Partial<Consultation>) => Promise<boolean>;
-  deleteConsultation: (id: string) => Promise<boolean>;
+  // IScribe methods
+  saveIScribe: (iScribeData: Omit<IScribe, 'id' | 'userId'>) => Promise<string | null>;
+  getUserIScribes: () => Promise<IScribe[]>;
+  getIScribeById: (id: string) => Promise<IScribe | null>;
+  updateIScribe: (id: string, updates: Partial<IScribe>) => Promise<boolean>;
+  deleteIScribe: (id: string) => Promise<boolean>;
   // Admin methods
   getAllUsers: () => Promise<User[]>;
-  getAllConsultations: () => Promise<Consultation[]>;
+  getAllIScribes: () => Promise<IScribe[]>;
   updateUserByAdmin: (uid: string, updates: { role?: User['role'], accountStatus?: User['accountStatus'] }) => Promise<boolean>;
   deleteUserByAdmin: (uid: string) => Promise<{ success: boolean; message: string }>;
 }
@@ -187,10 +187,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         router.push('/login');
       }
       if (isAuthenticated && isPublicRoute) {
-        router.push('/dashboard/consultations');
+        router.push('/dashboard/iscribe');
       }
        if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
-        router.push('/dashboard/consultations');
+        router.push('/dashboard/iscribe');
       }
     }
   }, [isAuthenticated, isLoading, pathname, router, user]);
@@ -265,58 +265,58 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Consultation Methods
-  const saveConsultation = async (consultationData: Omit<Consultation, 'id' | 'userId'>): Promise<string | null> => {
+  // IScribe Methods
+  const saveIScribe = async (iScribeData: Omit<IScribe, 'id' | 'userId'>): Promise<string | null> => {
     if (!user) return null;
     try {
-        const newConsultationRef = doc(collection(db, 'consultations'));
-        const newConsultation: Consultation = {
-            id: newConsultationRef.id,
+        const newIScribeRef = doc(collection(db, 'iscribes'));
+        const newIScribe: IScribe = {
+            id: newIScribeRef.id,
             userId: user.uid,
-            ...consultationData,
+            ...iScribeData,
         };
-        await setDoc(newConsultationRef, newConsultation);
-        return newConsultationRef.id;
+        await setDoc(newIScribeRef, newIScribe);
+        return newIScribeRef.id;
     } catch (error) {
-        console.error("Error saving consultation:", error);
+        console.error("Error saving iscribe:", error);
         return null;
     }
   };
 
-  const getUserConsultations = useCallback(async (): Promise<Consultation[]> => {
+  const getUserIScribes = useCallback(async (): Promise<IScribe[]> => {
     if (!user) return [];
     try {
-        const q = query(collection(db, 'consultations'), where('userId', '==', user.uid));
+        const q = query(collection(db, 'iscribes'), where('userId', '==', user.uid));
         const querySnapshot = await getDocs(q);
-        const consultations = querySnapshot.docs.map(doc => doc.data() as Consultation);
-        consultations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        return consultations;
+        const iscribes = querySnapshot.docs.map(doc => doc.data() as IScribe);
+        iscribes.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return iscribes;
     } catch (error) {
-        console.error("Error fetching user consultations:", error);
+        console.error("Error fetching user iscribes:", error);
         return [];
     }
   }, [user]);
 
-  const getConsultationById = useCallback(async (id: string): Promise<Consultation | null> => {
+  const getIScribeById = useCallback(async (id: string): Promise<IScribe | null> => {
     if (!user) return null;
     try {
-        const docRef = doc(db, 'consultations', id);
+        const docRef = doc(db, 'iscribes', id);
         const docSnap = await getDoc(docRef);
-        // Admin can view any consultation, regular user can only view their own
+        // Admin can view any iscribe, regular user can only view their own
         if (docSnap.exists() && (docSnap.data().userId === user.uid || user.role === 'admin')) {
-            return docSnap.data() as Consultation;
+            return docSnap.data() as IScribe;
         }
         return null;
     } catch (error) {
-        console.error("Error fetching consultation by ID:", error);
+        console.error("Error fetching iscribe by ID:", error);
         return null;
     }
   }, [user]);
 
-  const updateConsultation = async (id: string, updates: Partial<Consultation>): Promise<boolean> => {
+  const updateIScribe = async (id: string, updates: Partial<IScribe>): Promise<boolean> => {
     if (!user) return false;
     try {
-        const docRef = doc(db, 'consultations', id);
+        const docRef = doc(db, 'iscribes', id);
         const docSnap = await getDoc(docRef);
         // Admin or owner can update
         if(docSnap.exists() && (docSnap.data().userId === user.uid || user.role === 'admin')) {
@@ -325,15 +325,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         return false;
     } catch (error) {
-        console.error("Error updating consultation:", error);
+        console.error("Error updating iscribe:", error);
         return false;
     }
   };
 
-  const deleteConsultation = async (id: string): Promise<boolean> => {
+  const deleteIScribe = async (id: string): Promise<boolean> => {
     if (!user) return false;
     try {
-        const docRef = doc(db, 'consultations', id);
+        const docRef = doc(db, 'iscribes', id);
         const docSnap = await getDoc(docRef);
         // Admin or owner can delete
         if(docSnap.exists() && (docSnap.data().userId === user.uid || user.role === 'admin')) {
@@ -342,7 +342,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         return false;
     } catch (error) {
-        console.error("Error deleting consultation:", error);
+        console.error("Error deleting iscribe:", error);
         return false;
     }
   };
@@ -414,15 +414,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const getAllConsultations = useCallback(async (): Promise<Consultation[]> => {
+  const getAllIScribes = useCallback(async (): Promise<IScribe[]> => {
     if (user?.role !== 'admin') return [];
     try {
-        const querySnapshot = await getDocs(collection(db, "consultations"));
-        const consultations = querySnapshot.docs.map(doc => doc.data() as Consultation);
-        consultations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        return consultations;
+        const querySnapshot = await getDocs(collection(db, "iscribes"));
+        const iscribes = querySnapshot.docs.map(doc => doc.data() as IScribe);
+        iscribes.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return iscribes;
     } catch (error) {
-        console.error("Error getting all consultations:", error);
+        console.error("Error getting all iscribes:", error);
         return [];
     }
   }, [user]);
@@ -439,13 +439,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user,
       firebaseUser,
       updateUserProfile,
-      saveConsultation,
-      getUserConsultations,
-      getConsultationById,
-      updateConsultation,
-      deleteConsultation,
+      saveIScribe,
+      getUserIScribes,
+      getIScribeById,
+      updateIScribe,
+      deleteIScribe,
       getAllUsers,
-      getAllConsultations,
+      getAllIScribes,
       updateUserByAdmin,
       deleteUserByAdmin,
     }}>

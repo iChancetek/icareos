@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Loader2, ShieldCheck, Users, FileText, MoreHorizontal, UserPlus, Edit, KeyRound, Trash2 } from 'lucide-react';
 import type { User } from '@/contexts/AuthContext';
-import type { Consultation } from '@/types';
+import type { IScribe } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -46,19 +46,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Extend Consultation type to include userName for the admin view
-interface AdminConsultation extends Consultation {
+// Extend IScribe type to include userName for the admin view
+interface AdminIScribe extends IScribe {
     userName?: string;
 }
 
 
 function AdminDashboard() {
-    const { user, getAllUsers, getAllConsultations, updateUserByAdmin, deleteUserByAdmin, isLoading: authIsLoading } = useAuth();
+    const { user, getAllUsers, getAllIScribes, updateUserByAdmin, deleteUserByAdmin, isLoading: authIsLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
 
     const [allUsers, setAllUsers] = useState<User[]>([]);
-    const [allConsultations, setAllConsultations] = useState<AdminConsultation[]>([]);
+    const [allIScribes, setAllIScribes] = useState<AdminIScribe[]>([]);
     const [isLoadingData, setIsLoadingData] = useState(true);
     
     // State for the Create User Dialog
@@ -83,19 +83,19 @@ function AdminDashboard() {
     const fetchAdminData = useCallback(async () => {
         setIsLoadingData(true);
         try {
-            const [users, consultations] = await Promise.all([
+            const [users, iscribes] = await Promise.all([
                 getAllUsers(),
-                getAllConsultations()
+                getAllIScribes()
             ]);
 
             const userMap = new Map(users.map(u => [u.uid, u.displayName]));
-            const consultationsWithUserNames = consultations.map(c => ({
+            const iscribesWithUserNames = iscribes.map(c => ({
                 ...c,
                 userName: userMap.get(c.userId) || 'Unknown User'
             }));
             
             setAllUsers(users);
-            setAllConsultations(consultationsWithUserNames);
+            setAllIScribes(iscribesWithUserNames);
 
         } catch (error) {
             console.error("Error fetching admin data:", error);
@@ -107,12 +107,12 @@ function AdminDashboard() {
         } finally {
             setIsLoadingData(false);
         }
-    }, [getAllUsers, getAllConsultations, toast]);
+    }, [getAllUsers, getAllIScribes, toast]);
 
     useEffect(() => {
         if (authIsLoading) return;
         if (!user || user.role !== 'admin') {
-            router.replace('/dashboard/consultations');
+            router.replace('/dashboard/iscribes');
             return;
         }
 
@@ -221,7 +221,7 @@ function AdminDashboard() {
         <div className="container mx-auto py-8 px-4 md:px-0">
             <header className="mb-8">
                 <h1 className="text-4xl font-bold flex items-center gap-3"><ShieldCheck className="h-10 w-10 text-primary" /> Admin Panel</h1>
-                <p className="text-lg text-muted-foreground">Oversee users and consultations across the platform.</p>
+                <p className="text-lg text-muted-foreground">Oversee users and iscribes across the platform.</p>
             </header>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -236,11 +236,11 @@ function AdminDashboard() {
                 </Card>
                  <Card className="bg-card/80">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Consultations</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total iScribes</CardTitle>
                         <FileText className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{allConsultations.length}</div>
+                        <div className="text-2xl font-bold">{allIScribes.length}</div>
                     </CardContent>
                 </Card>
             </div>
@@ -249,7 +249,7 @@ function AdminDashboard() {
                 <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
                     <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
                         <TabsTrigger value="users">Users</TabsTrigger>
-                        <TabsTrigger value="consultations">Consultations</TabsTrigger>
+                        <TabsTrigger value="iscribes">iScribes</TabsTrigger>
                     </TabsList>
                     <Dialog open={isCreateUserDialogOpen} onOpenChange={setIsCreateUserDialogOpen}>
                         <DialogTrigger asChild>
@@ -373,11 +373,11 @@ function AdminDashboard() {
                         </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="consultations">
+                <TabsContent value="iscribes">
                      <Card className="bg-card/80">
                         <CardHeader>
-                            <CardTitle>All Consultations</CardTitle>
-                            <CardDescription>Directory of all recorded consultations.</CardDescription>
+                            <CardTitle>All iScribes</CardTitle>
+                            <CardDescription>Directory of all recorded iscribes.</CardDescription>
                         </CardHeader>
                         <CardContent>
                              <ScrollArea className="h-[50vh]">
@@ -391,7 +391,7 @@ function AdminDashboard() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {allConsultations.map((c) => (
+                                        {allIScribes.map((c) => (
                                             <TableRow key={c.id}>
                                                 <TableCell className="font-medium">{c.patientName}</TableCell>
                                                 <TableCell>{c.userName}</TableCell>
@@ -503,7 +503,7 @@ export default function AdminPage() {
     }
 
     if (user.role !== 'admin') {
-        router.replace('/dashboard/consultations');
+        router.replace('/dashboard/iscribes');
         return (
              <div className="flex h-screen w-full items-center justify-center">
                 <p>You are not authorized to view this page. Redirecting...</p>

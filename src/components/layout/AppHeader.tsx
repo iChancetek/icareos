@@ -36,7 +36,7 @@ export default function AppHeader() {
            <span className="sr-only">Toggle Menu</span>
          </Button>
       )}
-      <Link href="/dashboard/consultations" className="flex items-center gap-2 text-lg font-semibold md:text-base">
+      <Link href="/dashboard/iscribe" className="flex items-center gap-2 text-lg font-semibold md:text-base">
         <Stethoscope className="h-7 w-7 text-primary" />
         <span className="hidden font-bold sm:inline-block">MediScribe</span>
       </Link>
