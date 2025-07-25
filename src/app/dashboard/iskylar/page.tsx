@@ -1,66 +1,345 @@
+
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, useCallback }from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mic, Bot } from 'lucide-react';
+import { Mic, Bot, Loader2, StopCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { askISkylar } from '@/ai/flows/iskylar-assistant-flow';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+// Check for SpeechRecognition API
+const SpeechRecognition =
+  typeof window !== 'undefined'
+    ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    : null;
+
+type SessionState = 'idle' | 'listening' | 'processing' | 'speaking';
 
 export default function ISkylarPage() {
   const { user } = useAuth();
-  const router = useRouter();
-  const [sessionStarted, setSessionStarted] = useState(false);
+  const { toast } = useToast();
 
-  // In a real implementation, this would trigger the voice session logic
-  const handleStartSession = () => {
-    // For now, we just toggle a state to show what a session view could look like
-    setSessionStarted(true);
-    // You would likely navigate to a session-specific page or update the state
-    // to show the conversational UI here.
+  const [sessionStarted, setSessionStarted] = useState(false);
+  const [sessionState, setSessionState] = useState<SessionState>('idle');
+  const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
+  
+  const [userTranscript, setUserTranscript] = useState('');
+  const [aiResponse, setAiResponse] = useState('');
+
+  const recognitionRef = useRef<any>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const stopSpeechAndRecognition = useCallback(() => {
+    if (typeof window !== 'undefined' && window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setSessionState('idle');
+  }, []);
+
+  const cleanupSession = useCallback(() => {
+    stopSpeechAndRecognition();
+    if (recognitionRef.current) {
+      recognitionRef.current.onresult = null;
+      recognitionRef.current.onend = null;
+      recognitionRef.current.onerror = null;
+      recognitionRef.current = null;
+    }
+     if (utteranceRef.current) {
+      utteranceRef.current.onend = null;
+      utteranceRef.current = null;
+    }
+  }, [stopSpeechAndRecognition]);
+
+  useEffect(() => {
+    // This effect ensures everything is cleaned up when the component unmounts.
+    return () => {
+      cleanupSession();
+    };
+  }, [cleanupSession]);
+
+  const processUserSpeech = async (transcript: string) => {
+    if (!transcript.trim()) {
+      setSessionState('idle');
+      return;
+    }
+    
+    setSessionState('processing');
+    setUserTranscript(transcript);
+
+    try {
+      const response = await askISkylar({ question: transcript });
+      setAiResponse(response.answer);
+      speak(response.answer);
+    } catch (error) {
+      console.error("Error with iSkylar flow:", error);
+      const errorMessage = "I'm sorry, I'm having a little trouble connecting right now. Let's try again in a moment.";
+      setAiResponse(errorMessage);
+      speak(errorMessage);
+      setSessionState('idle');
+    }
   };
+
+  const speak = (text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+        toast({ title: "TTS Not Supported", description: "Your browser doesn't support speech synthesis.", variant: "destructive" });
+        setSessionState('idle');
+        return;
+    }
+
+    // Cancel any ongoing speech
+    if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+    }
+    
+    setSessionState('speaking');
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    // Find a suitable female voice
+    const voices = window.speechSynthesis.getVoices();
+    const femaleVoice = voices.find(v => v.name.includes('Female') && v.lang.startsWith('en')) || 
+                        voices.find(v => v.lang.startsWith('en-US')) ||
+                        voices[0];
+    
+    if (femaleVoice) {
+      utterance.voice = femaleVoice;
+    }
+    
+    utterance.pitch = 1.1;
+    utterance.rate = 1;
+
+    utterance.onend = () => {
+        console.log("iSkylar finished speaking.");
+        setSessionState('idle');
+        // Restart listening loop if session is still active
+        if (sessionStarted && recognitionRef.current) {
+           setTimeout(() => recognitionRef.current.start(), 250);
+        }
+    };
+    
+    utteranceRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+};
+
+
+  const initializeSpeechRecognition = () => {
+    if (!SpeechRecognition) {
+      toast({
+        title: "Browser Not Supported",
+        description: "Your browser does not support the Web Speech API for voice recognition.",
+        variant: "destructive",
+        duration: 8000
+      });
+      return;
+    }
+
+    recognitionRef.current = new SpeechRecognition();
+    const recognition = recognitionRef.current;
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      console.log("Recognition started");
+      setSessionState('listening');
+    };
+    
+    recognition.onresult = (event: any) => {
+        const currentTranscript = Array.from(event.results)
+          .map((result: any) => result[0])
+          .map((result) => result.transcript)
+          .join('');
+        
+        setUserTranscript(currentTranscript);
+
+        if (event.results[0].isFinal) {
+            console.log("Final transcript:", currentTranscript);
+            // Process the final transcript
+            processUserSpeech(currentTranscript);
+        }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      if (event.error === 'no-speech' || event.error === 'audio-capture') {
+        toast({ title: "No speech detected", description: "I didn't catch that, please try again.", variant: "default" });
+      } else if (event.error === 'not-allowed') {
+        setHasMicPermission(false);
+      } else {
+        toast({ title: "Voice Recognition Error", description: `An error occurred: ${event.error}`, variant: "destructive" });
+      }
+    };
+
+    recognition.onend = () => {
+      console.log("Recognition ended.");
+      if (sessionState === 'listening') { // If it ended without processing, go back to idle
+          setSessionState('idle');
+          if(sessionStarted) {
+             // Restart listening if we are still in an active session and didn't stop manually
+             setTimeout(() => recognitionRef.current?.start(), 100);
+          }
+      }
+    };
+
+    recognition.start();
+  };
+
+
+  const handleStartSession = async () => {
+    if (hasMicPermission === false) {
+      toast({ title: "Microphone Required", description: "Please enable microphone permissions in your browser settings.", variant: "destructive" });
+      return;
+    }
+    
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setHasMicPermission(true);
+        stream.getTracks().forEach(track => track.stop()); // Release immediately
+
+        setSessionStarted(true);
+        setUserTranscript('');
+        setAiResponse('');
+        const welcomeMessage = `Hello ${user?.displayName || 'there'}. I'm iSkylar. How are you feeling today?`;
+        speak(welcomeMessage); // iSkylar speaks first
+        
+        // Defer starting recognition until after iSkylar speaks
+         const checkSpeechEnd = setInterval(() => {
+            if (!window.speechSynthesis.speaking) {
+                clearInterval(checkSpeechEnd);
+                initializeSpeechRecognition();
+            }
+        }, 100);
+
+    } catch (error) {
+        console.error("Error getting mic permission:", error);
+        setHasMicPermission(false);
+        toast({ title: "Microphone Access Denied", description: "Please enable microphone access to talk with iSkylar.", variant: "destructive"});
+    }
+  };
+
+  const handleEndSession = () => {
+    setSessionStarted(false);
+    cleanupSession();
+    const goodbyeMessage = "Take care. I’m here whenever you need me.";
+    setUserTranscript('');
+    setAiResponse(goodbyeMessage);
+    speak(goodbyeMessage);
+  };
+  
+  const getSessionIndicatorText = () => {
+    switch (sessionState) {
+        case 'listening':
+            return 'Listening...';
+        case 'processing':
+            return 'iSkylar is thinking...';
+        case 'speaking':
+            return 'iSkylar is speaking...';
+        default:
+            return userTranscript ? 'Tap the mic to speak again.' : 'Start speaking to begin your session.';
+    }
+  }
+  
+  const getMicButton = () => {
+    let animationClass = '';
+    let icon = <Mic className="h-12 w-12" />;
+
+    switch(sessionState) {
+        case 'listening':
+            animationClass = 'animate-pulse-strong';
+            icon = <Mic className="h-12 w-12" />;
+            break;
+        case 'processing':
+            animationClass = 'animate-spin';
+            icon = <Loader2 className="h-12 w-12" />;
+            break;
+        case 'speaking':
+            animationClass = 'animate-pulse-gentle';
+            icon = <Bot className="h-12 w-12" />;
+            break;
+        default: 
+            icon = <Mic className="h-12 w-12" />;
+            break;
+    }
+
+    return (
+         <div className="relative">
+            <div className={`absolute -inset-4 rounded-full bg-purple-400/50 blur-xl ${animationClass}`}></div>
+            <Button 
+                variant="default" 
+                size="icon" 
+                className="relative h-24 w-24 rounded-full bg-purple-500 shadow-lg hover:bg-purple-600"
+                onClick={() => {
+                   if(recognitionRef.current) {
+                      recognitionRef.current.start();
+                   }
+                }}
+                disabled={sessionState !== 'idle'}
+              >
+                {icon}
+            </Button>
+        </div>
+    )
+  }
 
   return (
     <div className="flex h-[calc(100vh-8rem)] w-full flex-col text-white">
-      <header className="absolute top-4 right-4 z-10">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9 border-2 border-slate-500">
-            <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
-            <AvatarFallback className="bg-slate-700 text-white">
-              {user?.displayName?.split(' ').map(n => n[0]).join('') || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-sm font-medium">{user?.displayName || 'User'}</span>
-        </div>
-      </header>
-
-      <main className="flex flex-1 flex-col items-center justify-center text-center">
+      <main className="flex flex-1 flex-col items-center justify-center text-center p-4">
         {sessionStarted ? (
-            <div className="flex flex-col items-center justify-center gap-8">
-                <h1 className="text-5xl font-bold">iSkylar is listening...</h1>
-                <div className="relative">
-                    <div className="absolute -inset-4 animate-pulse rounded-full bg-purple-400/50 blur-xl"></div>
-                    <Button variant="default" size="icon" className="relative h-24 w-24 rounded-full bg-purple-500 shadow-lg hover:bg-purple-600">
-                        <Mic className="h-12 w-12" />
-                    </Button>
-                </div>
-                 <p className="text-slate-300">Start speaking to begin your session.</p>
+          <div className="flex flex-col items-center justify-between h-full w-full max-w-4xl">
+            <div className="w-full h-1/3 space-y-2">
+               <h2 className="text-xl font-medium text-slate-300">iSkylar says:</h2>
+               <p className="text-lg text-slate-100 min-h-[6rem]">{aiResponse}</p>
             </div>
-        ) : (
-            <>
-                <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-800/80">
-                  <Bot className="h-12 w-12 text-purple-300" />
-                </div>
-                <h1 className="text-6xl font-bold">iSkylar</h1>
-                <p className="mt-2 text-xl text-slate-300">Your AI Voice Therapist</p>
-                <Button 
-                  onClick={handleStartSession}
-                  className="mt-10 rounded-lg bg-purple-500 px-12 py-6 text-lg font-semibold text-white shadow-lg hover:bg-purple-600 focus-visible:ring-purple-400"
+            
+            <div className="flex flex-col items-center justify-center gap-4">
+                {getMicButton()}
+                <p className="text-slate-300 h-6">{getSessionIndicatorText()}</p>
+            </div>
+
+            <div className="w-full h-1/3 space-y-2 flex flex-col justify-end">
+               <h2 className="text-xl font-medium text-slate-300">You said:</h2>
+               <p className="text-lg text-slate-100 min-h-[6rem]">{userTranscript}</p>
+               <Button 
+                    onClick={handleEndSession}
+                    variant="destructive"
+                    className="mt-4 mx-auto"
                 >
-                  Start Session
-                </Button>
-                <p className="mt-4 text-sm text-slate-400">Click ‘Start Session’ to begin.</p>
-            </>
+                  <StopCircle className="mr-2 h-5 w-5"/> End Session
+               </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-800/80">
+              <Bot className="h-12 w-12 text-purple-300" />
+            </div>
+            <h1 className="text-6xl font-bold">iSkylar</h1>
+            <p className="mt-2 text-xl text-slate-300">Your AI Voice Therapist</p>
+            
+            {hasMicPermission === false && (
+                <Alert variant="destructive" className="mt-6 max-w-sm text-left">
+                  <Mic className="h-4 w-4" />
+                  <AlertTitle>Microphone Access Denied</AlertTitle>
+                  <AlertDescription>
+                    Please enable microphone permissions in your browser to talk with iSkylar.
+                  </AlertDescription>
+                </Alert>
+            )}
+
+            <Button
+              onClick={handleStartSession}
+              className="mt-10 rounded-lg bg-purple-500 px-12 py-6 text-lg font-semibold text-white shadow-lg hover:bg-purple-600 focus-visible:ring-purple-400"
+              disabled={hasMicPermission === false}
+            >
+              Start Session
+            </Button>
+            <p className="mt-4 text-sm text-slate-400">Click ‘Start Session’ to begin.</p>
+          </>
         )}
       </main>
     </div>
