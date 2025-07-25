@@ -131,10 +131,13 @@ function AdminDashboard() {
         if (!userToEdit) return;
         setIsSavingEdit(true);
 
-        const success = await updateUserByAdmin(userToEdit.uid, {
-            role: editUserForm.role,
-            accountStatus: editUserForm.accountStatus,
-        });
+        // Ensure payload is clean and has no undefined values
+        const updatePayload: { role: User['role'], accountStatus: User['accountStatus'] } = {
+            role: editUserForm.role || 'user',
+            accountStatus: editUserForm.accountStatus || 'active',
+        };
+
+        const success = await updateUserByAdmin(userToEdit.uid, updatePayload);
 
         if (success) {
             toast({

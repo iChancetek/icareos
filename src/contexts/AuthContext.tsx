@@ -93,7 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           username: username,
           displayName: displayName,
           photoURL: fbUser.photoURL,
-          role: 'admin', 
+          role: 'user', 
           accountStatus: 'active',
           createdAt: serverTimestamp(),
           lastLogin: serverTimestamp(),
@@ -377,7 +377,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     try {
       const userDocRef = doc(db, 'users', uid);
-      await updateDoc(userDocRef, updates);
+      // Clean up the updates object to remove any undefined values
+      const cleanedUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([, value]) => value !== undefined)
+      );
+      if (Object.keys(cleanedUpdates).length === 0) {
+        console.warn("Update skipped: No valid fields to update after cleaning.");
+        return true; // No error, but no update was made.
+      }
+      await updateDoc(userDocRef, cleanedUpdates);
       return true;
     } catch (error) {
       console.error("Error updating user by admin:", error);
