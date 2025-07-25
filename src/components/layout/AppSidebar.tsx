@@ -55,9 +55,6 @@ export default function AppSidebar() {
       icon: Languages,
       action: () => setIsVoiceTranslatorDialogOpen(true)
     },
-    { href: '/dashboard/profile', label: 'Profile', icon: User },
-    { href: '/dashboard/settings', label: 'Settings', icon: Settings },
-    { href: '/dashboard/admin', label: 'Admin Panel', icon: ShieldCheck, adminOnly: true },
   ];
 
   const isActive = (item: NavItem) => {
@@ -129,10 +126,6 @@ export default function AppSidebar() {
         <Separator className="my-0" />
         
         <SidebarFooter className="p-2">
-          <Button variant="outline" className="w-full justify-start gap-2" onClick={logout}>
-            <LogOut className="h-5 w-5" />
-            <span className={cn((sidebarDisplayState === 'collapsed' && !isEffectivelyMobile) ? "hidden" : "inline-block")}>Logout</span>
-          </Button>
         </SidebarFooter>
       </Sidebar>
       <RealtimeVoiceTranslatorDialog isOpen={isVoiceTranslatorDialogOpen} onOpenChange={setIsVoiceTranslatorDialogOpen} />
