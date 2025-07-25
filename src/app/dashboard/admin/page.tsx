@@ -123,7 +123,7 @@ function AdminDashboard() {
         setUserToEdit(targetUser);
         setEditUserForm({
             role: targetUser.role,
-            accountStatus: targetUser.accountStatus,
+            accountStatus: targetUser.accountStatus || 'active', // Default to 'active' if undefined
         });
     };
     
@@ -326,7 +326,7 @@ function AdminDashboard() {
                                                 </TableCell>
                                                 <TableCell>
                                                      <Badge variant={u.accountStatus === 'active' ? 'default' : 'outline'} className="capitalize">
-                                                        {u.accountStatus}
+                                                        {u.accountStatus || 'active'}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>{u.createdAt ? format(u.createdAt, 'PPP') : 'N/A'}</TableCell>
