@@ -52,6 +52,7 @@ interface AdminIScribe extends IScribe {
 }
 
 type EditUserForm = {
+    displayName: string;
     username: string;
     role: User['role'];
     accountStatus: User['accountStatus'];
@@ -83,7 +84,7 @@ function AdminDashboard() {
 
     // State for Edit User Dialog
     const [userToEdit, setUserToEdit] = useState<User | null>(null);
-    const [editUserForm, setEditUserForm] = useState<EditUserForm>({ username: '', role: 'user', accountStatus: 'active' });
+    const [editUserForm, setEditUserForm] = useState<EditUserForm>({ displayName: '', username: '', role: 'user', accountStatus: 'active' });
     const [isSavingEdit, setIsSavingEdit] = useState(false);
 
     const fetchAdminData = useCallback(async () => {
@@ -128,6 +129,7 @@ function AdminDashboard() {
     const handleOpenEditDialog = (targetUser: User) => {
         setUserToEdit(targetUser);
         setEditUserForm({
+            displayName: targetUser.displayName || '',
             username: targetUser.username || '',
             role: targetUser.role,
             accountStatus: targetUser.accountStatus || 'active',
@@ -139,6 +141,7 @@ function AdminDashboard() {
         setIsSavingEdit(true);
 
         const updatePayload: Partial<User> = {
+            displayName: editUserForm.displayName,
             username: editUserForm.username,
             role: editUserForm.role,
             accountStatus: editUserForm.accountStatus,
@@ -441,13 +444,22 @@ function AdminDashboard() {
                     <DialogHeader>
                         <DialogTitle>Edit User: {userToEdit?.displayName}</DialogTitle>
                         <DialogDescription>
-                            Modify the user's username, role, and account status.
+                            Modify the user's display name, username, role, and account status.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right">Email</Label>
                             <Input value={userToEdit?.email || ''} readOnly className="col-span-3 bg-muted/50" />
+                        </div>
+                         <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="displayName-edit" className="text-right">Display Name</Label>
+                             <Input 
+                                id="displayName-edit"
+                                value={editUserForm.displayName}
+                                onChange={(e) => setEditUserForm(prev => ({...prev, displayName: e.target.value}))}
+                                className="col-span-3"
+                            />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="username-edit" className="text-right">Username</Label>
