@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { transcribeAudio } from '@/ai/flows/transcribe-audio';
 import { translateText } from '@/ai/flows/translate-text-flow';
-import { summarizeConsultation as summarizeIScribe } from '@/ai/flows/summarize-consultation';
+import { summarizeIScribe } from '@/ai/flows/summarize-iscribe';
 import { Progress } from '@/components/ui/progress';
 
 interface RealtimeVoiceTranslatorDialogProps {

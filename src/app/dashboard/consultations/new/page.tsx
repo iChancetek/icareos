@@ -12,11 +12,11 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
 import { transcribeAudio } from '@/ai/flows/transcribe-audio';
-import { summarizeConsultation } from '@/ai/flows/summarize-consultation';
+import { summarizeIScribe } from '@/ai/flows/summarize-iscribe';
 import { translateText } from '@/ai/flows/translate-text-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { sendDataToHubSpot } from '@/services/hubspotService';
-import type { Consultation } from '@/types';
+import type { IScribe } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type RecordingState = 'idle' | 'recording' | 'processing' | 'success' | 'error';
@@ -24,7 +24,7 @@ type RecordingState = 'idle' | 'recording' | 'processing' | 'success' | 'error';
 export default function NewConsultationPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, saveConsultation } = useAuth();
+  const { user, saveIScribe: saveConsultation } = useAuth();
 
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [progress, setProgress] = useState(0);
@@ -322,7 +322,7 @@ export default function NewConsultationPage() {
       // Step 3: Generate Summary (from original transcript)
       setCurrentStepMessage(processingSteps[2]); 
       console.log("NewConsultation: Sending original transcript for summarization.");
-      const summaryResult = await summarizeConsultation({ transcript }); // Summarize original transcript
+      const summaryResult = await summarizeIScribe({ transcript }); // Summarize original transcript
       if (!summaryResult || typeof summaryResult.summary !== 'string') { 
         console.error("NewConsultation: Summarization service did not return a valid summary object or summary string.", summaryResult);
         throw new Error("Summarization service did not return a valid summary.");
@@ -335,7 +335,7 @@ export default function NewConsultationPage() {
       setCurrentStepMessage(processingSteps[3]); 
       console.log("NewConsultation: Finalizing consultation save...");
       
-      const consultationToSave: Omit<Consultation, 'id' | 'userId'> = {
+      const consultationToSave: Omit<IScribe, 'id' | 'userId'> = {
         patientName: patientName,
         date: new Date().toISOString(),
         status: 'Completed', 
@@ -578,3 +578,5 @@ interface BlobEvent extends Event {
   readonly data: Blob;
   readonly timecode: number;
 }
+
+    
