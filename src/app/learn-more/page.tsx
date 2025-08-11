@@ -9,8 +9,8 @@ import './learn-more.css';
 const features = [
   {
     icon: <Globe className="h-10 w-10" />,
-    title: "Multilingual Communication 🇺🇸🇪🇸🇩🇪🇫🇷🇨🇳🇮🇱",
-    description: "Effortlessly communicate in English, Spanish, German, French, Chinese, and Hebrew, enhancing accessibility and understanding across borders.",
+    title: "Multilingual Communication 🇺🇸🇪🇸🇩🇪🇫🇷🇮🇱",
+    description: "Effortlessly communicate in English, Spanish, German, French, and Hebrew, enhancing accessibility and understanding across borders.",
     example: "A doctor in Germany dictates patient notes in German, and MediScribe instantly translates them for a consultation with an English-speaking colleague.",
     color: "#4285F4"
   },

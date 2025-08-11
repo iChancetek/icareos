@@ -28,7 +28,7 @@ export default function LandingPage() {
         <section className="hero-section">
           <h2 className="hero-title">Welcome to MediScribe</h2>
           <p className="hero-subtitle">
-            MediScribe is your intelligent, voice-powered companion for healthcare, everyday tasks, and personal interactions—blending empathy, precision, and innovation to revolutionize how you capture, understand, and act on information. With multilingual communication (English, Spanish, German, French, Chinese, and Hebrew), seamless translation, and precise transcription, MediScribe empowers you to work and connect effortlessly across professional and personal settings.
+            MediScribe is your intelligent, voice-powered companion for healthcare, everyday tasks, and personal interactions—blending empathy, precision, and innovation to revolutionize how you capture, understand, and act on information. With multilingual communication (English, Spanish, German, French, and Hebrew), seamless translation, and precise transcription, MediScribe empowers you to work and connect effortlessly across professional and personal settings.
           </p>
           <div className="hero-actions">
             <Link href="/signup" passHref>
