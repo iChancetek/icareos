@@ -248,7 +248,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const provider = new GoogleAuthProvider();
       provider.addScope('profile');
       provider.addScope('email');
-      provider.setCustomParameters({ prompt: 'select_account' }); // Force account selection
+      provider.setCustomParameters({ prompt: 'consent' }); // Force consent screen
       setNewUserInfo(null); 
       await signInWithPopup(auth, provider);
       // onAuthStateChanged will handle the rest
