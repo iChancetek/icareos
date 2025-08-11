@@ -1,21 +1,20 @@
 
+
 "use client";
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Stethoscope, LayoutDashboard, User, Settings, Bot, LogOut, Languages, ShieldCheck } from 'lucide-react';
+import { Stethoscope, LayoutDashboard, Bot, Languages, Mic, FolderKanban } from 'lucide-react';
 import { 
   Sidebar, 
   SidebarHeader, 
   SidebarContent, 
-  SidebarFooter, 
   SidebarMenu, 
   SidebarMenuItem, 
   SidebarMenuButton,
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -34,7 +33,7 @@ interface NavItem {
 
 export default function AppSidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth(); 
+  const { user } = useAuth(); 
   const { state: sidebarState, isMobile: sidebarIsMobileFromHook } = useSidebar(); 
   const [isVoiceTranslatorDialogOpen, setIsVoiceTranslatorDialogOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -44,7 +43,8 @@ export default function AppSidebar() {
   }, []);
 
   const navItems: NavItem[] = [
-    { href: '/dashboard/iscribe', label: 'iScribe', icon: LayoutDashboard, matchStartsWith: true },
+    { href: '/dashboard/iscribe', label: 'iScribe', icon: LayoutDashboard },
+    { href: '/dashboard/recordings', label: 'My Recordings', icon: FolderKanban, matchStartsWith: true },
     { 
       href: '/dashboard/iskylar',
       label: 'iSkylar', 
@@ -59,9 +59,15 @@ export default function AppSidebar() {
 
   const isActive = (item: NavItem) => {
     if (!item.href) return false;
+
+    if (item.href === '/dashboard/recordings') {
+        return pathname.startsWith('/dashboard/recordings');
+    }
+
     if (item.matchStartsWith) {
       if (item.href === '/dashboard/iscribe') {
-        return pathname.startsWith('/dashboard/iscribe');
+        // Exact match for iscribe dashboard, but not sub-pages unless specified
+        return pathname === item.href;
       }
       return pathname.startsWith(item.href);
     }
@@ -125,8 +131,6 @@ export default function AppSidebar() {
 
         <Separator className="my-0" />
         
-        <SidebarFooter className="p-2">
-        </SidebarFooter>
       </Sidebar>
       <RealtimeVoiceTranslatorDialog isOpen={isVoiceTranslatorDialogOpen} onOpenChange={setIsVoiceTranslatorDialogOpen} />
     </>

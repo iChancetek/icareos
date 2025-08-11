@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { ReactNode } from 'react';
@@ -15,7 +16,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc, runTransaction, collection, getDocs, query, where, deleteDoc } from 'firebase/firestore';
 import { auth, db, functions } from '@/lib/firebase';
-import type { IScribe } from '@/types';
+import type { IScribe, Translation } from '@/types';
 import { httpsCallable } from 'firebase/functions';
 
 // Define our custom User type based on the project brief
@@ -47,6 +48,11 @@ interface AuthContextType {
   getIScribeById: (id: string) => Promise<IScribe | null>;
   updateIScribe: (id: string, updates: Partial<IScribe>) => Promise<boolean>;
   deleteIScribe: (id: string) => Promise<boolean>;
+  // Translation methods
+  saveTranslation: (translationData: Omit<Translation, 'id' | 'userId'>) => Promise<string | null>;
+  getUserTranslations: () => Promise<Translation[]>;
+  getTranslationById: (id: string) => Promise<Translation | null>;
+  deleteTranslation: (id: string) => Promise<boolean>;
   // Admin methods
   getAllUsers: () => Promise<User[]>;
   getAllIScribes: () => Promise<IScribe[]>;
@@ -368,6 +374,69 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return false;
     }
   };
+
+   // Translation Methods
+  const saveTranslation = async (translationData: Omit<Translation, 'id' | 'userId'>): Promise<string | null> => {
+    if (!user) return null;
+    try {
+      const newTranslationRef = doc(collection(db, 'translations'));
+      const newTranslation: Translation = {
+        id: newTranslationRef.id,
+        userId: user.uid,
+        ...translationData,
+      };
+      await setDoc(newTranslationRef, newTranslation);
+      return newTranslationRef.id;
+    } catch (error) {
+      console.error("Error saving translation:", error);
+      return null;
+    }
+  };
+
+  const getUserTranslations = useCallback(async (): Promise<Translation[]> => {
+    if (!user) return [];
+    try {
+      const q = query(collection(db, 'translations'), where('userId', '==', user.uid));
+      const querySnapshot = await getDocs(q);
+      const translations = querySnapshot.docs.map(doc => doc.data() as Translation);
+      translations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      return translations;
+    } catch (error) {
+      console.error("Error fetching user translations:", error);
+      return [];
+    }
+  }, [user]);
+
+  const getTranslationById = useCallback(async (id: string): Promise<Translation | null> => {
+    if (!user) return null;
+    try {
+      const docRef = doc(db, 'translations', id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists() && (docSnap.data().userId === user.uid || user.role === 'admin')) {
+        return docSnap.data() as Translation;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching translation by ID:", error);
+      return null;
+    }
+  }, [user]);
+
+  const deleteTranslation = async (id: string): Promise<boolean> => {
+    if (!user) return false;
+    try {
+      const docRef = doc(db, 'translations', id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists() && (docSnap.data().userId === user.uid || user.role === 'admin')) {
+        await deleteDoc(docRef);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error deleting translation:", error);
+      return false;
+    }
+  };
   
   // Admin Methods
   const getAllUsers = useCallback(async (): Promise<User[]> => {
@@ -466,6 +535,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       getIScribeById,
       updateIScribe,
       deleteIScribe,
+      saveTranslation,
+      getUserTranslations,
+      getTranslationById,
+      deleteTranslation,
       getAllUsers,
       getAllIScribes,
       updateUserByAdmin,
