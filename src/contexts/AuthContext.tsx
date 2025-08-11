@@ -251,7 +251,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
-      console.error("Google Sign-In Error Code:", error.code, "Message:", error.message);
+      if (error.code !== 'auth/popup-closed-by-user') {
+          console.error("Google Sign-In Error Code:", error.code, "Message:", error.message);
+      } else {
+          console.log("Google Sign-In popup closed by user.");
+      }
       setIsLoading(false);
       return false;
     }
@@ -468,4 +472,3 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     </AuthContext.Provider>
   );
 };
-

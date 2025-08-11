@@ -58,9 +58,8 @@ export default function LoginPage() {
   };
   
   const handleGoogleSignIn = async () => {
-    setIsSubmitting(true);
     const success = await signInWithGoogle();
-    setIsSubmitting(false);
+    setIsSubmitting(true);
     if(success) {
       toast({
           title: "Login Successful",
@@ -69,10 +68,11 @@ export default function LoginPage() {
     } else {
         toast({
             title: "Google Sign-In Failed",
-            description: "Could not sign in with Google. Please try again.",
+            description: "The sign-in process was not completed. Please try again.",
             variant: "destructive",
         });
     }
+    setIsSubmitting(false);
   }
 
   const handleForgotPassword = async () => {
@@ -113,9 +113,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col items-start justify-center bg-[#f8f7ff] p-12 text-[#231942]">
+      <div className="hidden lg:flex flex-col items-start justify-center bg-blue-50 p-12 text-gray-800">
         <h1 className="text-5xl font-bold mb-4">Welcome to MediScribe</h1>
-        <p className="text-lg text-[#231942]/80 max-w-md">
+        <p className="text-lg text-gray-600 max-w-md">
           A modern AI companion for healthcare professionals—powered by voice, empathy, and innovation.
         </p>
       </div>
