@@ -128,10 +128,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (!userDoc.exists()) {
             console.log("New user detected, creating profile...");
             // For Google Sign-In, use their provided name. For email/pass, use our temp state.
-            const profileData = newUserInfo || { 
-              displayName: fbUser.displayName || "New User", 
-              username: fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0,5)}` 
-            };
+            const isGoogleSignIn = fbUser.providerData.some(p => p.providerId === 'google.com');
+            let profileData: NewUserInfo;
+
+            if (isGoogleSignIn) {
+              profileData = {
+                displayName: fbUser.displayName || "New User",
+                username: fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0, 5)}`
+              };
+            } else if (newUserInfo) {
+              profileData = newUserInfo;
+            } else {
+              // Fallback if newUserInfo is not set for some reason on email signup
+              console.warn("New user detected without pre-set info. Using fallback data.");
+              profileData = {
+                displayName: "New User",
+                username: fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0, 5)}`
+              };
+            }
+            
             const userProfile = await createUserProfile(fbUser, profileData.displayName, profileData.username);
             setUser(userProfile); // Set the full user profile immediately
             setNewUserInfo(null); // Clear temp info
@@ -454,4 +469,3 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-    
