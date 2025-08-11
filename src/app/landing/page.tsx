@@ -36,7 +36,7 @@ export default function LandingPage() {
                 Get Started <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-             <Link href="#features" passHref>
+             <Link href="/learn-more" passHref>
                 <Button size="lg" variant="outline" className="learnmore-btn">
                     Learn More
                 </Button>
