@@ -178,7 +178,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAuthenticated = !isLoading && !!user;
 
   useEffect(() => {
-    const publicRoutes = ['/login', '/signup', '/'];
+    const publicRoutes = ['/login', '/signup', '/', '/learn-more'];
     const isPublicRoute = publicRoutes.includes(pathname);
     const isAdminRoute = pathname.startsWith('/dashboard/admin');
 
@@ -186,7 +186,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!isAuthenticated && !isPublicRoute) {
         router.push('/login');
       }
-      if (isAuthenticated && isPublicRoute) {
+      if (isAuthenticated && (pathname === '/login' || pathname === '/signup' || pathname === '/')) {
         router.push('/dashboard/iscribe');
       }
        if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
@@ -453,3 +453,5 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     </AuthContext.Provider>
   );
 };
+
+    
