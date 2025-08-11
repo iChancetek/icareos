@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
-import LoginPage from './login/page';
+import LandingPage from './landing/page';
 
 export default function HomePage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -28,6 +28,6 @@ export default function HomePage() {
     );
   }
   
-  // If not loading and not authenticated, show the login page as the landing page.
-  return <LoginPage />;
+  // If not loading and not authenticated, show the landing page.
+  return <LandingPage />;
 }

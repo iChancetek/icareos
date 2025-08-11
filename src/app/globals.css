@@ -5,41 +5,43 @@
 
 @layer base {
   :root {
-    --background: 217 74% 12%; /* Dark Blue from iSkylar page */
-    --foreground: 220 15% 95%; /* Light cool gray for text */
-    --card: 220 20% 15%; /* Dark card background */
-    --card-foreground: 220 15% 95%;
-    --popover: 220 20% 15%;
-    --popover-foreground: 220 15% 95%;
-    --primary: 220 80% 65%; /* Brighter blue for dark mode */
-    --primary-foreground: 220 15% 15%; /* Darker text on primary */
-    --secondary: 220 15% 22%; /* Dark secondary */
-    --secondary-foreground: 220 15% 95%;
-    --muted: 220 15% 22%; /* Consistent with dark secondary */
-    --muted-foreground: 220 10% 65%;
-    --accent: 180 50% 60%; /* Brighter teal for dark mode accent */
-    --accent-foreground: 180 90% 10%; /* Dark text on dark teal accent */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 15% 25%; /* Darker, softer border */
-    --input: 220 15% 25%; /* Consistent with dark border */
-    --ring: 220 80% 65%; /* Match new dark ring */
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --radius: 0.5rem;
+
+    /* Chart Colors */
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --radius: 0.75rem; /* Increased for a more modern, rounded feel */
 
     /* Sidebar specific theme */
-    --sidebar-background: 220 20% 12%; /* Slightly distinct dark background */
-    --sidebar-foreground: 220 15% 95%; /* Match main dark foreground */
-    --sidebar-primary: 220 80% 65%; /* Match new dark primary */
-    --sidebar-primary-foreground: 220 15% 15%;
-    --sidebar-accent: 180 50% 20%; /* Dark teal background for active/hover items */
-    --sidebar-accent-foreground: 180 50% 85%; /* Lighter teal text on dark sidebar accent */
-    --sidebar-border: 220 15% 25%; /* Match main dark border */
-    --sidebar-ring: 220 80% 65%; /* Match new dark ring */
+    --sidebar-background: 240 10% 3.9%; 
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 240 4.9% 83.9%;
   }
 
   .dark {
