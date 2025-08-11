@@ -7,12 +7,13 @@ import { getFunctions } from 'firebase/functions';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  projectId: 'medisummarize-qk1kp',
-  appId: '1:979096704240:web:60ff4f01a2e5c164401e35',
-  storageBucket: 'medisummarize-qk1kp.firebasestorage.app',
-  apiKey: 'AIzaSyA8GqHDkhj2p-XUyRgJ_QLb3-3i_CoI1uA',
-  authDomain: 'medisummarize-qk1kp.firebaseapp.com',
-  messagingSenderId: '979096704240',
+  "projectId": "medisummarize-qk1kp",
+  "appId": "1:979096704240:web:60ff4f01a2e5c164401e35",
+  "storageBucket": "medisummarize-qk1kp.firebasestorage.app",
+  "apiKey": "AIzaSyA8GqHDkhj2p-XUyRgJ_QLb3-3i_CoI1uA",
+  "authDomain": "medisummarize-qk1kp.firebaseapp.com",
+  "measurementId": "",
+  "messagingSenderId": "979096704240"
 };
 
 // Initialize Firebase
@@ -22,5 +23,3 @@ const db = getFirestore(app);
 const functions = getFunctions(app);
 
 export {app, auth, db, functions};
-
-    
