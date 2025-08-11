@@ -1,17 +1,17 @@
 
 :root {
-  --landing-bg: #f8f7ff;
-  --landing-text: #231942;
-  --landing-primary: #5E548E;
-  --landing-primary-light: #9f86c0;
-  --landing-secondary: #e0b1cb;
-  --card-bg: #ffffff;
-  --card-border: #ebeaef;
+  --landing-bg: linear-gradient(135deg, #e0f7fa 0%, #d1c4e9 100%);
+  --landing-text: #1a237e;
+  --landing-primary: #303f9f;
+  --landing-primary-light: #5c6bc0;
+  --landing-secondary: #81d4fa;
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --card-border: rgba(0, 0, 0, 0.1);
 }
 
 .landing-page-container {
   font-family: var(--font-geist-sans), sans-serif;
-  background-color: var(--landing-bg);
+  background: var(--landing-bg);
   color: var(--landing-text);
   min-height: 100vh;
   display: flex;
@@ -27,6 +27,8 @@
   max-width: 1280px;
   margin: 0 auto;
   border-bottom: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
 }
 
 .logo {
@@ -38,7 +40,7 @@
 .logo h1 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--landing-text);
+  color: var(--landing-primary);
 }
 
 .main-nav {
@@ -50,16 +52,18 @@
     color: var(--landing-primary) !important;
     background-color: transparent !important;
     border: none !important;
+    transition: background-color 0.3s ease;
 }
 
 .signin-btn:hover {
-    background-color: var(--landing-primary-light) !important;
-    color: white !important;
+    background-color: rgba(48, 63, 159, 0.1) !important;
+    color: var(--landing-primary) !important;
 }
 
 .getstarted-btn {
   background-color: var(--landing-primary) !important;
   color: white !important;
+  transition: background-color 0.3s ease;
 }
 
 .getstarted-btn:hover {
@@ -70,6 +74,7 @@
     color: var(--landing-primary) !important;
     background-color: transparent !important;
     border-color: var(--landing-primary) !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .learnmore-btn:hover {
@@ -98,7 +103,7 @@
   font-size: 3rem;
   font-weight: 700;
   line-height: 1.2;
-  color: var(--landing-text);
+  color: var(--landing-primary);
 }
 
 .hero-subtitle {
@@ -108,7 +113,7 @@
   margin-left: auto;
   margin-right: auto;
   color: var(--landing-text);
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .hero-actions {
@@ -134,11 +139,13 @@
   padding: 2rem;
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 .feature-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
 .feature-icon {
@@ -152,11 +159,12 @@
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
+  color: var(--landing-primary);
 }
 
 .feature-description {
   color: var(--landing-text);
-  opacity: 0.7;
+  opacity: 0.8;
   line-height: 1.6;
 }
 
@@ -166,7 +174,9 @@
   border-top: 1px solid var(--card-border);
   font-size: 0.875rem;
   color: var(--landing-text);
-  opacity: 0.7;
+  opacity: 0.8;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
 }
 
 @media (max-width: 768px) {

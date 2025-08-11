@@ -1,14 +1,27 @@
 
 .learn-more-container {
   font-family: var(--font-geist-sans), sans-serif;
-  background-color: #f9faff;
-  color: #333;
+  background: linear-gradient(135deg, #e0f7fa 0%, #d1c4e9 100%);
+  color: #1a237e;
   min-height: 100vh;
 }
 
 .learn-more-header {
   padding: 1rem 2rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.learn-more-header .learn-more-back-button {
+  color: #303f9f;
+  background-color: transparent;
+  border-color: transparent;
+  transition: background-color 0.3s ease;
+}
+
+.learn-more-header .learn-more-back-button:hover {
+  background-color: rgba(48, 63, 159, 0.1);
 }
 
 .learn-more-main {
@@ -25,13 +38,13 @@
 .title-section h1 {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: #303f9f;
   margin-bottom: 0.5rem;
 }
 
 .title-section p {
   font-size: 1.1rem;
-  color: #555;
+  color: #1a237e;
   max-width: 700px;
   margin: 0 auto;
 }
@@ -43,9 +56,9 @@
 }
 
 .feature-item-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.8);
   border-radius: 12px;
-  border: 1px solid #e8eaf6;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   padding: 2rem;
   display: flex;
   flex-direction: column;
@@ -53,6 +66,7 @@
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(5px);
 }
 
 .feature-item-card:hover {
@@ -69,18 +83,19 @@
   justify-content: center;
   color: white;
   margin-bottom: 1.5rem;
+  flex-shrink: 0;
 }
 
 .feature-item-content h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: #303f9f;
   margin-bottom: 0.75rem;
   line-height: 1.4;
 }
 
 .feature-item-content p {
-  color: #555;
+  color: #1a237e;
   line-height: 1.6;
   font-size: 0.95rem;
 }
@@ -88,37 +103,54 @@
 .feature-item-example {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px dashed #e0e0e0;
+  border-top: 1px dashed rgba(0,0,0,0.1);
   width: 100%;
 }
 
 .feature-item-example p {
-  background-color: #f9faff;
+  background-color: rgba(255, 255, 255, 0.5);
   border-left: 4px solid;
   padding: 0.8rem 1rem;
   border-radius: 4px;
   font-style: italic;
-  color: #444;
+  color: #1a237e;
   text-align: left;
-  border-color: #7c7c7c; /* Fallback */
 }
 
+.feature-item-card:nth-child(1) .feature-item-icon { background-color: #4285F4; }
 .feature-item-card:nth-child(1) .feature-item-example { border-color: #4285F4; }
+
+.feature-item-card:nth-child(2) .feature-item-icon { background-color: #DB4437; }
 .feature-item-card:nth-child(2) .feature-item-example { border-color: #DB4437; }
+
+.feature-item-card:nth-child(3) .feature-item-icon { background-color: #F4B400; }
 .feature-item-card:nth-child(3) .feature-item-example { border-color: #F4B400; }
+
+.feature-item-card:nth-child(4) .feature-item-icon { background-color: #0F9D58; }
 .feature-item-card:nth-child(4) .feature-item-example { border-color: #0F9D58; }
+
+.feature-item-card:nth-child(5) .feature-item-icon { background-color: #AB47BC; }
 .feature-item-card:nth-child(5) .feature-item-example { border-color: #AB47BC; }
+
+.feature-item-card:nth-child(6) .feature-item-icon { background-color: #26A69A; }
 .feature-item-card:nth-child(6) .feature-item-example { border-color: #26A69A; }
+
+.feature-item-card:nth-child(7) .feature-item-icon { background-color: #EC407A; }
 .feature-item-card:nth-child(7) .feature-item-example { border-color: #EC407A; }
+
+.feature-item-card:nth-child(8) .feature-item-icon { background-color: #5C6BC0; }
 .feature-item-card:nth-child(8) .feature-item-example { border-color: #5C6BC0; }
+
+.feature-item-card:nth-child(9) .feature-item-icon { background-color: #78909C; }
 .feature-item-card:nth-child(9) .feature-item-example { border-color: #78909C; }
 
 
 .learn-more-footer {
   text-align: center;
   padding: 2rem 1rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid rgba(0,0,0,0.1);
   font-size: 0.875rem;
-  color: #777;
-  background-color: #f1f3f6;
+  color: #1a237e;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
 }
