@@ -11,7 +11,7 @@ export default function LandingPage() {
     <div className="landing-page-container">
       <header className="landing-header">
         <div className="logo">
-          <Stethoscope className="h-8 w-8 text-[#5E548E]" />
+          <Stethoscope className="h-8 w-8 text-primary" />
           <h1>MediScribe</h1>
         </div>
         <nav className="main-nav">
@@ -70,7 +70,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="landing-footer">
-        <p>Developed by iSynera LLC | ChanceTEK LLC</p>
+        <p>© {new Date().getFullYear()} MediScribe. All Rights Reserved. | Developed by iSynera LLC | ChanceTEK LLC</p>
       </footer>
     </div>
   );

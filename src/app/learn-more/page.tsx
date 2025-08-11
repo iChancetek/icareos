@@ -109,7 +109,7 @@ export default function LearnMorePage() {
       </main>
       
       <footer className="learn-more-footer">
-        <p>Developed by iSynera LLC | ChanceTEK LLC</p>
+        <p>© {new Date().getFullYear()} MediScribe. All Rights Reserved. | Developed by iSynera LLC | ChanceTEK LLC</p>
       </footer>
     </div>
   );
