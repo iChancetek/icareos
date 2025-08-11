@@ -70,7 +70,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="landing-footer">
-        <p>&copy; {new Date().getFullYear()} MediScribe. All Rights Reserved.</p>
+        <p>Developed by iSynera LLC | ChanceTEK LLC</p>
       </footer>
     </div>
   );
