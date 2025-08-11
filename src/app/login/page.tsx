@@ -113,21 +113,21 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col items-start justify-center bg-[#0A1931] p-12 text-white">
+      <div className="hidden lg:flex flex-col items-start justify-center bg-[#f8f7ff] p-12 text-[#231942]">
         <h1 className="text-5xl font-bold mb-4">Welcome to MediScribe</h1>
-        <p className="text-lg text-gray-300 max-w-md">
+        <p className="text-lg text-[#231942]/80 max-w-md">
           A modern AI companion for healthcare professionals—powered by voice, empathy, and innovation.
         </p>
       </div>
-      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md space-y-8 bg-[#1C2C4E] p-10 rounded-2xl shadow-lg">
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
+        <div className="w-full max-w-md space-y-8">
           <div>
-            <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-white">
+            <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-foreground">
               Sign In
             </h2>
-             <p className="mt-2 text-center text-sm text-gray-400">
+             <p className="mt-2 text-center text-sm text-muted-foreground">
               Don't have an account?{' '}
-              <Link href="/signup" className="font-medium text-blue-400 hover:text-blue-300">
+              <Link href="/signup" className="font-medium text-primary hover:text-primary/80">
                 Create one now
               </Link>
             </p>
@@ -142,7 +142,7 @@ export default function LoginPage() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="relative block w-full appearance-none rounded-t-md border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:z-10 focus:border-blue-400 focus:outline-none focus:ring-blue-400 sm:text-sm"
+                  className="relative block w-full appearance-none rounded-none rounded-t-md px-3 py-2 sm:text-sm"
                   placeholder="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -157,7 +157,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
-                  className="relative block w-full appearance-none rounded-b-md border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:z-10 focus:border-blue-400 focus:outline-none focus:ring-blue-400 sm:text-sm"
+                  className="relative block w-full appearance-none rounded-none rounded-b-md px-3 py-2 sm:text-sm"
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -183,7 +183,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={handleForgotPassword}
-                  className="font-medium text-blue-400 hover:text-blue-300"
+                  className="font-medium text-primary hover:text-primary/80"
                   disabled={isLoading}
                 >
                   Forgot your password?
@@ -194,7 +194,7 @@ export default function LoginPage() {
             <div>
               <Button
                 type="submit"
-                className="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-500 py-2 px-4 text-sm font-medium text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-gray-800"
+                className="group relative flex w-full justify-center"
                 disabled={isLoading}
               >
                 {isLoading ? <Loader2 className="animate-spin" /> : 'Sign In'}
@@ -203,17 +203,17 @@ export default function LoginPage() {
           </form>
             <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-600" />
+                    <div className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                    <span className="bg-[#1C2C4E] px-2 text-gray-400">OR CONTINUE WITH</span>
+                    <span className="bg-background px-2 text-muted-foreground">OR CONTINUE WITH</span>
                 </div>
             </div>
 
             <div>
                 <Button
                     variant="outline"
-                    className="w-full justify-center flex items-center bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+                    className="w-full justify-center flex items-center"
                     onClick={handleGoogleSignIn}
                     disabled={isLoading}
                 >
