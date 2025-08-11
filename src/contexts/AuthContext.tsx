@@ -246,6 +246,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       const provider = new GoogleAuthProvider();
+      provider.addScope('profile');
+      provider.addScope('email');
       provider.setCustomParameters({ prompt: 'select_account' }); // Force account selection
       setNewUserInfo(null); 
       await signInWithPopup(auth, provider);
