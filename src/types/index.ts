@@ -13,7 +13,7 @@ export interface IScribe {
   translatedTranscriptLanguage?: string; // Optional: Language of the translatedTranscript
 }
 
-export type TranslationLanguage = 'English' | 'Spanish';
+export type TranslationLanguage = 'English' | 'Spanish' | 'French' | 'German' | 'Chinese' | 'Hebrew';
 
 export interface Translation {
     id: string;

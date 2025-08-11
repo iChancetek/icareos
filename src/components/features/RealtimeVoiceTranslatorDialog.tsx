@@ -235,7 +235,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
     setTranslatedText("");  
     setSummaryText(""); 
     setSessionSaved(false);
-    const targetLang = sourceLang === 'English' ? 'Spanish' : 'English';
+    const targetLang: TranslationLanguage = 'English';
 
     let originalTranscript = "";
 
@@ -293,7 +293,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
         const newTranslation = {
             date: new Date().toISOString(),
             sourceLanguage: currentRecordingLang,
-            targetLanguage: currentRecordingLang === 'English' ? 'Spanish' : 'English' as TranslationLanguage,
+            targetLanguage: 'English' as TranslationLanguage,
             sourceTranscript: transcribedText,
             translatedText: translatedText,
             summary: summaryText,
@@ -338,7 +338,16 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       if (utteranceRef.current) utteranceRef.current.onend = null;
 
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang === 'English' ? 'en-US' : 'es-ES';
+      let ttsLangCode = 'en-US';
+      switch(lang) {
+        case 'Spanish': ttsLangCode = 'es-ES'; break;
+        case 'French': ttsLangCode = 'fr-FR'; break;
+        case 'German': ttsLangCode = 'de-DE'; break;
+        case 'Chinese': ttsLangCode = 'zh-CN'; break;
+        case 'Hebrew': ttsLangCode = 'he-IL'; break;
+        default: ttsLangCode = 'en-US'; break;
+      }
+      utterance.lang = ttsLangCode;
       utteranceRef.current = utterance;
       
       ttsTimeoutRef.current = setTimeout(() => {
@@ -365,7 +374,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
   const handleManualPlayTTS = async () => {
     if (!translatedText || isManuallyPlayingTTS || isProcessing || isRecording) return;
 
-    const targetLanguageToSpeak = currentRecordingLang === 'English' ? 'Spanish' : 'English';
+    const targetLanguageToSpeak: TranslationLanguage = 'English';
     setIsManuallyPlayingTTS(true);
     try {
       await playTTSSound(translatedText, targetLanguageToSpeak);
@@ -421,14 +430,14 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       }
       onOpenChange(open);
     }}>
-      <DialogContent className="sm:max-w-xl md:max-w-2xl flex flex-col h-[85vh] max-h-[900px] min-h-[500px]">
+      <DialogContent className="sm:max-w-xl md:max-w-4xl flex flex-col h-[90vh] max-h-[900px] min-h-[600px]">
         <DialogHeader className="p-4 border-b">
           <DialogTitle className="flex items-center text-xl">
             <Languages className="mr-2 h-6 w-6 text-primary" />
             Real-time Voice Translator
           </DialogTitle>
           <DialogDescription className="text-sm">
-            Speak in English or Spanish. The app will transcribe, translate, and summarize. You can then save the session.
+            Speak in any of the supported languages. The app will transcribe, translate to English, and summarize. You can then save the session.
           </DialogDescription>
         </DialogHeader>
 
@@ -450,9 +459,13 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
 
         {hasMicPermission && isOpen && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4">
               {renderMicButton("English", "Speak in English")}
               {renderMicButton("Spanish", "Speak in Spanish")}
+              {renderMicButton("French", "Speak in French")}
+              {renderMicButton("German", "Speak in German")}
+              {renderMicButton("Chinese", "Speak in Chinese")}
+              {renderMicButton("Hebrew", "Speak in Hebrew")}
             </div>
 
             {(isProcessing || transcribedText || translatedText || summaryText) && (
@@ -479,7 +492,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
                   <div className="space-y-1">
                     <div className="flex justify-between items-center">
                       <h3 className="text-sm font-semibold text-muted-foreground">
-                        Translation ({currentRecordingLang === 'English' ? 'Spanish' : 'English'}):
+                        Translation (English):
                       </h3>
                       <Button
                         variant="outline"
