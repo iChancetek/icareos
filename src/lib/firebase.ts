@@ -7,13 +7,13 @@ import { getFunctions } from 'firebase/functions';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  "projectId": "medisummarize-qk1kp",
-  "appId": "1:979096704240:web:60ff4f01a2e5c164401e35",
-  "storageBucket": "medisummarize-qk1kp.firebasestorage.app",
-  "apiKey": "AIzaSyA8GqHDkhj2p-XUyRgJ_QLb3-3i_CoI1uA",
-  "authDomain": "medisummarize-qk1kp.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "979096704240"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

@@ -9,7 +9,7 @@ import { Settings as SettingsIcon, Moon, Sun, Languages } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type Theme = 'light' | 'dark';
-type Language = 'en' | 'es';
+type Language = 'en' | 'es' | 'fr' | 'zh' | 'ar';
 
 export default function SettingsPage() {
   const [mounted, setMounted] = useState(false);
@@ -26,7 +26,7 @@ export default function SettingsPage() {
     } else if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       initialTheme = 'dark';
     }
-    
+
     setCurrentTheme(initialTheme);
     if (initialTheme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -41,7 +41,7 @@ export default function SettingsPage() {
       // In a full i18n setup, you would trigger language change here
       console.log(`App language loaded: ${savedLanguage}`);
     }
-    
+
     setMounted(true);
   }, []);
 
@@ -116,9 +116,9 @@ export default function SettingsPage() {
                 )}
               </div>
               {mounted && (
-                 <p className="mt-3 text-xs text-muted-foreground">
-                    Current theme: <span className="font-semibold">{currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1)}</span>.
-                  </p>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Current theme: <span className="font-semibold">{currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1)}</span>.
+                </p>
               )}
             </div>
           </section>
@@ -148,6 +148,9 @@ export default function SettingsPage() {
                     <SelectContent>
                       <SelectItem value="en">English</SelectItem>
                       <SelectItem value="es">Español (Spanish)</SelectItem>
+                      <SelectItem value="fr">Français (French)</SelectItem>
+                      <SelectItem value="zh">中文 (Mandarin)</SelectItem>
+                      <SelectItem value="ar">العربية (Arabic)</SelectItem>
                     </SelectContent>
                   </Select>
                 ) : (
@@ -155,9 +158,14 @@ export default function SettingsPage() {
                 )}
               </div>
               {mounted && (
-                 <p className="mt-3 text-xs text-muted-foreground">
-                    Current language: <span className="font-semibold">{currentLanguage === 'en' ? 'English' : 'Español'}</span>.
-                  </p>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Current language: <span className="font-semibold">{
+                    currentLanguage === 'en' ? 'English' :
+                      currentLanguage === 'es' ? 'Español' :
+                        currentLanguage === 'fr' ? 'Français' :
+                          currentLanguage === 'zh' ? '中文' : 'العربية'
+                  }</span>.
+                </p>
               )}
               <p className="mt-3 text-xs text-muted-foreground italic">
                 Note: This is a UI placeholder. Actual content translation requires a full internationalization (i18n) setup.

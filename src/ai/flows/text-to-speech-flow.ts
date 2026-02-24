@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A text-to-speech AI agent.
@@ -7,9 +6,8 @@
  * - TextToSpeechInput - The input type for the textToSpeech function.
  * - TextToSpeechOutput - The return type for the textToSpeech function.
  */
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-import wav from 'wav';
+import { OpenAIService } from '@/services/openaiService';
+import { z } from 'zod';
 
 const TextToSpeechInputSchema = z.object({
   text: z.string().describe('The text to be converted to speech.'),
@@ -23,72 +21,25 @@ const TextToSpeechOutputSchema = z.object({
 export type TextToSpeechOutput = z.infer<typeof TextToSpeechOutputSchema>;
 
 export async function textToSpeech(input: TextToSpeechInput): Promise<TextToSpeechOutput> {
-  return textToSpeechFlow(input);
-}
-
-async function toWav(
-  pcmData: Buffer,
-  channels = 1,
-  rate = 24000,
-  sampleWidth = 2
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const writer = new wav.Writer({
-      channels,
-      sampleRate: rate,
-      bitDepth: sampleWidth * 8,
-    });
-
-    const bufs: Buffer[] = [];
-    writer.on('error', reject);
-    writer.on('data', (d) => {
-      bufs.push(d);
-    });
-    writer.on('end', () => {
-      resolve(Buffer.concat(bufs).toString('base64'));
-    });
-
-    writer.write(pcmData);
-    writer.end();
-  });
-}
-
-const textToSpeechFlow = ai.defineFlow(
-  {
-    name: 'textToSpeechFlow',
-    inputSchema: TextToSpeechInputSchema,
-    outputSchema: TextToSpeechOutputSchema,
-  },
-  async ({ text, voice }) => {
-    if (!text.trim()) {
-      return { audioDataUri: '' };
-    }
-
-    const { media } = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-preview-tts',
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: voice || 'Algenib' },
-          },
-        },
-      },
-      prompt: text,
-    });
-
-    if (!media || !media.url) {
-      throw new Error('No media returned from TTS service');
-    }
-
-    const audioBuffer = Buffer.from(
-      media.url.substring(media.url.indexOf(',') + 1),
-      'base64'
-    );
-    const wavBase64 = await toWav(audioBuffer);
-    
-    return {
-      audioDataUri: `data:audio/wav;base64,${wavBase64}`,
-    };
+  if (!input.text.trim()) {
+    return { audioDataUri: '' };
   }
-);
+
+  try {
+    // Map old Genkit voices to OpenAI voices loosely
+    const openAIVoice = input.voice === 'Achernar' ? 'onyx' : 'alloy';
+
+    // We get back an mp3 buffer from OpenAI
+    const audioBuffer = await OpenAIService.textToSpeech(input.text, openAIVoice);
+
+    // Convert directly to base64 mp3 data URI to satisfy existing consumers
+    const base64Audio = audioBuffer.toString('base64');
+
+    return {
+      audioDataUri: `data:audio/mpeg;base64,${base64Audio}`,
+    };
+  } catch (error: any) {
+    console.error("Error in textToSpeech API route fallback:", error);
+    throw new Error("Failed to generate speech using OpenAI");
+  }
+}

@@ -41,12 +41,12 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
   const [processingStep, setProcessingStep] = useState<ProcessingStep>("idle");
   const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
   const [sessionSaved, setSessionSaved] = useState(false);
-  
+
   const [isManuallyPlayingTTS, setIsManuallyPlayingTTS] = useState(false);
 
   const [hasMicPermission, setHasMicPermission] = useState(false);
   const [isPermissionChecked, setIsPermissionChecked] = useState(false);
-  
+
   const { saveTranslation } = useAuth();
   const router = useRouter();
 
@@ -77,53 +77,53 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
           setIsPermissionChecked(true);
         }
       };
-      if (typeof navigator !== "undefined" && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      if (typeof navigator !== "undefined" && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
         getMicPermission();
       } else {
         setHasMicPermission(false);
         setIsPermissionChecked(true);
-         toast({
-            variant: 'destructive',
-            title: 'Audio Recording Not Supported',
-            description: 'Your browser does not support audio recording or permissions are blocked.',
-            duration: 7000,
-          });
+        toast({
+          variant: 'destructive',
+          title: 'Audio Recording Not Supported',
+          description: 'Your browser does not support audio recording or permissions are blocked.',
+          duration: 7000,
+        });
       }
     }
-    
+
     return () => {
       if (ttsTimeoutRef.current) clearTimeout(ttsTimeoutRef.current);
       if (typeof window !== 'undefined' && window.speechSynthesis && (window.speechSynthesis.speaking || window.speechSynthesis.pending)) {
         window.speechSynthesis.cancel();
       }
-       if (utteranceRef.current) utteranceRef.current.onend = null;
+      if (utteranceRef.current) utteranceRef.current.onend = null;
       setIsManuallyPlayingTTS(false);
     };
   }, [isOpen, isPermissionChecked, toast]);
 
   const resetState = () => {
-     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.stop(); 
-      }
-      audioChunksRef.current = [];
-      effectiveMimeTypeRef.current = '';
-      setIsRecording(false);
-      setCurrentRecordingLang(null);
-      setIsProcessing(false);
-      setProcessingStep("idle");
-      setTranscribedText("");
-      setTranslatedText("");
-      setSummaryText("");
-      setAudioDataUri(null);
-      setSessionSaved(false);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+    audioChunksRef.current = [];
+    effectiveMimeTypeRef.current = '';
+    setIsRecording(false);
+    setCurrentRecordingLang(null);
+    setIsProcessing(false);
+    setProcessingStep("idle");
+    setTranscribedText("");
+    setTranslatedText("");
+    setSummaryText("");
+    setAudioDataUri(null);
+    setSessionSaved(false);
 
-      if (typeof window !== 'undefined' && window.speechSynthesis) { 
-          if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-              window.speechSynthesis.cancel();
-          }
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        window.speechSynthesis.cancel();
       }
-      if (utteranceRef.current) utteranceRef.current.onend = null;
-      setIsManuallyPlayingTTS(false);
+    }
+    if (utteranceRef.current) utteranceRef.current.onend = null;
+    setIsManuallyPlayingTTS(false);
   }
 
   const handleStartStopRecording = async (inputLang: TranslationLanguage) => {
@@ -157,17 +157,17 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
             break;
           }
         }
-        
+
         try {
-            mediaRecorderRef.current = selectedMimeType
+          mediaRecorderRef.current = selectedMimeType
             ? new MediaRecorder(stream, { mimeType: selectedMimeType })
-            : new MediaRecorder(stream); 
-            effectiveMimeTypeRef.current = mediaRecorderRef.current.mimeType;
+            : new MediaRecorder(stream);
+          effectiveMimeTypeRef.current = mediaRecorderRef.current.mimeType;
         } catch (recorderError) {
-            const errorMessage = (recorderError as Error).message || "Unknown recorder initialization error.";
-            toast({ title: "Recording Error", description: `Could not initialize audio recorder: ${errorMessage}.`, variant: "destructive", duration: 7000 });
-            if (stream) stream.getTracks().forEach(track => track.stop());
-            return;
+          const errorMessage = (recorderError as Error).message || "Unknown recorder initialization error.";
+          toast({ title: "Recording Error", description: `Could not initialize audio recorder: ${errorMessage}.`, variant: "destructive", duration: 7000 });
+          if (stream) stream.getTracks().forEach(track => track.stop());
+          return;
         }
 
         mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
@@ -184,13 +184,13 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
             return;
           }
           const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
-          
-          if (audioBlob.size < 1000) { 
+
+          if (audioBlob.size < 1000) {
             toast({ title: "Recording Too Short", description: "Recorded audio is very short or possibly silent. Please try speaking for a longer duration.", variant: "default", duration: 5000 });
             resetState();
             return;
           }
-          
+
           let currentAudioDataUri: string;
           try {
             currentAudioDataUri = await new Promise<string>((resolve, reject) => {
@@ -201,20 +201,20 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
             });
             setAudioDataUri(currentAudioDataUri);
           } catch (fileReaderError) {
-             toast({ title: "Audio Processing Error", description: (fileReaderError as Error).message, variant: "destructive" });
-             resetState();
-             return;
+            toast({ title: "Audio Processing Error", description: (fileReaderError as Error).message, variant: "destructive" });
+            resetState();
+            return;
           }
 
           await processAudio(currentAudioDataUri, inputLang);
         };
-        
+
         mediaRecorderRef.current.onerror = (event: Event) => {
-            const mediaRecorderErrorEvent = event as MediaRecorderErrorEvent;
-            const errorDetails = mediaRecorderErrorEvent.error;
-            const errorMessage = errorDetails?.name || errorDetails?.message || 'Unknown recording error';
-            toast({ title: "Recording Error", description: `An error occurred during recording: ${errorMessage}.`, variant: "destructive", duration: 7000 });
-            resetState();
+          const mediaRecorderErrorEvent = event as MediaRecorderErrorEvent;
+          const errorDetails = mediaRecorderErrorEvent.error;
+          const errorMessage = errorDetails?.name || errorDetails?.message || 'Unknown recording error';
+          toast({ title: "Recording Error", description: `An error occurred during recording: ${errorMessage}.`, variant: "destructive", duration: 7000 });
+          resetState();
         };
 
         mediaRecorderRef.current.start();
@@ -231,9 +231,9 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
 
   const processAudio = async (uri: string, sourceLang: TranslationLanguage) => {
     setIsProcessing(true);
-    setTranscribedText(""); 
-    setTranslatedText("");  
-    setSummaryText(""); 
+    setTranscribedText("");
+    setTranslatedText("");
+    setSummaryText("");
     setSessionSaved(false);
     const targetLang: TranslationLanguage = 'English';
 
@@ -245,11 +245,11 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       if (!transcriptionResult || typeof transcriptionResult.transcription !== 'string') throw new Error(`Transcription service returned invalid data.`);
       originalTranscript = transcriptionResult.transcription;
       setTranscribedText(originalTranscript);
-      toast({ title: "Transcription Complete"});
+      toast({ title: "Transcription Complete" });
 
       if (!originalTranscript.trim()) {
-         toast({ title: "Empty Transcription", description: "No speech detected in the audio."});
-         throw new Error("Empty transcription result."); 
+        toast({ title: "Empty Transcription", description: "No speech detected in the audio." });
+        throw new Error("Empty transcription result.");
       }
 
       setProcessingStep("translating");
@@ -257,22 +257,22 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       if (!translationResult || typeof translationResult.translatedText !== 'string') throw new Error(`Translation service returned invalid data.`);
       setTranslatedText(translationResult.translatedText);
       toast({ title: "Translation Complete" });
-      
+
       setProcessingStep("summarizing");
       const summaryResult = await summarizeIScribe({ transcript: originalTranscript });
       if (!summaryResult || typeof summaryResult.summary !== 'string') throw new Error(`Summarization service returned invalid data.`);
       setSummaryText(summaryResult.summary);
       toast({ title: "Summary Complete" });
 
-      setProcessingStep("completed"); 
-      
+      setProcessingStep("completed");
+
     } catch (error: any) {
       const detailedErrorMessage = error instanceof Error ? error.message : "An unknown error occurred during AI processing.";
-      toast({ 
-        title: "Processing Error", 
-        description: `Operation failed during: ${processingStep}. Details: ${detailedErrorMessage}`, 
+      toast({
+        title: "Processing Error",
+        description: `Operation failed during: ${processingStep}. Details: ${detailedErrorMessage}`,
         variant: "destructive",
-        duration: 9000 
+        duration: 9000
       });
       setProcessingStep('idle');
     } finally {
@@ -280,95 +280,91 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
     }
   };
 
-    const handleSaveSession = async () => {
+  const handleSaveSession = async () => {
     if (!audioDataUri || !transcribedText || !translatedText || !summaryText || !currentRecordingLang) {
-        toast({ title: "Cannot Save", description: "Not enough data to save the session.", variant: "destructive" });
-        return;
+      toast({ title: "Cannot Save", description: "Not enough data to save the session.", variant: "destructive" });
+      return;
     }
 
     setIsProcessing(true);
     setProcessingStep("saving");
 
     try {
-        const newTranslation = {
-            date: new Date().toISOString(),
-            sourceLanguage: currentRecordingLang,
-            targetLanguage: 'English' as TranslationLanguage,
-            sourceTranscript: transcribedText,
-            translatedText: translatedText,
-            summary: summaryText,
-            audioDataUri: audioDataUri,
-        };
+      const newTranslation = {
+        date: new Date().toISOString(),
+        sourceLanguage: currentRecordingLang,
+        targetLanguage: 'English' as TranslationLanguage,
+        sourceTranscript: transcribedText,
+        translatedText: translatedText,
+        summary: summaryText,
+        audioDataUri: audioDataUri,
+      };
 
-        const newId = await saveTranslation(newTranslation);
-        if (newId) {
-            toast({
-                title: "Session Saved",
-                description: "Your translation has been saved to 'My Recordings'.",
-            });
-            setSessionSaved(true);
-        } else {
-            throw new Error("Failed to get a new ID from the save operation.");
-        }
+      const newId = await saveTranslation(newTranslation);
+      if (newId) {
+        toast({
+          title: "Session Saved",
+          description: "Your translation has been saved to 'My Recordings'.",
+        });
+        setSessionSaved(true);
+      } else {
+        throw new Error("Failed to get a new ID from the save operation.");
+      }
     } catch (error) {
-        console.error("Error saving translation session:", error);
-        toast({ title: "Save Failed", description: "Could not save the translation session. Please try again.", variant: "destructive" });
+      console.error("Error saving translation session:", error);
+      toast({ title: "Save Failed", description: "Could not save the translation session. Please try again.", variant: "destructive" });
     } finally {
-        setIsProcessing(false);
-        setProcessingStep("completed");
+      setIsProcessing(false);
+      setProcessingStep("completed");
     }
-    };
+  };
 
 
-  // Utility function to play TTS, returns a Promise
-  const playTTSSound = (text: string, lang: TranslationLanguage): Promise<void> => {
-    return new Promise<void>((resolve, reject) => {
-      if (typeof window === 'undefined' || !window.speechSynthesis) {
-        toast({ title: "TTS Not Supported", description: "Your browser does not support text-to-speech.", variant: "destructive" });
-        reject(new Error("TTSNotSupported"));
-        return;
+  // Utility function to play TTS via OpenAI API route
+  const playTTSSound = async (text: string, lang: TranslationLanguage): Promise<void> => {
+    if (!text.trim()) return;
+
+    if (ttsTimeoutRef.current) clearTimeout(ttsTimeoutRef.current);
+
+    // Cancel any built-in speech synthesis just in case
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    if (utteranceRef.current) utteranceRef.current.onend = null;
+
+    try {
+      // Instead of using browser TTS, let's call our internal API route that wraps OpenAI TTS
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, lang })
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch TTS audio');
       }
-      if (!text.trim()) {
-        resolve();
-        return;
-      }
 
-      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) window.speechSynthesis.cancel();
-      if (ttsTimeoutRef.current) clearTimeout(ttsTimeoutRef.current);
-      if (utteranceRef.current) utteranceRef.current.onend = null;
+      const audioBlob = await res.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      let ttsLangCode = 'en-US';
-      switch(lang) {
-        case 'Spanish': ttsLangCode = 'es-ES'; break;
-        case 'French': ttsLangCode = 'fr-FR'; break;
-        case 'German': ttsLangCode = 'de-DE'; break;
-        case 'Chinese': ttsLangCode = 'zh-CN'; break;
-        case 'Hebrew': ttsLangCode = 'he-IL'; break;
-        default: ttsLangCode = 'en-US'; break;
-      }
-      utterance.lang = ttsLangCode;
-      utteranceRef.current = utterance;
-      
-      ttsTimeoutRef.current = setTimeout(() => {
-        window.speechSynthesis.cancel(); 
-        reject(new Error("TTSPlaybackTimeout"));
-      }, 20000);
+      const audio = new Audio(audioUrl);
 
-      utterance.onend = () => {
-        if (ttsTimeoutRef.current) clearTimeout(ttsTimeoutRef.current);
-        resolve();
-      };
+      return new Promise<void>((resolve, reject) => {
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+          resolve();
+        };
+        audio.onerror = (e) => {
+          URL.revokeObjectURL(audioUrl);
+          reject(new Error("Audio playback failed"));
+        };
+        audio.play().catch(reject);
+      });
 
-      utterance.onerror = (event) => {
-        if (ttsTimeoutRef.current) clearTimeout(ttsTimeoutRef.current);
-        let errorMsg = `Could not play the audio in ${lang}. Error: ${event.error}`;
-        toast({ title: "TTS Error", description: errorMsg, variant: "destructive" });
-        reject(new Error(typeof event.error === 'string' ? event.error : "TTSPlaybackError")); 
-      };
-      
-      setTimeout(() => window.speechSynthesis.speak(utterance), 100);
-    });
+    } catch (error: any) {
+      toast({ title: "TTS Error", description: error.message || "Failed to play audio.", variant: "destructive" });
+      throw error;
+    }
   };
 
   const handleManualPlayTTS = async () => {
@@ -411,9 +407,9 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
       variant={isRecording && currentRecordingLang === lang ? "destructive" : "default"}
       onClick={() => handleStartStopRecording(lang)}
       disabled={
-        (!isOpen || !hasMicPermission) || 
-        (isRecording && currentRecordingLang !== lang) || 
-        isProcessing || 
+        (!isOpen || !hasMicPermission) ||
+        (isRecording && currentRecordingLang !== lang) ||
+        isProcessing ||
         isManuallyPlayingTTS
       }
       className="w-full h-16 text-lg flex-col gap-1 shadow-md"
@@ -425,7 +421,7 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) { 
+      if (!open) {
         resetState();
       }
       onOpenChange(open);
@@ -463,9 +459,11 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
               {renderMicButton("English", "Speak in English")}
               {renderMicButton("Spanish", "Speak in Spanish")}
               {renderMicButton("French", "Speak in French")}
+              {renderMicButton("Mandarin", "Speak in Mandarin")}
+              {renderMicButton("Arabic", "Speak in Arabic")}
               {renderMicButton("German", "Speak in German")}
-              {renderMicButton("Chinese", "Speak in Chinese")}
               {renderMicButton("Hebrew", "Speak in Hebrew")}
+              {renderMicButton("Chinese", "Speak in Chinese")}
             </div>
 
             {(isProcessing || transcribedText || translatedText || summaryText) && (
@@ -501,8 +499,8 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
                         disabled={!translatedText || isProcessing || isRecording}
                         className="shadow-sm"
                       >
-                         {isManuallyPlayingTTS ? <StopCircle className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-                         {isManuallyPlayingTTS ? 'Stop' : 'Play'}
+                        {isManuallyPlayingTTS ? <StopCircle className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
+                        {isManuallyPlayingTTS ? 'Stop' : 'Play'}
                       </Button>
                     </div>
                     <p className="p-3 bg-primary/10 rounded-md border border-primary/30 whitespace-pre-wrap text-sm">{translatedText}</p>
@@ -512,39 +510,39 @@ export default function RealtimeVoiceTranslatorDialog({ isOpen, onOpenChange }: 
                 {summaryText && (
                   <div className="space-y-1">
                     <h3 className="text-sm font-semibold text-muted-foreground flex items-center">
-                       <FileText className="mr-2 h-4 w-4" /> AI Summary (of original):
+                      <FileText className="mr-2 h-4 w-4" /> AI Summary (of original):
                     </h3>
                     <p className="p-3 bg-accent/10 rounded-md border border-accent/30 whitespace-pre-wrap text-sm">{summaryText}</p>
                   </div>
                 )}
-                 {processingStep === 'completed' && audioDataUri && (
-                    <div className="pt-4 text-center">
-                        {sessionSaved ? (
-                             <div className="flex items-center justify-center gap-2 text-green-600">
-                                <CheckCircle className="h-5 w-5" />
-                                <p>Session saved successfully!</p>
-                            </div>
-                        ) : (
-                            <Button onClick={handleSaveSession} disabled={isProcessing}>
-                                <Save className="mr-2 h-4 w-4"/>
-                                Save Session
-                            </Button>
-                        )}
-                    </div>
+                {processingStep === 'completed' && audioDataUri && (
+                  <div className="pt-4 text-center">
+                    {sessionSaved ? (
+                      <div className="flex items-center justify-center gap-2 text-green-600">
+                        <CheckCircle className="h-5 w-5" />
+                        <p>Session saved successfully!</p>
+                      </div>
+                    ) : (
+                      <Button onClick={handleSaveSession} disabled={isProcessing}>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Session
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             )}
-            { !isProcessing && !transcribedText && !translatedText && !summaryText &&
+            {!isProcessing && !transcribedText && !translatedText && !summaryText &&
               <div className="flex-1 flex items-center justify-center">
                 <p className="text-muted-foreground">Click a button above to start translating.</p>
               </div>
             }
           </>
         )}
-         <DialogFooter className="p-4 border-t mt-auto">
-            <p className="text-xs text-muted-foreground text-center w-full">
-                Ensure your microphone is enabled and speak clearly. Processing times may vary.
-            </p>
+        <DialogFooter className="p-4 border-t mt-auto">
+          <p className="text-xs text-muted-foreground text-center w-full">
+            Ensure your microphone is enabled and speak clearly. Processing times may vary.
+          </p>
         </DialogFooter>
       </DialogContent>
     </Dialog>

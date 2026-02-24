@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI assistant named iSkylar to answer user questions.
@@ -8,8 +7,8 @@
  * - ISkylarAssistantOutput - The return type for the askISkylar function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { OpenAIService } from '@/services/openaiService';
+import { z } from 'zod';
 
 const ISkylarAssistantInputSchema = z.object({
   question: z.string().describe("The user's question for iSkylar."),
@@ -21,9 +20,6 @@ const ISkylarAssistantOutputSchema = z.object({
 });
 export type ISkylarAssistantOutput = z.infer<typeof ISkylarAssistantOutputSchema>;
 
-export async function askISkylar(input: ISkylarAssistantInput): Promise<ISkylarAssistantOutput> {
-  return iskylarAssistantFlow(input);
-}
 
 const MEDISCRIBE_CONTEXT = `
 MediScribe is an AI-powered voice recording and transcription app for healthcare professionals.
@@ -75,35 +71,23 @@ If asked about the MediScribe app itself, you can provide information based on t
 `;
 
 
-const prompt = ai.definePrompt({
-  name: 'iskylarAssistantPrompt',
-  input: {schema: ISkylarAssistantInputSchema},
-  output: {schema: ISkylarAssistantOutputSchema},
-  prompt: `
+export async function askISkylar(input: ISkylarAssistantInput): Promise<ISkylarAssistantOutput> {
+  const systemPrompt = `
 ${ISKYLAR_PERSONA}
 
 You have access to the following information about the MediScribe application's features if the user asks about them.
 <mediscribe_info>
 ${MEDISCRIBE_CONTEXT}
 </mediscribe_info>
+`;
 
-User's question: {{{question}}}
-
-iSkylar's response:
-`,
-});
-
-const iskylarAssistantFlow = ai.defineFlow(
-  {
-    name: 'iskylarAssistantFlow',
-    inputSchema: ISkylarAssistantInputSchema,
-    outputSchema: ISkylarAssistantOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    if (!output) {
-      return { answer: "I'm sorry, I encountered an issue trying to process your request. Please try again." };
+  try {
+    const answer = await OpenAIService.generateText(input.question, systemPrompt);
+    if (!answer) {
+      throw new Error();
     }
-    return output;
+    return { answer };
+  } catch (err: any) {
+    return { answer: "I'm sorry, I encountered an issue trying to process your request. Please try again." };
   }
-);
+}

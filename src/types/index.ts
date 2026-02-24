@@ -13,16 +13,16 @@ export interface IScribe {
   translatedTranscriptLanguage?: string; // Optional: Language of the translatedTranscript
 }
 
-export type TranslationLanguage = 'English' | 'Spanish' | 'French' | 'German' | 'Chinese' | 'Hebrew';
+export type TranslationLanguage = 'English' | 'Spanish' | 'French' | 'German' | 'Chinese' | 'Hebrew' | 'Mandarin' | 'Arabic';
 
 export interface Translation {
-    id: string;
-    userId: string;
-    date: string; // ISO string date
-    sourceLanguage: TranslationLanguage;
-    targetLanguage: TranslationLanguage;
-    sourceTranscript: string;
-    translatedText: string;
-    summary: string;
-    audioDataUri: string;
+  id: string;
+  userId: string;
+  date: string; // ISO string date
+  sourceLanguage: TranslationLanguage;
+  targetLanguage: TranslationLanguage;
+  sourceTranscript: string;
+  translatedText: string;
+  summary: string;
+  audioDataUri: string;
 }

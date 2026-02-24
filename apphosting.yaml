@@ -1,0 +1,7 @@
+#  apphosting.yaml
+#  https://firebase.google.com/docs/app-hosting/configure
+
+# Setting environment variables from Cloud Secret Manager
+env:
+  - variable: OPENAI_API_KEY
+    secret: OPENAI_API_KEY
