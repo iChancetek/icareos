@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 
 // Ensure the OPENAI_API_KEY environment variable is set
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY || "dummy-openai-api-key-to-bypass-build-crash",
     dangerouslyAllowBrowser: true, // If used client-side, enable this; otherwise keep interactions server-side.
 });
 
