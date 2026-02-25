@@ -109,7 +109,7 @@ export default function LearnMorePage() {
       </main>
 
       <footer className="learn-more-footer">
-        <p>© {new Date().getFullYear()} MediScribe. All Rights Reserved.</p>
+        <p>© {new Date().getFullYear()} MediScribe. All Rights Reserved. | ChanceTEK LLC</p>
       </footer>
     </div>
   );

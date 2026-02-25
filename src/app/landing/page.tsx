@@ -33,7 +33,7 @@ export default function LandingPage() {
             <span className="font-bold tracking-tight text-foreground">MediScribe</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} MediScribe. All Rights Reserved.
+            © {new Date().getFullYear()} MediScribe. All Rights Reserved. | ChanceTEK LLC
           </p>
         </div>
       </footer>
