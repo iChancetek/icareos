@@ -95,46 +95,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const createUserProfile = async (fbUser: FirebaseUser, displayName: string, username: string): Promise<User | null> => {
     const userDocRef = doc(db, 'users', fbUser.uid);
     try {
-      const newUserProfileData = await runTransaction(db, async (transaction) => {
-        const userDoc = await transaction.get(userDocRef);
-        if (userDoc.exists()) {
-          console.warn("User document already exists for new user:", fbUser.uid);
-          const existingData = userDoc.data();
-          transaction.update(userDocRef, { lastLogin: serverTimestamp() });
-          return {
-            ...existingData,
-            uid: fbUser.uid,
-            createdAt: existingData.createdAt?.toDate() || new Date(),
-            lastLogin: new Date(),
-          } as User;
-        }
+      const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> & { createdAt: any, lastLogin: any } = {
+        uid: fbUser.uid,
+        email: fbUser.email,
+        username: username,
+        displayName: displayName,
+        photoURL: fbUser.photoURL,
+        role: 'user',
+        accountStatus: 'active',
+        createdAt: serverTimestamp(),
+        lastLogin: serverTimestamp(),
+      };
 
-        const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> & { createdAt: any, lastLogin: any } = {
-          uid: fbUser.uid,
-          email: fbUser.email,
-          username: username,
-          displayName: displayName,
-          photoURL: fbUser.photoURL,
-          role: 'user',
-          accountStatus: 'active',
-          createdAt: serverTimestamp(),
-          lastLogin: serverTimestamp(),
-        };
+      await setDoc(userDocRef, newUserProfile);
 
-        transaction.set(userDocRef, newUserProfile);
-
-        // This is the important part: return the complete user profile immediately
-        return {
-          ...newUserProfile,
-          createdAt: new Date(),
-          lastLogin: new Date(),
-        };
-      });
-      return newUserProfileData;
+      // Return the complete user profile immediately
+      return {
+        ...newUserProfile,
+        createdAt: new Date(),
+        lastLogin: new Date(),
+      };
     } catch (error) {
-      console.error("Error creating user profile in transaction: ", error);
+      console.error("Error creating user profile via setDoc: ", error);
       await signOut(auth);
-      throw error; // Rethrow to be caught by the signup function
+      throw error; // Rethrow to be caught by the calling function
     }
   };
 

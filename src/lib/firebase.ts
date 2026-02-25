@@ -48,8 +48,14 @@ const auth = getAuth(app);
 
 let db;
 try {
-  db = initializeFirestore(app, { experimentalForceLongPolling: true });
+  // Only apply long polling on the client-side in production to prevent SSR hanging
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'development') {
+    db = initializeFirestore(app, { experimentalForceLongPolling: true });
+  } else {
+    db = getFirestore(app);
+  }
 } catch (e) {
+  // Fallback if initializeFirestore is called twice somehow
   db = getFirestore(app);
 }
 
