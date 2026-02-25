@@ -123,27 +123,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    console.log("[AuthContext] Setting up onAuthStateChanged...");
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      console.log("[AuthContext] onAuthStateChanged fired. User:", fbUser?.uid);
-      setIsLoading(true);
-      try {
-        if (fbUser) {
-          setFirebaseUser(fbUser);
-          const userDocRef = doc(db, 'users', fbUser.uid);
-          console.log("[AuthContext] Fetching user doc...");
-          let userDoc;
-          try {
-            userDoc = await getDoc(userDocRef);
-            console.log("[AuthContext] User doc fetched. Exists:", userDoc.exists());
-          } catch (err) {
-            console.error("[AuthContext] getDoc failed:", err);
-            throw err;
-          }
+    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+      if (fbUser) {
+        // Step 1: Immediately unblock the UI - Firebase Auth is resolved (fast)
+        setFirebaseUser(fbUser);
 
-          if (!userDoc.exists()) {
-            console.log("New user detected, creating profile...");
-            // For Google Sign-In, use their provided name. For email/pass, use our temp state.
+        // Build a minimal user object from what Firebase Auth already knows.
+        // This allows routing and UI to work instantly, before Firestore loads.
+        const minimalUser: User = {
+          uid: fbUser.uid,
+          email: fbUser.email,
+          displayName: fbUser.displayName,
+          photoURL: fbUser.photoURL,
+          username: fbUser.email?.split('@')[0] || null,
+          role: 'user',
+          accountStatus: 'active',
+          createdAt: null,
+          lastLogin: null,
+        };
+        setUser(minimalUser);
+        setIsLoading(false); // Unblock the UI immediately!
+
+        // Step 2: Load the full Firestore profile in the background (non-blocking)
+        const userDocRef = doc(db, 'users', fbUser.uid);
+        getDoc(userDocRef).then(async (userDoc) => {
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.accountStatus === 'disabled') {
+              console.warn(`Login attempt by disabled user: ${fbUser.email}`);
+              await signOut(auth);
+              setUser(null);
+              setFirebaseUser(null);
+              return;
+            }
+            // Enrich user with full Firestore profile
+            setUser({
+              uid: fbUser.uid,
+              email: fbUser.email,
+              username: userData.username,
+              displayName: userData.displayName || fbUser.displayName,
+              photoURL: userData.photoURL || fbUser.photoURL,
+              role: userData.role || 'user',
+              accountStatus: userData.accountStatus || 'active',
+              createdAt: userData.createdAt?.toDate() || null,
+              lastLogin: new Date(),
+            });
+            // Update lastLogin in background, don't await it
+            if (pathnameRef.current !== '/dashboard/admin') {
+              updateDoc(userDocRef, { lastLogin: serverTimestamp() }).catch(() => { });
+            }
+          } else {
+            // New user - create their profile document
             const isGoogleSignIn = fbUser.providerData.some(p => p.providerId === 'google.com');
             const currentUserInfo = newUserInfoRef.current;
             let profileData: NewUserInfo;
@@ -155,53 +185,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               };
             } else if (currentUserInfo) {
               profileData = currentUserInfo;
+              setNewUserInfo(null);
             } else {
-              // Fallback if newUserInfo is not set for some reason on email signup
-              console.warn("New user detected without pre-set info. Using fallback data.");
               profileData = {
-                displayName: "New User",
+                displayName: fbUser.displayName || "New User",
                 username: fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0, 5)}`
               };
             }
 
-            console.log("[AuthContext] Calling createUserProfile...");
-            const userProfile = await createUserProfile(fbUser, profileData.displayName, profileData.username);
-            console.log("[AuthContext] createUserProfile completed.");
-            setUser(userProfile); // Set the full user profile immediately
-            setNewUserInfo(null); // Clear temp info
-          } else {
-            const userData = userDoc.data();
-            if (userData.accountStatus === 'disabled') {
-              console.warn(`Login attempt by disabled user: ${fbUser.email}`);
-              await signOut(auth);
-              // Optionally add a toast message here to inform the user
-              throw new Error("User account is disabled.");
-            }
-            if (pathnameRef.current !== '/dashboard/admin') {
-              await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
-            }
-            const userProfile: User = {
-              uid: fbUser.uid,
-              email: fbUser.email,
-              username: userData.username,
-              displayName: userData.displayName,
-              photoURL: userData.photoURL,
-              role: userData.role || 'user',
-              accountStatus: userData.accountStatus || 'active',
-              createdAt: userData.createdAt?.toDate() || null,
-              lastLogin: new Date(),
-            };
-            setUser(userProfile);
+            createUserProfile(fbUser, profileData.displayName, profileData.username)
+              .then((userProfile) => {
+                if (userProfile) setUser(userProfile);
+              })
+              .catch((err) => {
+                console.error("Failed to create user profile:", err);
+                signOut(auth);
+                setUser(null);
+                setFirebaseUser(null);
+              });
           }
-        } else {
-          setFirebaseUser(null);
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Error during auth state change processing:", error);
-        setUser(null);
+        }).catch((err) => {
+          console.error("[AuthContext] Firestore getDoc failed (non-blocking):", err);
+          // Keep the user logged in via Firebase Auth; just won't have Firestore enrichment
+        });
+
+      } else {
+        // User logged out
         setFirebaseUser(null);
-      } finally {
+        setUser(null);
         setIsLoading(false);
       }
     });
