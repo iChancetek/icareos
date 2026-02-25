@@ -524,3 +524,7 @@ Full Firebase Config: {
  ○ Compiling /favicon.ico ...
  ✓ Compiled /favicon.ico in 12.2s (1786 modules)
  GET /favicon.ico 200 in 12852ms
+ ✓ Compiled in 17.2s (3265 modules)
+ GET /dashboard/recordings 200 in 16209ms
+ GET /dashboard/iscribe 200 in 557ms
+ GET /dashboard/recordings 200 in 113ms
