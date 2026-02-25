@@ -4,13 +4,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Stethoscope, LayoutDashboard, Bot, Languages, Mic, FolderKanban } from 'lucide-react';
-import { 
-  Sidebar, 
-  SidebarHeader, 
-  SidebarContent, 
-  SidebarMenu, 
-  SidebarMenuItem, 
+import { Stethoscope, LayoutDashboard, Bot, Languages, FolderKanban, BarChart2, ShieldAlert } from 'lucide-react';
+import {
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
   SidebarMenuButton,
   SidebarTrigger,
   useSidebar,
@@ -33,8 +33,8 @@ interface NavItem {
 
 export default function AppSidebar() {
   const pathname = usePathname();
-  const { user } = useAuth(); 
-  const { state: sidebarState, isMobile: sidebarIsMobileFromHook } = useSidebar(); 
+  const { user } = useAuth();
+  const { state: sidebarState, isMobile: sidebarIsMobileFromHook } = useSidebar();
   const [isVoiceTranslatorDialogOpen, setIsVoiceTranslatorDialogOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -45,23 +45,25 @@ export default function AppSidebar() {
   const navItems: NavItem[] = [
     { href: '/dashboard/iscribe', label: 'iScribe', icon: LayoutDashboard },
     { href: '/dashboard/recordings', label: 'My Recordings', icon: FolderKanban, matchStartsWith: true },
-    { 
+    { href: '/dashboard/insights', label: 'Insights', icon: BarChart2, matchStartsWith: true },
+    {
       href: '/dashboard/iskylar',
-      label: 'iSkylar', 
-      icon: Bot, 
+      label: 'iSkylar',
+      icon: Bot,
     },
-    { 
+    {
       label: 'Voice Translator',
       icon: Languages,
       action: () => setIsVoiceTranslatorDialogOpen(true)
     },
+    { href: '/dashboard/admin', label: 'Admin', icon: ShieldAlert, adminOnly: true },
   ];
 
   const isActive = (item: NavItem) => {
     if (!item.href) return false;
 
     if (item.href === '/dashboard/recordings') {
-        return pathname.startsWith('/dashboard/recordings');
+      return pathname.startsWith('/dashboard/recordings');
     }
 
     if (item.matchStartsWith) {
@@ -76,7 +78,7 @@ export default function AppSidebar() {
 
   const collapsibleProp = mounted ? (sidebarIsMobileFromHook ? "offcanvas" : "icon") : "icon";
   const isEffectivelyMobile = mounted && sidebarIsMobileFromHook;
-  const sidebarDisplayState = mounted ? sidebarState : "collapsed"; 
+  const sidebarDisplayState = mounted ? sidebarState : "collapsed";
 
   return (
     <>
@@ -85,13 +87,13 @@ export default function AppSidebar() {
           {isEffectivelyMobile && <SheetTitle className="sr-only">Menu</SheetTitle>}
           <div className="flex items-center gap-2">
             <Stethoscope className="h-8 w-8 text-primary" />
-            {(sidebarDisplayState === 'expanded' || (sidebarDisplayState === 'collapsed' && isEffectivelyMobile)) &&  (
+            {(sidebarDisplayState === 'expanded' || (sidebarDisplayState === 'collapsed' && isEffectivelyMobile)) && (
               <h1 className="text-xl font-semibold text-foreground">MediScribe</h1>
             )}
           </div>
           {mounted && !sidebarIsMobileFromHook && <SidebarTrigger className="absolute right-2 top-3 data-[state=open]:hidden data-[state=closed]:block group-data-[collapsible=offcanvas]:hidden" />}
         </SidebarHeader>
-        
+
         <Separator className="my-0" />
 
         <SidebarContent className="flex-1 p-2">
@@ -101,36 +103,36 @@ export default function AppSidebar() {
                 return null;
               }
               return (
-              <SidebarMenuItem key={item.label}>
-                {item.href ? (
-                  <Link href={item.href} legacyBehavior passHref>
-                    <SidebarMenuButton 
-                      isActive={isActive(item)} 
-                      className={cn("w-full justify-start", isActive(item) ? "bg-sidebar-accent text-sidebar-accent-foreground" : "")}
+                <SidebarMenuItem key={item.label}>
+                  {item.href ? (
+                    <Link href={item.href} legacyBehavior passHref>
+                      <SidebarMenuButton
+                        isActive={isActive(item)}
+                        className={cn("w-full justify-start", isActive(item) ? "bg-sidebar-accent text-sidebar-accent-foreground" : "")}
+                        tooltip={item.label}
+                      >
+                        <item.icon className="h-5 w-5" />
+                        <span className={cn((sidebarDisplayState === 'collapsed' && !isEffectivelyMobile) ? "hidden" : "inline-block")}>{item.label}</span>
+                      </SidebarMenuButton>
+                    </Link>
+                  ) : (
+                    <SidebarMenuButton
+                      onClick={item.action}
+                      className={cn("w-full justify-start")}
                       tooltip={item.label}
                     >
                       <item.icon className="h-5 w-5" />
                       <span className={cn((sidebarDisplayState === 'collapsed' && !isEffectivelyMobile) ? "hidden" : "inline-block")}>{item.label}</span>
                     </SidebarMenuButton>
-                  </Link>
-                ) : (
-                  <SidebarMenuButton 
-                    onClick={item.action}
-                    className={cn("w-full justify-start")}
-                    tooltip={item.label}
-                  >
-                    <item.icon className="h-5 w-5" />
-                     <span className={cn((sidebarDisplayState === 'collapsed' && !isEffectivelyMobile) ? "hidden" : "inline-block")}>{item.label}</span>
-                  </SidebarMenuButton>
-                )}
-              </SidebarMenuItem>
+                  )}
+                </SidebarMenuItem>
               );
             })}
           </SidebarMenu>
         </SidebarContent>
 
         <Separator className="my-0" />
-        
+
       </Sidebar>
       <RealtimeVoiceTranslatorDialog isOpen={isVoiceTranslatorDialogOpen} onOpenChange={setIsVoiceTranslatorDialogOpen} />
     </>
