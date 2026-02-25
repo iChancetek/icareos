@@ -12,6 +12,8 @@ import {
   signOut,
   GoogleAuthProvider,
   signInWithPopup,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   type User as FirebaseUser,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc, runTransaction, collection, getDocs, query, where, deleteDoc } from 'firebase/firestore';
@@ -39,6 +41,8 @@ interface AuthContextType {
   signup: (emailIn: string, passwordIn: string, displayNameIn: string, usernameIn: string) => Promise<boolean>;
   logout: () => void;
   signInWithGoogle: () => Promise<boolean>;
+  resendVerificationEmail: () => Promise<boolean>;
+  resetPassword: (email: string) => Promise<boolean>;
   user: User | null;
   firebaseUser: FirebaseUser | null;
   updateUserProfile: (updates: { displayName?: string, photoURL?: string }) => Promise<boolean>;
@@ -76,6 +80,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
+  const newUserInfoRef = React.useRef<NewUserInfo | null>(null);
+  const pathnameRef = React.useRef<string>(pathname);
+
+  // Keep refs up-to-date without causing re-renders
+  useEffect(() => {
+    newUserInfoRef.current = newUserInfo;
+  }, [newUserInfo]);
+
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
+
   const createUserProfile = async (fbUser: FirebaseUser, displayName: string, username: string): Promise<User | null> => {
     const userDocRef = doc(db, 'users', fbUser.uid);
     try {
@@ -86,27 +102,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const existingData = userDoc.data();
           transaction.update(userDocRef, { lastLogin: serverTimestamp() });
           return {
-             ...existingData,
-             uid: fbUser.uid,
-             createdAt: existingData.createdAt?.toDate() || new Date(),
-             lastLogin: new Date(),
+            ...existingData,
+            uid: fbUser.uid,
+            createdAt: existingData.createdAt?.toDate() || new Date(),
+            lastLogin: new Date(),
           } as User;
         }
 
-        const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> & {createdAt: any, lastLogin: any} = {
+        const newUserProfile: Omit<User, 'createdAt' | 'lastLogin'> & { createdAt: any, lastLogin: any } = {
           uid: fbUser.uid,
           email: fbUser.email,
           username: username,
           displayName: displayName,
           photoURL: fbUser.photoURL,
-          role: 'user', 
+          role: 'user',
           accountStatus: 'active',
           createdAt: serverTimestamp(),
           lastLogin: serverTimestamp(),
         };
 
         transaction.set(userDocRef, newUserProfile);
-        
+
         // This is the important part: return the complete user profile immediately
         return {
           ...newUserProfile,
@@ -123,18 +139,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    console.log("[AuthContext] Setting up onAuthStateChanged...");
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      console.log("[AuthContext] onAuthStateChanged fired. User:", fbUser?.uid);
       setIsLoading(true);
       try {
         if (fbUser) {
           setFirebaseUser(fbUser);
           const userDocRef = doc(db, 'users', fbUser.uid);
-          let userDoc = await getDoc(userDocRef);
+          console.log("[AuthContext] Fetching user doc...");
+          let userDoc;
+          try {
+            userDoc = await getDoc(userDocRef);
+            console.log("[AuthContext] User doc fetched. Exists:", userDoc.exists());
+          } catch (err) {
+            console.error("[AuthContext] getDoc failed:", err);
+            throw err;
+          }
 
           if (!userDoc.exists()) {
             console.log("New user detected, creating profile...");
             // For Google Sign-In, use their provided name. For email/pass, use our temp state.
             const isGoogleSignIn = fbUser.providerData.some(p => p.providerId === 'google.com');
+            const currentUserInfo = newUserInfoRef.current;
             let profileData: NewUserInfo;
 
             if (isGoogleSignIn) {
@@ -142,8 +169,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 displayName: fbUser.displayName || "New User",
                 username: fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0, 5)}`
               };
-            } else if (newUserInfo) {
-              profileData = newUserInfo;
+            } else if (currentUserInfo) {
+              profileData = currentUserInfo;
             } else {
               // Fallback if newUserInfo is not set for some reason on email signup
               console.warn("New user detected without pre-set info. Using fallback data.");
@@ -152,20 +179,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 username: fbUser.email?.split('@')[0] || `user_${fbUser.uid.substring(0, 5)}`
               };
             }
-            
+
+            console.log("[AuthContext] Calling createUserProfile...");
             const userProfile = await createUserProfile(fbUser, profileData.displayName, profileData.username);
+            console.log("[AuthContext] createUserProfile completed.");
             setUser(userProfile); // Set the full user profile immediately
             setNewUserInfo(null); // Clear temp info
           } else {
             const userData = userDoc.data();
             if (userData.accountStatus === 'disabled') {
-                console.warn(`Login attempt by disabled user: ${fbUser.email}`);
-                await signOut(auth);
-                // Optionally add a toast message here to inform the user
-                throw new Error("User account is disabled.");
+              console.warn(`Login attempt by disabled user: ${fbUser.email}`);
+              await signOut(auth);
+              // Optionally add a toast message here to inform the user
+              throw new Error("User account is disabled.");
             }
-            if (pathname !== '/dashboard/admin') { 
-                await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
+            if (pathnameRef.current !== '/dashboard/admin') {
+              await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
             }
             const userProfile: User = {
               uid: fbUser.uid,
@@ -194,27 +223,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [newUserInfo, pathname]);
+  }, []);
 
   const isAuthenticated = !isLoading && !!user;
 
   useEffect(() => {
-    const publicRoutes = ['/login', '/signup', '/', '/learn-more'];
+    const publicRoutes = ['/login', '/signup', '/', '/learn-more', '/verify-email'];
     const isPublicRoute = publicRoutes.includes(pathname);
     const isAdminRoute = pathname.startsWith('/dashboard/admin');
 
     if (!isLoading) {
       if (!isAuthenticated && !isPublicRoute) {
         router.push('/login');
-      }
-      if (isAuthenticated && (pathname === '/login' || pathname === '/signup' || pathname === '/')) {
-        router.push('/dashboard/iscribe');
-      }
-       if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
-        router.push('/dashboard/iscribe');
+      } else if (isAuthenticated) {
+        const isGoogleSignIn = firebaseUser?.providerData.some(p => p.providerId === 'google.com');
+        const isVerified = firebaseUser?.emailVerified || isGoogleSignIn;
+
+        if (!isVerified && pathname !== '/verify-email') {
+          router.push('/verify-email');
+        } else if (isVerified && (pathname === '/login' || pathname === '/signup' || pathname === '/' || pathname === '/verify-email')) {
+          router.push('/dashboard/iscribe');
+        } else if (isVerified && isAdminRoute && user?.role !== 'admin') {
+          router.push('/dashboard/iscribe');
+        }
       }
     }
-  }, [isAuthenticated, isLoading, pathname, router, user]);
+  }, [isAuthenticated, isLoading, pathname, router, user, firebaseUser]);
 
   const login = async (emailIn: string, passwordIn: string): Promise<boolean> => {
     setIsLoading(true);
@@ -238,13 +272,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Store user info before creating account, so onAuthStateChanged can use it.
       setNewUserInfo({ displayName: displayNameIn, username: usernameIn });
-      await createUserWithEmailAndPassword(auth, emailIn, passwordIn);
+      const userCredential = await createUserWithEmailAndPassword(auth, emailIn, passwordIn);
+      if (userCredential.user) {
+        await sendEmailVerification(userCredential.user);
+      }
       // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
-        setNewUserInfo(null); // Clear temp info on failure
-        setIsLoading(false);
-        throw error; // Let the caller handle the error message to display a toast
+      setNewUserInfo(null); // Clear temp info on failure
+      setIsLoading(false);
+      throw error; // Let the caller handle the error message to display a toast
     }
   };
 
@@ -255,18 +292,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       provider.addScope('profile');
       provider.addScope('email');
       provider.setCustomParameters({ prompt: 'consent' }); // Force consent screen
-      setNewUserInfo(null); 
+      setNewUserInfo(null);
       await signInWithPopup(auth, provider);
       // onAuthStateChanged will handle the rest
       return true;
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') {
-          console.error("Google Sign-In Error Code:", error.code, "Message:", error.message);
+        console.error("Google Sign-In Error Code:", error.code, "Message:", error.message);
       } else {
-          console.log("Google Sign-In popup closed by user.");
+        console.log("Google Sign-In popup closed by user.");
       }
       setIsLoading(false);
       return false;
+    }
+  };
+
+  const resendVerificationEmail = async (): Promise<boolean> => {
+    if (auth.currentUser) {
+      try {
+        await sendEmailVerification(auth.currentUser);
+        return true;
+      } catch (error) {
+        console.error("Error resending verification email:", error);
+        return false;
+      }
+    }
+    return false;
+  };
+
+  const resetPassword = async (emailIn: string): Promise<boolean> => {
+    try {
+      await sendPasswordResetEmail(auth, emailIn);
+      return true;
+    } catch (error) {
+      console.error("Error sending password reset email:", error);
+      throw error; // Let caller process the error visually
     }
   };
 
@@ -297,85 +357,85 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const saveIScribe = async (iScribeData: Omit<IScribe, 'id' | 'userId'>): Promise<string | null> => {
     if (!user) return null;
     try {
-        const newIScribeRef = doc(collection(db, 'iscribes'));
-        const newIScribe: IScribe = {
-            id: newIScribeRef.id,
-            userId: user.uid,
-            ...iScribeData,
-        };
-        await setDoc(newIScribeRef, newIScribe);
-        return newIScribeRef.id;
+      const newIScribeRef = doc(collection(db, 'iscribes'));
+      const newIScribe: IScribe = {
+        id: newIScribeRef.id,
+        userId: user.uid,
+        ...iScribeData,
+      };
+      await setDoc(newIScribeRef, newIScribe);
+      return newIScribeRef.id;
     } catch (error) {
-        console.error("Error saving iscribe:", error);
-        return null;
+      console.error("Error saving iscribe:", error);
+      return null;
     }
   };
 
   const getUserIScribes = useCallback(async (): Promise<IScribe[]> => {
     if (!user) return [];
     try {
-        const q = query(collection(db, 'iscribes'), where('userId', '==', user.uid));
-        const querySnapshot = await getDocs(q);
-        const iscribes = querySnapshot.docs.map(doc => doc.data() as IScribe);
-        iscribes.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        return iscribes;
+      const q = query(collection(db, 'iscribes'), where('userId', '==', user.uid));
+      const querySnapshot = await getDocs(q);
+      const iscribes = querySnapshot.docs.map(doc => doc.data() as IScribe);
+      iscribes.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      return iscribes;
     } catch (error) {
-        console.error("Error fetching user iscribes:", error);
-        return [];
+      console.error("Error fetching user iscribes:", error);
+      return [];
     }
   }, [user]);
 
   const getIScribeById = useCallback(async (id: string): Promise<IScribe | null> => {
     if (!user) return null;
     try {
-        const docRef = doc(db, 'iscribes', id);
-        const docSnap = await getDoc(docRef);
-        // Admin can view any iscribe, regular user can only view their own
-        if (docSnap.exists() && (docSnap.data().userId === user.uid || user.role === 'admin')) {
-            return docSnap.data() as IScribe;
-        }
-        return null;
+      const docRef = doc(db, 'iscribes', id);
+      const docSnap = await getDoc(docRef);
+      // Admin can view any iscribe, regular user can only view their own
+      if (docSnap.exists() && (docSnap.data().userId === user.uid || user.role === 'admin')) {
+        return docSnap.data() as IScribe;
+      }
+      return null;
     } catch (error) {
-        console.error("Error fetching iscribe by ID:", error);
-        return null;
+      console.error("Error fetching iscribe by ID:", error);
+      return null;
     }
   }, [user]);
 
   const updateIScribe = async (id: string, updates: Partial<IScribe>): Promise<boolean> => {
     if (!user) return false;
     try {
-        const docRef = doc(db, 'iscribes', id);
-        const docSnap = await getDoc(docRef);
-        // Admin or owner can update
-        if(docSnap.exists() && (docSnap.data().userId === user.uid || user.role === 'admin')) {
-            await updateDoc(docRef, updates);
-            return true;
-        }
-        return false;
+      const docRef = doc(db, 'iscribes', id);
+      const docSnap = await getDoc(docRef);
+      // Admin or owner can update
+      if (docSnap.exists() && (docSnap.data().userId === user.uid || user.role === 'admin')) {
+        await updateDoc(docRef, updates);
+        return true;
+      }
+      return false;
     } catch (error) {
-        console.error("Error updating iscribe:", error);
-        return false;
+      console.error("Error updating iscribe:", error);
+      return false;
     }
   };
 
   const deleteIScribe = async (id: string): Promise<boolean> => {
     if (!user) return false;
     try {
-        const docRef = doc(db, 'iscribes', id);
-        const docSnap = await getDoc(docRef);
-        // Admin or owner can delete
-        if(docSnap.exists() && (docSnap.data().userId === user.uid || user.role === 'admin')) {
-            await deleteDoc(docRef);
-            return true;
-        }
-        return false;
+      const docRef = doc(db, 'iscribes', id);
+      const docSnap = await getDoc(docRef);
+      // Admin or owner can delete
+      if (docSnap.exists() && (docSnap.data().userId === user.uid || user.role === 'admin')) {
+        await deleteDoc(docRef);
+        return true;
+      }
+      return false;
     } catch (error) {
-        console.error("Error deleting iscribe:", error);
-        return false;
+      console.error("Error deleting iscribe:", error);
+      return false;
     }
   };
 
-   // Translation Methods
+  // Translation Methods
   const saveTranslation = async (translationData: Omit<Translation, 'id' | 'userId'>): Promise<string | null> => {
     if (!user) return null;
     try {
@@ -437,24 +497,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
   };
-  
+
   // Admin Methods
   const getAllUsers = useCallback(async (): Promise<User[]> => {
     if (user?.role !== 'admin') return [];
     try {
-        const querySnapshot = await getDocs(collection(db, "users"));
-        return querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                ...data,
-                uid: doc.id,
-                createdAt: data.createdAt?.toDate() || null,
-                lastLogin: data.lastLogin?.toDate() || null,
-            } as User;
-        });
+      const querySnapshot = await getDocs(collection(db, "users"));
+      return querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          uid: doc.id,
+          createdAt: data.createdAt?.toDate() || null,
+          lastLogin: data.lastLogin?.toDate() || null,
+        } as User;
+      });
     } catch (error) {
-        console.error("Error getting all users:", error);
-        return [];
+      console.error("Error getting all users:", error);
+      return [];
     }
   }, [user]);
 
@@ -464,8 +524,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
     if (!uid) {
-        console.error("No user ID provided for update.");
-        return false;
+      console.error("No user ID provided for update.");
+      return false;
     }
     try {
       const userDocRef = doc(db, 'users', uid);
@@ -508,13 +568,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const getAllIScribes = useCallback(async (): Promise<IScribe[]> => {
     if (user?.role !== 'admin') return [];
     try {
-        const querySnapshot = await getDocs(collection(db, "iscribes"));
-        const iscribes = querySnapshot.docs.map(doc => doc.data() as IScribe);
-        iscribes.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        return iscribes;
+      const querySnapshot = await getDocs(collection(db, "iscribes"));
+      const iscribes = querySnapshot.docs.map(doc => doc.data() as IScribe);
+      iscribes.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      return iscribes;
     } catch (error) {
-        console.error("Error getting all iscribes:", error);
-        return [];
+      console.error("Error getting all iscribes:", error);
+      return [];
     }
   }, [user]);
 
@@ -527,6 +587,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signup,
       logout,
       signInWithGoogle,
+      resendVerificationEmail,
+      resetPassword,
       user,
       firebaseUser,
       updateUserProfile,

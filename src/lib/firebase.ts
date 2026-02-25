@@ -2,7 +2,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 
 // Your web app's Firebase configuration
@@ -41,9 +41,18 @@ if (!firebaseConfig.apiKey) {
 }
 
 // Initialize Firebase
+console.log("Firebase Init API Key Check (first 5 chars):", firebaseConfig.apiKey ? firebaseConfig.apiKey.substring(0, 5) : "MISSING", "dummy?", firebaseConfig.apiKey === "dummy-api-key-to-bypass-build-crash");
+console.log("Full Firebase Config:", JSON.stringify(firebaseConfig, null, 2));
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
-const db = getFirestore(app);
+
+let db;
+try {
+  db = initializeFirestore(app, { experimentalForceLongPolling: true });
+} catch (e) {
+  db = getFirestore(app);
+}
+
 const functions = getFunctions(app);
 
 export { app, auth, db, functions };
