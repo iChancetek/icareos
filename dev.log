@@ -464,3 +464,30 @@ Full Firebase Config: {
  ✓ Compiled /favicon.ico in 1380ms (1816 modules)
  GET /favicon.ico 200 in 1907ms
  ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled in 14.4s (3299 modules)
+Firebase Init API Key Check (first 5 chars): AIzaS dummy? false
+Full Firebase Config: {
+  "apiKey": "AIzaSyDdKIfgLetDTyd81nIUBjWKGdj3HLzNo-I",
+  "authDomain": "mediscribe-221.firebaseapp.com",
+  "projectId": "mediscribe-221",
+  "storageBucket": "mediscribe-221.firebasestorage.app",
+  "messagingSenderId": "707708093410",
+  "appId": "1:707708093410:web:0151a75037e12e2901afbb",
+  "measurementId": "G-N5TNTJTF3W"
+}
+ GET /dashboard/iskylar 200 in 1427ms
+ GET /favicon.ico 200 in 154ms
+ ○ Compiling /dashboard/iscribe ...
+ ✓ Compiled /dashboard/iscribe in 7.2s (1799 modules)
+Firebase Init API Key Check (first 5 chars): AIzaS dummy? false
+Full Firebase Config: {
+  "apiKey": "AIzaSyDdKIfgLetDTyd81nIUBjWKGdj3HLzNo-I",
+  "authDomain": "mediscribe-221.firebaseapp.com",
+  "projectId": "mediscribe-221",
+  "storageBucket": "mediscribe-221.firebasestorage.app",
+  "messagingSenderId": "707708093410",
+  "appId": "1:707708093410:web:0151a75037e12e2901afbb",
+  "measurementId": "G-N5TNTJTF3W"
+}
+ GET /dashboard/iscribe 200 in 9229ms
+ GET /dashboard/iscribe 200 in 3338ms

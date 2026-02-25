@@ -273,13 +273,8 @@ export default function AppSidebar() {
         </div>
       </motion.nav>
 
-      {/* ── Spacer so page content doesn't sit under the rail ── */}
-      <motion.div
-        animate={{ width: expanded ? PANEL_W : RAIL_W }}
-        transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
-        className="shrink-0 hidden md:block"
-        aria-hidden="true"
-      />
+      {/* Fixed 64px spacer — keeps content clear of the collapsed rail only */}
+      <div style={{ width: RAIL_W }} className="shrink-0 hidden md:block" aria-hidden="true" />
 
       {/* Voice Translator Dialog */}
       <RealtimeVoiceTranslatorDialog
