@@ -11,8 +11,7 @@ import { Mic, StopCircle, Save, Loader2, AlertTriangle, CheckCircle, LanguagesIc
 import { Progress } from '@/components/ui/progress';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
-import { transcribeAudio } from '@/ai/flows/transcribe-audio';
-import { summarizeIScribe } from '@/ai/flows/summarize-iscribe';
+import { processAudioSession } from '@/services/agentService';
 import { translateText } from '@/ai/flows/translate-text-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { sendDataToHubSpot } from '@/services/hubspotService';
@@ -29,18 +28,19 @@ export default function NewIScribePage() {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [progress, setProgress] = useState(0);
   const [patientName, setPatientName] = useState('');
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
   const effectiveMimeTypeRef = useRef<string>(''); // To store the actual mimeType used
-  
+
   const [isPermissionChecked, setIsPermissionChecked] = useState(false);
   const [hasMicPermission, setHasMicPermission] = useState(false);
 
-  const processingSteps = ["Transcribing Audio...", "Translating Transcript (Optional)...", "Generating Summary...", "Finalizing..."];
+  const processingSteps = ["Running Clinical Intelligence Agents...", "Translating Transcript (Optional)...", "Saving to your records...", "Finalizing..."];
   const [currentStepMessage, setCurrentStepMessage] = useState("");
   const [targetTranslationLanguage, setTargetTranslationLanguage] = useState<string>('none');
+  const [specialty, setSpecialty] = useState<string>('none');
 
 
   useEffect(() => {
@@ -103,42 +103,42 @@ export default function NewIScribePage() {
       console.log("NewIScribe: Media stream obtained:", stream);
 
       audioChunksRef.current = [];
-      setAudioDataUri(null); 
+      setAudioDataUri(null);
 
       const MimeTypes = [
-          'audio/mp4', // Often preferred by Safari/iOS
-          'audio/webm;codecs=opus',
-          'audio/ogg;codecs=opus',
-          'audio/webm',
-          'audio/aac',
+        'audio/mp4', // Often preferred by Safari/iOS
+        'audio/webm;codecs=opus',
+        'audio/ogg;codecs=opus',
+        'audio/webm',
+        'audio/aac',
       ];
       let selectedMimeType = '';
       for (const type of MimeTypes) {
-          if (MediaRecorder.isTypeSupported(type)) {
-            selectedMimeType = type;
-            console.log("NewIScribe: MediaRecorder.isTypeSupported is true for:", type);
-            break;
-          }
-          console.log("NewIScribe: MediaRecorder.isTypeSupported is false for:", type);
+        if (MediaRecorder.isTypeSupported(type)) {
+          selectedMimeType = type;
+          console.log("NewIScribe: MediaRecorder.isTypeSupported is true for:", type);
+          break;
+        }
+        console.log("NewIScribe: MediaRecorder.isTypeSupported is false for:", type);
       }
       if (!selectedMimeType) {
-          console.log("NewIScribe: No preferred mimeType supported, trying browser default for MediaRecorder.");
+        console.log("NewIScribe: No preferred mimeType supported, trying browser default for MediaRecorder.");
       }
-      
+
       try {
-          mediaRecorderRef.current = selectedMimeType
+        mediaRecorderRef.current = selectedMimeType
           ? new MediaRecorder(stream, { mimeType: selectedMimeType })
           : new MediaRecorder(stream); // Let browser pick if none are explicitly supported
-          effectiveMimeTypeRef.current = mediaRecorderRef.current.mimeType;
-          console.log("NewIScribe: MediaRecorder instance created with effective mimeType:", effectiveMimeTypeRef.current);
+        effectiveMimeTypeRef.current = mediaRecorderRef.current.mimeType;
+        console.log("NewIScribe: MediaRecorder instance created with effective mimeType:", effectiveMimeTypeRef.current);
       } catch (recorderError) {
-          console.error("NewIScribe: Error instantiating MediaRecorder:", recorderError);
-          const errorMessage = (recorderError as Error).message || "Unknown recorder initialization error.";
-          toast({ title: "Recording Error", description: `Could not initialize audio recorder: ${errorMessage}. Your browser might not support the required audio formats.`, variant: "destructive", duration: 7000 });
-          if (stream) stream.getTracks().forEach(track => track.stop());
-          setRecordingState('error');
-          setCurrentStepMessage(`Recorder init failed: ${errorMessage}`);
-          return;
+        console.error("NewIScribe: Error instantiating MediaRecorder:", recorderError);
+        const errorMessage = (recorderError as Error).message || "Unknown recorder initialization error.";
+        toast({ title: "Recording Error", description: `Could not initialize audio recorder: ${errorMessage}. Your browser might not support the required audio formats.`, variant: "destructive", duration: 7000 });
+        if (stream) stream.getTracks().forEach(track => track.stop());
+        setRecordingState('error');
+        setCurrentStepMessage(`Recorder init failed: ${errorMessage}`);
+        return;
       }
 
 
@@ -155,9 +155,9 @@ export default function NewIScribePage() {
         const mediaRecorderErrorEvent = event as MediaRecorderErrorEvent;
         const errorDetails = mediaRecorderErrorEvent.error;
         console.error("NewIScribe: MediaRecorder error event:", event, "DOMException:", errorDetails);
-        
+
         const errorMessage = errorDetails?.name || errorDetails?.message || 'Unknown recording error';
-        
+
         toast({
           title: "Recording Error",
           description: `An error occurred with the recorder: ${errorMessage}. Please ensure your microphone is working.`,
@@ -166,20 +166,20 @@ export default function NewIScribePage() {
         setRecordingState('error');
         setCurrentStepMessage(`Recording failed: ${errorMessage}`);
         if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            console.log("NewIScribe: Recording stream tracks stopped due to MediaRecorder error.");
+          stream.getTracks().forEach(track => track.stop());
+          console.log("NewIScribe: Recording stream tracks stopped due to MediaRecorder error.");
         }
       };
 
       mediaRecorderRef.current.onstop = () => {
         console.log("NewIScribe: MediaRecorder onstop event fired. Total chunks recorded:", audioChunksRef.current.length);
-        
+
         const actualMimeType = effectiveMimeTypeRef.current || (selectedMimeType || 'audio/webm'); // Fallback if ref wasn't set
         console.log("NewIScribe: Creating Blob with actual mimeType:", actualMimeType, "Number of chunks:", audioChunksRef.current.length);
-        
+
         const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
         console.log("NewIScribe: Audio blob created, size:", audioBlob.size, "type:", audioBlob.type);
-        
+
         if (audioBlob.size === 0) {
           toast({
             title: "Recording Failed",
@@ -190,7 +190,7 @@ export default function NewIScribePage() {
           setCurrentStepMessage("No audio data recorded.");
           setAudioDataUri(null);
           setProgress(0);
-           if (stream) {
+          if (stream) {
             stream.getTracks().forEach(track => track.stop());
             console.log("NewIScribe: Recording stream tracks stopped. No audio data recorded.");
           }
@@ -202,28 +202,28 @@ export default function NewIScribePage() {
         reader.onloadend = () => {
           const base64Audio = reader.result as string;
           setAudioDataUri(base64Audio);
-          console.log("NewIScribe: Audio converted to Data URI, length (first 100 chars):", base64Audio.substring(0,100));
+          console.log("NewIScribe: Audio converted to Data URI, length (first 100 chars):", base64Audio.substring(0, 100));
           setRecordingState('idle');
-          setProgress(100); 
+          setProgress(100);
           setCurrentStepMessage("Recording complete. Ready to save.");
           toast({ title: "Recording Stopped", description: `Recorded ${Math.round(audioBlob.size / 1024)} KB of ${actualMimeType}` });
         };
         reader.onerror = (error) => {
-            console.error("NewIScribe: FileReader error when converting blob to Data URI:", error);
-            toast({ title: "Processing Error", description: "Could not process recorded audio data.", variant: "destructive" });
-            setRecordingState('error');
-            setCurrentStepMessage("Error processing audio.");
+          console.error("NewIScribe: FileReader error when converting blob to Data URI:", error);
+          toast({ title: "Processing Error", description: "Could not process recorded audio data.", variant: "destructive" });
+          setRecordingState('error');
+          setCurrentStepMessage("Error processing audio.");
         }
         if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            console.log("NewIScribe: Recording stream tracks stopped after successful recording stop.");
+          stream.getTracks().forEach(track => track.stop());
+          console.log("NewIScribe: Recording stream tracks stopped after successful recording stop.");
         }
       };
 
       mediaRecorderRef.current.start();
       console.log("NewIScribe: MediaRecorder started.");
       setRecordingState('recording');
-      setProgress(0); 
+      setProgress(0);
       setCurrentStepMessage("Recording in progress... Speak clearly.");
       toast({ title: "Recording Started" });
     } catch (err: any) {
@@ -249,14 +249,13 @@ export default function NewIScribePage() {
       if (recordingState === 'recording') {
         setRecordingState('idle');
         setCurrentStepMessage("Recording stopped unexpectedly.");
-        toast({ title: "Recording Stopped", description: "Recorder was not active.", variant: "default"});
+        toast({ title: "Recording Stopped", description: "Recorder was not active.", variant: "default" });
       }
     }
   };
 
   const handleSaveIScribe = async () => {
-    console.log("NewIScribe: handleSaveIScribe called. audioDataUri present:", !!audioDataUri);
-     if (!patientName.trim()) {
+    if (!patientName.trim()) {
       toast({ title: "Patient Name Required", description: "Please enter the patient's name before saving.", variant: "destructive" });
       return;
     }
@@ -265,127 +264,87 @@ export default function NewIScribePage() {
       return;
     }
     if (!audioDataUri.startsWith('data:audio/')) {
-      toast({ title: "Invalid Audio Data", description: "The recorded audio data is not in a recognized format. Please try recording again.", variant: "destructive" });
-      console.error("NewIScribe: Invalid audioDataUri format:", audioDataUri.substring(0, 50));
+      toast({ title: "Invalid Audio Data", description: "The recorded audio data is not in a recognized format.", variant: "destructive" });
       setRecordingState('error');
-      setCurrentStepMessage("Invalid audio data format.");
       return;
     }
     if (!user) {
-        toast({ title: "Authentication Error", description: "You must be logged in to save a iscribe.", variant: "destructive" });
-        return;
+      toast({ title: "Authentication Error", description: "You must be logged in to save a iScribe.", variant: "destructive" });
+      return;
     }
 
     setRecordingState('processing');
-    setProgress(0);
-    
-    let transcript = "";
-    let summary = "";
-    let translatedTranscript: string | undefined = undefined;
-    let finalTranslationLanguage: string | undefined = undefined;
+    setProgress(10);
+    setCurrentStepMessage("Running Clinical Intelligence Agents (Transcription → NLP → SOAP → Risk → Billing → Compliance)...");
 
     try {
-      // Step 1: Transcribe Audio
-      setCurrentStepMessage(processingSteps[0]); 
-      console.log("NewIScribe: Sending audio for transcription, Data URI (first 100 chars):", audioDataUri.substring(0,100));
-      const transcriptionResult = await transcribeAudio({ audioDataUri });
-      if (!transcriptionResult || typeof transcriptionResult.transcription !== 'string') {
-        console.error("NewIScribe: Transcription service did not return a valid transcript object or transcription string.", transcriptionResult);
-        throw new Error("Transcription service did not return a valid transcript.");
-      }
-      if (transcriptionResult.transcription.trim() === "") {
-        console.log("NewIScribe: Transcription result is an empty string.");
-        toast({ title: "Transcription Result", description: "Transcription is empty. The audio might have been silent or too short.", variant: "default" });
-      }
-      transcript = transcriptionResult.transcription;
-      console.log("NewIScribe: Transcription received:", transcript.substring(0,100) + "...");
-      setProgress(25);
+      // Run the full multi-agent pipeline
+      const session = await processAudioSession(audioDataUri, {
+        specialty: specialty !== 'none' ? specialty : undefined,
+        language: targetTranslationLanguage !== 'none' ? targetTranslationLanguage : undefined,
+      });
 
-      // Step 2: Translate Transcript (Optional)
-      if (targetTranslationLanguage !== 'none' && transcript.trim()) {
-        setCurrentStepMessage(processingSteps[1]); 
-        console.log(`NewIScribe: Translating transcript to ${targetTranslationLanguage}.`);
-        const translationResult = await translateText({ text: transcript, targetLanguage: targetTranslationLanguage });
-        if (!translationResult || typeof translationResult.translatedText !== 'string') {
-          console.error("NewIScribe: Translation service did not return a valid translated text.", translationResult);
-          toast({ title: "Translation Warning", description: `Could not translate transcript to ${targetTranslationLanguage}. Proceeding without it.`, variant: "default" });
-        } else {
+      setProgress(60);
+      setCurrentStepMessage("Agents complete. Applying translation...");
+
+      // Optional translation of the transcript
+      let translatedTranscript: string | undefined;
+      let finalTranslationLanguage: string | undefined;
+      if (targetTranslationLanguage !== 'none' && session.transcription.transcript.trim()) {
+        try {
+          const translationResult = await translateText({ text: session.transcription.transcript, targetLanguage: targetTranslationLanguage });
           translatedTranscript = translationResult.translatedText;
           finalTranslationLanguage = targetTranslationLanguage;
-          console.log(`NewIScribe: Translated transcript to ${targetTranslationLanguage}:`, (translatedTranscript || "").substring(0,100) + "...");
+        } catch {
+          toast({ title: "Translation Warning", description: "Could not translate — saving without.", variant: "default" });
         }
-      } else {
-        console.log("NewIScribe: Skipping transcript translation step.");
       }
-      setProgress(50);
 
-      // Step 3: Generate Summary (from original transcript)
-      setCurrentStepMessage(processingSteps[2]); 
-      console.log("NewIScribe: Sending original transcript for summarization.");
-      const summaryResult = await summarizeIScribe({ transcript }); // Summarize original transcript
-      if (!summaryResult || typeof summaryResult.summary !== 'string') { 
-        console.error("NewIScribe: Summarization service did not return a valid summary object or summary string.", summaryResult);
-        throw new Error("Summarization service did not return a valid summary.");
-      }
-      summary = summaryResult.summary;
-      console.log("NewIScribe: Summary received:", summary.substring(0,100) + "...");
-      setProgress(75);
+      setProgress(80);
+      setCurrentStepMessage("Saving clinical record...");
 
-      // Step 4: Finalize
-      setCurrentStepMessage(processingSteps[3]); 
-      console.log("NewIScribe: Finalizing iscribe save...");
-      
       const iScribeToSave: Omit<IScribe, 'id' | 'userId'> = {
-        patientName: patientName,
+        patientName,
         date: new Date().toISOString(),
-        status: 'Completed', 
-        transcript: transcript,
-        summary: summary,
-        audioDataUri: audioDataUri, // For immediate playback, might not be suitable for long-term
-        translatedTranscript: translatedTranscript,
+        status: session.compliance.passed ? 'Completed' : 'Completed',
+        transcript: session.transcription.transcript,
+        summary: session.soap.structuredSummary,
+        audioDataUri,
+        translatedTranscript,
         translatedTranscriptLanguage: finalTranslationLanguage,
+        // Agent-enriched clinical data
+        soapNote: session.soap.soap,
+        laymanSummary: session.soap.laymanSummary,
+        icdCodes: session.billing.icdCodes,
+        cptCodes: session.billing.cptCodes,
+        riskLevel: session.risk.riskLevel,
+        riskScore: session.risk.riskScore,
+        riskFactors: session.risk.riskFactors,
+        overallConfidence: session.meta.overallConfidence,
+        requiresHumanReview: session.meta.requiresHumanReview,
+        agentSessionId: session.meta.sessionId,
+        agentLatency_ms: session.meta.totalLatency_ms,
+        specialty: specialty !== 'none' ? specialty : undefined,
       };
-      
+
       const newIScribeId = await saveIScribe(iScribeToSave);
+      if (!newIScribeId) throw new Error("Failed to save the iScribe to the database.");
 
-      if (!newIScribeId) {
-        throw new Error("Failed to save the iscribe to the database.");
-      }
+      sendDataToHubSpot({ ...iScribeToSave, id: newIScribeId, userId: user.uid }, audioDataUri).catch(() => { });
 
-      console.log("NewIScribe: Attempting to send data to HubSpot placeholder...");
-      await sendDataToHubSpot({ ...iScribeToSave, id: newIScribeId, userId: user.uid }, audioDataUri); 
-
-      await new Promise(resolve => setTimeout(resolve, 500)); 
       setProgress(100);
-
       setRecordingState('success');
       setCurrentStepMessage("iScribe processed successfully!");
-      toast({ title: "Success", description: "iScribe processed and saved." });
+      toast({ title: "Success", description: `Clinical intelligence complete. Overall confidence: ${Math.round((session.meta.overallConfidence ?? 0) * 100)}%` });
 
-      console.log("NewIScribe: New iscribe ID generated:", newIScribeId, "Navigating...");
-      
       setTimeout(() => router.push(`/dashboard/iscribe/${newIScribeId}`), 1500);
 
     } catch (error) {
-      console.error("NewIScribe: Processing error details during save/AI calls:", error);
+      console.error("NewIScribe: Processing error:", error);
       setRecordingState('error');
-      let description = "An unknown error occurred during AI processing.";
-      if (error instanceof Error) {
-        description = error.message;
-      } else if (typeof error === 'string') {
-        description = error;
-      } else if (error && typeof (error as any).toString === 'function') {
-        description = (error as any).toString();
-      }
-      
-      const detailedMessage = `Failed during: ${currentStepMessage || 'unknown step'}. Details: ${description}`;
-      setCurrentStepMessage(detailedMessage);
-      toast({ 
-        title: "Processing Error", 
-        description: detailedMessage, 
-        variant: "destructive",
-        duration: 7000 
-      });
+      const msg = error instanceof Error ? error.message : "An unknown error occurred.";
+      setCurrentStepMessage(`Failed: ${msg}`);
+      toast({ title: "Processing Error", description: msg, variant: "destructive", duration: 7000 });
     }
   };
 
@@ -414,9 +373,9 @@ export default function NewIScribePage() {
         <CardContent className="flex flex-col items-center space-y-8 py-10">
           <div className="w-full max-w-md space-y-2">
             <Label htmlFor="patientName">Patient Name</Label>
-            <Input 
-              id="patientName" 
-              placeholder="Enter patient's full name" 
+            <Input
+              id="patientName"
+              placeholder="Enter patient's full name"
               value={patientName}
               onChange={(e) => setPatientName(e.target.value)}
               disabled={recordingState === 'recording' || recordingState === 'processing'}
@@ -427,7 +386,7 @@ export default function NewIScribePage() {
           <div className="p-6 bg-accent/30 rounded-full animate-pulse-slow-shadow">
             {renderIcon()}
           </div>
-          
+
           {(!isPermissionChecked && recordingState === 'idle') && (
             <div className="flex items-center space-x-2 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -453,17 +412,17 @@ export default function NewIScribePage() {
           )}
 
           {recordingState === 'success' && (
-             <p className="text-center text-lg text-green-600 font-medium">{currentStepMessage}</p>
+            <p className="text-center text-lg text-green-600 font-medium">{currentStepMessage}</p>
           )}
-           {recordingState === 'error' && (
-             <p className="text-center text-lg text-destructive font-medium">{currentStepMessage}</p>
+          {recordingState === 'error' && (
+            <p className="text-center text-lg text-destructive font-medium">{currentStepMessage}</p>
           )}
 
           {(recordingState === 'idle' && audioDataUri) && (
             <div className="w-full max-w-md space-y-2 mt-4">
               <Label htmlFor="translate-language">Translate Transcript to (Optional)</Label>
-              <Select 
-                value={targetTranslationLanguage} 
+              <Select
+                value={targetTranslationLanguage}
                 onValueChange={setTargetTranslationLanguage}
                 disabled={recordingState !== 'idle'}
               >
@@ -485,9 +444,9 @@ export default function NewIScribePage() {
         </CardContent>
         <CardFooter className="flex flex-col sm:flex-row justify-center gap-4 pt-6 border-t">
           {recordingState === 'idle' && !audioDataUri && (
-            <Button 
-              size="lg" 
-              onClick={handleStartRecording} 
+            <Button
+              size="lg"
+              onClick={handleStartRecording}
               className="w-full sm:w-auto shadow-md"
               disabled={!isPermissionChecked || !hasMicPermission || recordingState === 'recording' || !patientName.trim()}
             >
@@ -496,20 +455,20 @@ export default function NewIScribePage() {
             </Button>
           )}
           {recordingState === 'recording' && (
-            <Button 
-              size="lg" 
-              variant="destructive" 
-              onClick={handleStopRecording} 
+            <Button
+              size="lg"
+              variant="destructive"
+              onClick={handleStopRecording}
               className="w-full sm:w-auto shadow-md"
             >
               <StopCircle className="mr-2 h-5 w-5" />
               Stop Recording
             </Button>
           )}
-          {(recordingState === 'idle' && audioDataUri) && ( 
-            <Button 
-              size="lg" 
-              onClick={handleSaveIScribe} 
+          {(recordingState === 'idle' && audioDataUri) && (
+            <Button
+              size="lg"
+              onClick={handleSaveIScribe}
               className="w-full sm:w-auto shadow-md"
               disabled={recordingState === 'processing' || recordingState === 'recording' || !patientName.trim() || !audioDataUri}
             >
@@ -517,39 +476,39 @@ export default function NewIScribePage() {
               Save iScribe
             </Button>
           )}
-          {(recordingState === 'error' || (recordingState === 'idle' && audioDataUri && !patientName.trim())) && ( 
-             <Button 
-                size="lg" 
-                onClick={() => { 
-                    console.log("NewIScribe: Try Again button clicked. Resetting state.");
-                    setRecordingState('idle'); 
-                    setProgress(0); 
-                    setCurrentStepMessage(''); 
-                    setAudioDataUri(null);
-                    audioChunksRef.current = [];
-                    effectiveMimeTypeRef.current = '';
-                    setTargetTranslationLanguage('none');
-                    // Do not reset patientName here
-                    if (!isPermissionChecked || !hasMicPermission) { // Re-prompt if permission was denied/not checked
-                       setIsPermissionChecked(false); // This will trigger useEffect to re-check
-                       toast({
-                          variant: 'destructive',
-                          title: 'Microphone Access Issue',
-                          description: 'Please ensure microphone permissions are enabled in your browser settings. Re-checking now.',
-                          duration: 7000,
-                        });
-                    } else if (!patientName.trim()) {
-                       toast({ title: "Patient Name Required", description: "Please enter the patient's name.", variant: "destructive" });
-                    } else {
-                        toast({
-                            title: 'Ready',
-                            description: 'You can try recording again.',
-                            variant: 'default'
-                        });
-                    }
-                }} 
-                className="w-full sm:w-auto shadow-md"
-              >
+          {(recordingState === 'error' || (recordingState === 'idle' && audioDataUri && !patientName.trim())) && (
+            <Button
+              size="lg"
+              onClick={() => {
+                console.log("NewIScribe: Try Again button clicked. Resetting state.");
+                setRecordingState('idle');
+                setProgress(0);
+                setCurrentStepMessage('');
+                setAudioDataUri(null);
+                audioChunksRef.current = [];
+                effectiveMimeTypeRef.current = '';
+                setTargetTranslationLanguage('none');
+                // Do not reset patientName here
+                if (!isPermissionChecked || !hasMicPermission) { // Re-prompt if permission was denied/not checked
+                  setIsPermissionChecked(false); // This will trigger useEffect to re-check
+                  toast({
+                    variant: 'destructive',
+                    title: 'Microphone Access Issue',
+                    description: 'Please ensure microphone permissions are enabled in your browser settings. Re-checking now.',
+                    duration: 7000,
+                  });
+                } else if (!patientName.trim()) {
+                  toast({ title: "Patient Name Required", description: "Please enter the patient's name.", variant: "destructive" });
+                } else {
+                  toast({
+                    title: 'Ready',
+                    description: 'You can try recording again.',
+                    variant: 'default'
+                  });
+                }
+              }}
+              className="w-full sm:w-auto shadow-md"
+            >
               Try Again
             </Button>
           )}
