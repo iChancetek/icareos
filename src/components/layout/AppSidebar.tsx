@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Bot, Languages, FolderKanban, BarChart2,
-  ShieldAlert, Activity, Pin, PinOff,
+  ShieldAlert, Activity, PanelLeft, PanelLeftClose,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -34,6 +34,7 @@ export default function AppSidebar() {
   const [hovered, setHovered] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [suppressHover, setSuppressHover] = useState(false);
   const leaveTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -42,9 +43,15 @@ export default function AppSidebar() {
   }, []);
 
   const togglePin = () => {
-    const next = !pinned;
-    setPinned(next);
-    try { localStorage.setItem(STORAGE, String(next)); } catch { }
+    if (pinned) {
+      setPinned(false);
+      setSuppressHover(true); // Force collapse immediately
+      try { localStorage.setItem(STORAGE, 'false'); } catch { }
+    } else {
+      setPinned(true);
+      setSuppressHover(false);
+      try { localStorage.setItem(STORAGE, 'true'); } catch { }
+    }
   };
 
   const handleMouseEnter = useCallback(() => {
@@ -54,12 +61,15 @@ export default function AppSidebar() {
 
   const handleMouseLeave = useCallback(() => {
     if (pinned) return;
-    leaveTimer.current = setTimeout(() => setHovered(false), 120);
+    leaveTimer.current = setTimeout(() => {
+      setHovered(false);
+      setSuppressHover(false); // Reset suppression once they leave the rail
+    }, 120);
   }, [pinned]);
 
   useEffect(() => () => { if (leaveTimer.current) clearTimeout(leaveTimer.current); }, []);
 
-  const expanded = pinned || (mounted && hovered);
+  const expanded = mounted && (pinned || (hovered && !suppressHover));
   const currentW = expanded ? PANEL_W : RAIL_W;
 
   const navItems: NavItem[] = [
@@ -162,10 +172,11 @@ export default function AppSidebar() {
                 exit={{ opacity: 0, scale: 0.75 }}
                 transition={{ duration: 0.15 }}
                 onClick={togglePin}
-                aria-label={pinned ? 'Unpin sidebar' : 'Pin sidebar'}
-                className="shrink-0 h-6 w-6 flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                aria-label={pinned ? 'Collapse sidebar' : 'Lock sidebar open'}
+                className="shrink-0 h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/10 dark:hover:bg-white/5 transition-colors"
+                title={pinned ? 'Collapse sidebar' : 'Lock sidebar open'}
               >
-                {pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+                {pinned ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
               </motion.button>
             )}
           </AnimatePresence>
