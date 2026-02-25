@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Activity, UserCircle, LogOut, Settings, Menu, ShieldCheck, Sun, Moon } from 'lucide-react';
+import { Activity, UserCircle, LogOut, Settings, ShieldCheck, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -9,14 +9,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
-import { useSidebar } from '@/components/ui/sidebar';
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
 export default function AppHeader() {
   const { user, logout } = useAuth();
-  const { toggleSidebar, isMobile } = useSidebar();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -39,14 +37,6 @@ export default function AppHeader() {
       "sticky top-0 z-40 flex h-14 items-center gap-4 border-b px-4 backdrop-blur-xl transition-all duration-200 md:px-6",
       scrolled ? "border-border/60 bg-background/95 shadow-sm" : "border-transparent bg-background/70"
     )}>
-      {/* Mobile menu trigger */}
-      {mounted && isMobile && (
-        <Button variant="ghost" size="icon" onClick={toggleSidebar}
-          className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground">
-          <Menu className="h-4.5 w-4.5" style={{ height: '1.125rem', width: '1.125rem' }} />
-        </Button>
-      )}
-
       {/* Brand — mobile only */}
       <Link href="/dashboard/iscribe" className="flex items-center gap-2 md:hidden">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
@@ -78,8 +68,8 @@ export default function AppHeader() {
             aria-label="Toggle theme"
           >
             {isDark
-              ? <Sun className="h-4 w-4 transition-transform duration-300 rotate-0" />
-              : <Moon className="h-4 w-4 transition-transform duration-300 rotate-0" />
+              ? <Sun className="h-4 w-4" />
+              : <Moon className="h-4 w-4" />
             }
           </Button>
         )}

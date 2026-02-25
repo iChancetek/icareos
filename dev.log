@@ -427,3 +427,40 @@ Error in generateText: Error: 404 This is not a chat model and thus not supporte
  GET /dashboard/iskylar 200 in 202ms
  ✓ Compiled in 3.5s (3302 modules)
  GET /dashboard/iskylar 200 in 511ms
+ ✓ Compiled in 14.4s (3302 modules)
+Firebase Init API Key Check (first 5 chars): AIzaS dummy? false
+Full Firebase Config: {
+  "apiKey": "AIzaSyDdKIfgLetDTyd81nIUBjWKGdj3HLzNo-I",
+  "authDomain": "mediscribe-221.firebaseapp.com",
+  "projectId": "mediscribe-221",
+  "storageBucket": "mediscribe-221.firebasestorage.app",
+  "messagingSenderId": "707708093410",
+  "appId": "1:707708093410:web:0151a75037e12e2901afbb",
+  "measurementId": "G-N5TNTJTF3W"
+}
+ GET /dashboard/iskylar 200 in 3648ms
+ GET /dashboard/iskylar 200 in 87ms
+ GET /dashboard/iskylar 200 in 424ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 4.4s (1814 modules)
+ GET /favicon.ico 200 in 5174ms
+ ✓ Compiled in 24.7s (3306 modules)
+ GET /dashboard/iskylar 200 in 379ms
+ ✓ Compiled in 2.2s (3306 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /dashboard/iskylar 200 in 214ms
+Firebase Init API Key Check (first 5 chars): AIzaS dummy? false
+Full Firebase Config: {
+  "apiKey": "AIzaSyDdKIfgLetDTyd81nIUBjWKGdj3HLzNo-I",
+  "authDomain": "mediscribe-221.firebaseapp.com",
+  "projectId": "mediscribe-221",
+  "storageBucket": "mediscribe-221.firebasestorage.app",
+  "messagingSenderId": "707708093410",
+  "appId": "1:707708093410:web:0151a75037e12e2901afbb",
+  "measurementId": "G-N5TNTJTF3W"
+}
+ GET /dashboard/iskylar 200 in 2403ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 1380ms (1816 modules)
+ GET /favicon.ico 200 in 1907ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.

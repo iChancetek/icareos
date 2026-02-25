@@ -1,21 +1,21 @@
 "use client";
 
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Bot, Languages, FolderKanban, BarChart2,
-  ShieldAlert, Activity, Stethoscope, ChevronRight
+  ShieldAlert, Activity, Pin, PinOff,
 } from 'lucide-react';
-import {
-  Sidebar, SidebarHeader, SidebarContent, SidebarMenu,
-  SidebarMenuItem, SidebarMenuButton, SidebarTrigger, useSidebar,
-} from '@/components/ui/sidebar';
-import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
-import { SheetTitle } from '@/components/ui/sheet';
 import RealtimeVoiceTranslatorDialog from '@/components/features/RealtimeVoiceTranslatorDialog';
-import { useState, useEffect } from 'react';
+
+// ── Constants ────────────────────────────────────────────────
+const RAIL_W = 64;   // collapsed px
+const PANEL_W = 240;  // expanded px
+const STORAGE = 'mediscribe-sidebar-pinned';
 
 interface NavItem {
   href?: string;
@@ -24,24 +24,52 @@ interface NavItem {
   matchStartsWith?: boolean;
   action?: () => void;
   adminOnly?: boolean;
-  badge?: string;
 }
 
+// ── AppSidebar ───────────────────────────────────────────────
 export default function AppSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { state: sidebarState, isMobile } = useSidebar();
   const [isVoiceTranslatorOpen, setIsVoiceTranslatorOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [pinned, setPinned] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const leaveTimer = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => { setMounted(true); }, []);
+  // hydration guard + localStorage pin state
+  useEffect(() => {
+    setMounted(true);
+    try {
+      setPinned(localStorage.getItem(STORAGE) === 'true');
+    } catch { }
+  }, []);
+
+  const togglePin = () => {
+    const next = !pinned;
+    setPinned(next);
+    try { localStorage.setItem(STORAGE, String(next)); } catch { }
+  };
+
+  const handleMouseEnter = useCallback(() => {
+    if (leaveTimer.current) { clearTimeout(leaveTimer.current); leaveTimer.current = null; }
+    setHovered(true);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (pinned) return;
+    leaveTimer.current = setTimeout(() => setHovered(false), 120);
+  }, [pinned]);
+
+  useEffect(() => () => { if (leaveTimer.current) clearTimeout(leaveTimer.current); }, []);
+
+  const expanded = pinned || (mounted && hovered);
 
   const navItems: NavItem[] = [
     { href: '/dashboard/iscribe', label: 'iScribe', icon: LayoutDashboard },
     { href: '/dashboard/recordings', label: 'Recordings', icon: FolderKanban, matchStartsWith: true },
     { href: '/dashboard/insights', label: 'Insights', icon: BarChart2, matchStartsWith: true },
     { href: '/dashboard/iskylar', label: 'iSkylar', icon: Bot },
-    { label: 'Voice Translator', icon: Languages, action: () => setIsVoiceTranslatorOpen(true) },
+    { label: 'Translator', icon: Languages, action: () => setIsVoiceTranslatorOpen(true) },
     { href: '/dashboard/admin', label: 'Admin', icon: ShieldAlert, adminOnly: true },
   ];
 
@@ -52,99 +80,212 @@ export default function AppSidebar() {
     return pathname === item.href;
   };
 
-  const collapsible = mounted ? (isMobile ? "offcanvas" : "icon") : "icon";
-  const isEffectivelyMobile = mounted && isMobile;
-  const expanded = mounted ? sidebarState === 'expanded' : false;
-  const showLabel = expanded || isEffectivelyMobile;
+  const initials = user
+    ? (user.displayName || user.email || 'U')[0].toUpperCase()
+    : 'U';
+
+  if (!mounted) {
+    // SSR: render minimal collapsed rail (avoids hydration mismatch)
+    return (
+      <div style={{ width: RAIL_W }} className="fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border/40 bg-background/80" />
+    );
+  }
 
   return (
     <>
-      <Sidebar side="left" variant="sidebar" collapsible={collapsible}>
-        {/* Logo */}
-        <SidebarHeader className="relative p-4 pb-3">
-          {isEffectivelyMobile && <SheetTitle className="sr-only">Menu</SheetTitle>}
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Icon mark */}
-            <div className="relative shrink-0 flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-[0_0_16px_hsl(191_97%_55%/0.2)]">
-              <Activity className="h-4.5 w-4.5 text-primary" style={{ height: '1.125rem', width: '1.125rem' }} />
+      {/* ── Rail container ──────────────────────────────────── */}
+      <motion.nav
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        animate={{ width: expanded ? PANEL_W : RAIL_W }}
+        transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex flex-col overflow-hidden",
+          "border-r border-border/40",
+          // glassmorphism
+          "backdrop-blur-xl",
+          "dark:bg-[hsl(222_50%_4%/0.88)] bg-white/90",
+          // subtle edge glow
+          "shadow-[4px_0_32px_hsl(191_97%_58%/0.05)]",
+        )}
+        style={{ willChange: 'width' }}
+        aria-label="Main navigation"
+      >
+        {/* ── Top: Logo + Pin ─────────────────────────────── */}
+        <div className="flex items-center justify-between gap-2 px-[14px] py-4 shrink-0">
+          {/* Logo icon */}
+          <Link href="/dashboard/iscribe" className="flex items-center gap-2.5 min-w-0">
+            <div className="relative shrink-0 flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-[0_0_16px_hsl(191_97%_55%/0.25)]">
+              <Activity className="h-4 w-4 text-primary" />
               <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary animate-pulse" />
             </div>
-            {showLabel && (
-              <div className="min-w-0">
-                <p className="text-sm font-bold tracking-tight text-foreground truncate">MediScribe</p>
-                <p className="text-[10px] text-muted-foreground truncate">Neural Clinical AI</p>
-              </div>
-            )}
-          </div>
-          {mounted && !isMobile && (
-            <SidebarTrigger className="absolute right-2 top-3 h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" />
-          )}
-        </SidebarHeader>
-
-        <Separator className="bg-border/50" />
-
-        <SidebarContent className="flex-1 p-2 pt-3">
-          <SidebarMenu className="space-y-0.5">
-            {navItems.map((item) => {
-              if (item.adminOnly && user?.role !== 'admin') return null;
-              const active = isActive(item);
-
-              const buttonContent = (
-                <SidebarMenuButton
-                  isActive={active}
-                  onClick={item.action}
-                  tooltip={item.label}
-                  className={cn(
-                    "group w-full justify-start gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                    active
-                      ? "bg-primary/10 text-primary border border-primary/20 shadow-[0_0_12px_hsl(191_97%_55%/0.15)]"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50 border border-transparent"
-                  )}
+            <AnimatePresence>
+              {expanded && (
+                <motion.div
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -6 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  className="min-w-0 overflow-hidden"
                 >
-                  <item.icon className={cn("h-4.5 w-4.5 shrink-0 transition-colors", active ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} style={{ height: '1.125rem', width: '1.125rem' }} />
-                  {showLabel && (
-                    <>
-                      <span className="flex-1 truncate">{item.label}</span>
-                      {active && <ChevronRight className="h-3.5 w-3.5 text-primary/60" />}
-                      {item.badge && (
-                        <span className="ml-auto rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary">{item.badge}</span>
-                      )}
-                    </>
+                  <p className="text-sm font-bold tracking-tight text-foreground leading-none whitespace-nowrap">MediScribe</p>
+                  <p className="text-[10px] text-primary/70 whitespace-nowrap mt-0.5">Agentic AI · Neural</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Link>
+
+          {/* Pin toggle — only visible when expanded */}
+          <AnimatePresence>
+            {expanded && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.15 }}
+                onClick={togglePin}
+                aria-label={pinned ? 'Unpin sidebar' : 'Pin sidebar'}
+                className="shrink-0 h-6 w-6 flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+              >
+                {pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* ── Divider ─────────────────────────────────────── */}
+        <div className="mx-3 h-px bg-border/40 shrink-0" />
+
+        {/* ── Nav items ───────────────────────────────────── */}
+        <div className="flex-1 flex flex-col gap-0.5 overflow-hidden px-2 py-3">
+          {navItems.map(item => {
+            if (item.adminOnly && user?.role !== 'admin') return null;
+            const active = isActive(item);
+
+            const inner = (
+              <motion.div
+                onClick={item.action}
+                whileHover={!active ? { x: 1 } : {}}
+                className={cn(
+                  "group relative flex items-center gap-3 rounded-xl px-[14px] py-2.5 cursor-pointer transition-colors duration-150",
+                  active
+                    ? "bg-primary/10 text-primary border border-primary/20 shadow-[0_0_12px_hsl(191_97%_55%/0.12)]"
+                    : "text-muted-foreground border border-transparent hover:text-foreground hover:bg-accent/40"
+                )}
+              >
+                {/* Active left bar */}
+                {active && (
+                  <motion.span
+                    layoutId="activeBar"
+                    className="absolute left-0 inset-y-2 w-0.5 rounded-full bg-primary"
+                    style={{ boxShadow: '0 0 6px hsl(191 97% 58% / 0.7)' }}
+                  />
+                )}
+
+                {/* Icon */}
+                <item.icon
+                  className={cn(
+                    "h-[18px] w-[18px] shrink-0 transition-colors",
+                    active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                   )}
-                </SidebarMenuButton>
-              );
+                />
 
-              return (
-                <SidebarMenuItem key={item.label}>
-                  {item.href ? (
-                    <Link href={item.href} legacyBehavior passHref>
-                      {buttonContent}
-                    </Link>
-                  ) : buttonContent}
-                </SidebarMenuItem>
-              );
-            })}
-          </SidebarMenu>
-        </SidebarContent>
+                {/* Label */}
+                <AnimatePresence>
+                  {expanded && (
+                    <motion.span
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -8 }}
+                      transition={{ duration: 0.16, ease: 'easeOut' }}
+                      className="text-sm font-medium whitespace-nowrap overflow-hidden"
+                    >
+                      {item.label}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
 
-        <Separator className="bg-border/50" />
+                {/* Hover glow */}
+                <span className={cn(
+                  "absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+                  "bg-[radial-gradient(ellipse_60%_50%_at_30%_50%,hsl(191_97%_58%/0.06),transparent)]"
+                )} />
 
-        {/* Footer user info */}
-        {showLabel && user && (
-          <div className="p-3">
-            <div className="flex items-center gap-2.5 rounded-xl bg-accent/30 px-3 py-2.5 border border-border/40">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 text-primary text-xs font-bold shrink-0">
-                {(user.displayName || user.email || 'U')[0].toUpperCase()}
+                {/* Tooltip when collapsed */}
+                {!expanded && (
+                  <div className={cn(
+                    "pointer-events-none absolute left-full ml-3 z-50",
+                    "flex items-center rounded-lg border border-border/60 bg-popover px-2.5 py-1.5",
+                    "text-xs font-medium text-popover-foreground shadow-lg",
+                    "opacity-0 group-hover:opacity-100 translate-x-0 group-hover:translate-x-0.5",
+                    "transition-all duration-150 whitespace-nowrap"
+                  )}>
+                    {item.label}
+                  </div>
+                )}
+              </motion.div>
+            );
+
+            return (
+              <div key={item.label}>
+                {item.href ? (
+                  <Link href={item.href} aria-label={item.label} aria-current={active ? 'page' : undefined}>
+                    {inner}
+                  </Link>
+                ) : inner}
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-foreground truncate">{user.displayName || user.email}</p>
-                <p className="text-[10px] text-muted-foreground capitalize">{user.role || 'User'}</p>
-              </div>
+            );
+          })}
+        </div>
+
+        {/* ── Divider ─────────────────────────────────────── */}
+        <div className="mx-3 h-px bg-border/40 shrink-0" />
+
+        {/* ── Bottom: User avatar ──────────────────────────── */}
+        <div className="px-2 py-3 shrink-0">
+          <div className={cn(
+            "flex items-center gap-2.5 rounded-xl border border-border/40 px-[14px] py-2.5",
+            "bg-muted/20"
+          )}>
+            {/* Avatar */}
+            <div className="h-7 w-7 shrink-0 flex items-center justify-center rounded-lg bg-primary/15 border border-primary/20 text-primary text-xs font-bold">
+              {initials}
             </div>
+            <AnimatePresence>
+              {expanded && user && (
+                <motion.div
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: 0.16 }}
+                  className="min-w-0 overflow-hidden"
+                >
+                  <p className="text-xs font-semibold text-foreground truncate leading-none">
+                    {user.displayName || user.email}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground capitalize mt-0.5">
+                    {user.role || 'User'}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        )}
-      </Sidebar>
-      <RealtimeVoiceTranslatorDialog isOpen={isVoiceTranslatorOpen} onOpenChange={setIsVoiceTranslatorOpen} />
+        </div>
+      </motion.nav>
+
+      {/* ── Spacer so page content doesn't sit under the rail ── */}
+      <motion.div
+        animate={{ width: expanded ? PANEL_W : RAIL_W }}
+        transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+        className="shrink-0 hidden md:block"
+        aria-hidden="true"
+      />
+
+      {/* Voice Translator Dialog */}
+      <RealtimeVoiceTranslatorDialog
+        isOpen={isVoiceTranslatorOpen}
+        onOpenChange={setIsVoiceTranslatorOpen}
+      />
     </>
   );
 }
