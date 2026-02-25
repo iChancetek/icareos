@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  
+
   const [greetingAudio, setGreetingAudio] = useState<string | null>(null);
   const audioPlayerRef = useRef<HTMLAudioElement>(null);
   const [greetingPlayed, setGreetingPlayed] = useState(false);
@@ -27,7 +27,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       router.replace('/login');
     }
   }, [isAuthenticated, isLoading, router]);
-  
+
   // AI Voice Greeting Generation
   useEffect(() => {
     const generateGreeting = async () => {
@@ -36,27 +36,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           console.log("DashboardLayout: Generating AI welcome greeting...");
           sessionStorage.setItem('greetingGenerated', 'true'); // Mark as generated
           const greetingText = `Welcome back, ${user.displayName}. I hope you're feeling well today.`;
-          
+
           const response = await textToSpeech({ text: greetingText, voice: 'Algenib' });
-          
+
           if (response.audioDataUri) {
             setGreetingAudio(response.audioDataUri);
             console.log("DashboardLayout: AI greeting audio received and is ready to be played on user interaction.");
           } else {
-             console.warn("DashboardLayout: AI greeting TTS flow returned an empty audio URI.");
+            console.warn("DashboardLayout: AI greeting TTS flow returned an empty audio URI.");
           }
         } catch (error) {
           console.error("DashboardLayout: Failed to generate AI greeting:", error);
-           toast({
-                title: "AI Greeting Failed",
-                description: "Could not generate the welcome message.",
-                variant: "destructive"
-            });
+          toast({
+            title: "AI Greeting Failed",
+            description: "Could not generate the welcome message.",
+            variant: "destructive"
+          });
         }
       } else {
-         if (user?.displayName) {
-            console.log("DashboardLayout: AI welcome greeting already generated this session.");
-         }
+        if (user?.displayName) {
+          console.log("DashboardLayout: AI welcome greeting already generated this session.");
+        }
       }
     };
 
@@ -80,7 +80,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     if (greetingAudio && !greetingPlayed) {
       window.addEventListener('click', handleFirstInteraction);
     }
-  
+
     return () => {
       window.removeEventListener('click', handleFirstInteraction);
     };
@@ -104,18 +104,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen w-full flex-col">
         <AppSidebar />
         <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-[calc(var(--sidebar-width-icon)_+_1rem)] md:pl-[calc(var(--sidebar-width)_+_1rem)] group-data-[collapsible=icon]:sm:pl-[calc(var(--sidebar-width-icon)_+_1rem)] transition-[padding-left] duration-300 ease-in-out">
-          <div className="flex flex-1 flex-col sm:pl-14 md:group-data-[state=expanded]:pl-64"> 
-             <AppHeader />
+          <div className="flex flex-1 flex-col sm:pl-14 md:group-data-[state=expanded]:pl-64">
+            <AppHeader />
             <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
               {children}
             </main>
             <footer className="border-t bg-background/80 p-4 text-center text-sm text-muted-foreground">
-              © {new Date().getFullYear()} MediScribe. All Rights Reserved. | Developed by iSynera LLC | ChanceTEK LLC
+              © {new Date().getFullYear()} MediScribe. All Rights Reserved.
             </footer>
           </div>
         </div>
       </div>
-       {greetingAudio && <audio ref={audioPlayerRef} src={greetingAudio} className="hidden" preload="auto" />}
+      {greetingAudio && <audio ref={audioPlayerRef} src={greetingAudio} className="hidden" preload="auto" />}
     </SidebarProvider>
   );
 }

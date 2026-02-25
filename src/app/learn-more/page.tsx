@@ -107,9 +107,9 @@ export default function LearnMorePage() {
           ))}
         </div>
       </main>
-      
+
       <footer className="learn-more-footer">
-        <p>© {new Date().getFullYear()} MediScribe. All Rights Reserved. | Developed by iSynera LLC | ChanceTEK LLC</p>
+        <p>© {new Date().getFullYear()} MediScribe. All Rights Reserved.</p>
       </footer>
     </div>
   );
