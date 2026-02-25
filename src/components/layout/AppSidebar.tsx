@@ -116,9 +116,9 @@ export default function AppSidebar() {
           "fixed z-50 hidden md:flex flex-col overflow-hidden",
           // detached look: margin from edges, fully rounded
           "rounded-2xl",
-          // glassmorphism — translucent so page content shows through
-          "backdrop-blur-2xl",
-          "dark:bg-[hsl(222_50%_5%/0.35)] bg-white/30",
+          // glassmorphism — highly translucent so page content shows through clearly
+          "backdrop-blur-md",
+          "dark:bg-background/10 bg-white/10",
           // border + dual shadow (depth + glow)
           "border border-white/10 dark:border-white/[0.06]",
           "shadow-[0_8px_32px_rgba(0,0,0,0.28),0_0_0_1px_rgba(255,255,255,0.04),0_0_24px_hsl(191_97%_58%/0.07)]",
