@@ -491,3 +491,19 @@ Full Firebase Config: {
 }
  GET /dashboard/iscribe 200 in 9229ms
  GET /dashboard/iscribe 200 in 3338ms
+ ✓ Compiled in 24.4s (3265 modules)
+ GET /dashboard/iscribe 200 in 355ms
+Firebase Init API Key Check (first 5 chars): AIzaS dummy? false
+Full Firebase Config: {
+  "apiKey": "AIzaSyDdKIfgLetDTyd81nIUBjWKGdj3HLzNo-I",
+  "authDomain": "mediscribe-221.firebaseapp.com",
+  "projectId": "mediscribe-221",
+  "storageBucket": "mediscribe-221.firebasestorage.app",
+  "messagingSenderId": "707708093410",
+  "appId": "1:707708093410:web:0151a75037e12e2901afbb",
+  "measurementId": "G-N5TNTJTF3W"
+}
+ GET /dashboard/iscribe 200 in 1260ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 2.3s (1786 modules)
+ GET /favicon.ico 200 in 2622ms

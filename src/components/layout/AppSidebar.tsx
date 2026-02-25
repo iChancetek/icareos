@@ -15,6 +15,7 @@ import RealtimeVoiceTranslatorDialog from '@/components/features/RealtimeVoiceTr
 // ── Constants ────────────────────────────────────────────────
 const RAIL_W = 64;   // collapsed px
 const PANEL_W = 240;  // expanded px
+const INSET = 12;   // gap from screen edges (px)
 const STORAGE = 'mediscribe-sidebar-pinned';
 
 interface NavItem {
@@ -26,7 +27,6 @@ interface NavItem {
   adminOnly?: boolean;
 }
 
-// ── AppSidebar ───────────────────────────────────────────────
 export default function AppSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -36,12 +36,9 @@ export default function AppSidebar() {
   const [mounted, setMounted] = useState(false);
   const leaveTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // hydration guard + localStorage pin state
   useEffect(() => {
     setMounted(true);
-    try {
-      setPinned(localStorage.getItem(STORAGE) === 'true');
-    } catch { }
+    try { setPinned(localStorage.getItem(STORAGE) === 'true'); } catch { }
   }, []);
 
   const togglePin = () => {
@@ -63,6 +60,7 @@ export default function AppSidebar() {
   useEffect(() => () => { if (leaveTimer.current) clearTimeout(leaveTimer.current); }, []);
 
   const expanded = pinned || (mounted && hovered);
+  const currentW = expanded ? PANEL_W : RAIL_W;
 
   const navItems: NavItem[] = [
     { href: '/dashboard/iscribe', label: 'iScribe', icon: LayoutDashboard },
@@ -80,40 +78,61 @@ export default function AppSidebar() {
     return pathname === item.href;
   };
 
-  const initials = user
-    ? (user.displayName || user.email || 'U')[0].toUpperCase()
-    : 'U';
+  const initials = user ? (user.displayName || user.email || 'U')[0].toUpperCase() : 'U';
 
+  // ── SSR skeleton ────────────────────────────────────────────
   if (!mounted) {
-    // SSR: render minimal collapsed rail (avoids hydration mismatch)
     return (
-      <div style={{ width: RAIL_W }} className="fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border/40 bg-background/80" />
+      <div
+        style={{ width: RAIL_W + INSET, minWidth: RAIL_W + INSET }}
+        className="hidden md:block shrink-0"
+        aria-hidden="true"
+      />
     );
   }
 
   return (
     <>
-      {/* ── Rail container ──────────────────────────────────── */}
+      {/*
+       * The fixed floating rail sits inset from the screen edges.
+       * A static spacer of (RAIL_W + INSET) always reserves room
+       * for the collapsed state — the expanded panel floats OVER
+       * the right side of the spacer, so nothing is ever hidden.
+       */}
+      <div
+        style={{ width: RAIL_W + INSET, minWidth: RAIL_W + INSET }}
+        className="hidden md:block shrink-0 relative"
+        aria-hidden="true"
+      />
+
+      {/* ── Floating glass rail ─────────────────────────────── */}
       <motion.nav
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        animate={{ width: expanded ? PANEL_W : RAIL_W }}
-        transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+        animate={{ width: currentW }}
+        transition={{ duration: 0.30, ease: [0.4, 0, 0.2, 1] }}
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col overflow-hidden",
-          "border-r border-border/40",
+          // floating: fixed + inset from all edges
+          "fixed z-50 hidden md:flex flex-col overflow-hidden",
+          // detached look: margin from edges, fully rounded
+          "rounded-2xl",
           // glassmorphism
-          "backdrop-blur-xl",
-          "dark:bg-[hsl(222_50%_4%/0.88)] bg-white/90",
-          // subtle edge glow
-          "shadow-[4px_0_32px_hsl(191_97%_58%/0.05)]",
+          "backdrop-blur-2xl",
+          "dark:bg-[hsl(222_50%_5%/0.85)] bg-white/85",
+          // border + dual shadow (depth + glow)
+          "border border-white/10 dark:border-white/[0.06]",
+          "shadow-[0_8px_32px_rgba(0,0,0,0.28),0_0_0_1px_rgba(255,255,255,0.04),0_0_24px_hsl(191_97%_58%/0.07)]",
         )}
-        style={{ willChange: 'width' }}
+        style={{
+          top: INSET,
+          left: INSET,
+          bottom: INSET,
+          willChange: 'width',
+        }}
         aria-label="Main navigation"
       >
         {/* ── Top: Logo + Pin ─────────────────────────────── */}
         <div className="flex items-center justify-between gap-2 px-[14px] py-4 shrink-0">
-          {/* Logo icon */}
           <Link href="/dashboard/iscribe" className="flex items-center gap-2.5 min-w-0">
             <div className="relative shrink-0 flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-[0_0_16px_hsl(191_97%_55%/0.25)]">
               <Activity className="h-4 w-4 text-primary" />
@@ -122,26 +141,25 @@ export default function AppSidebar() {
             <AnimatePresence>
               {expanded && (
                 <motion.div
-                  initial={{ opacity: 0, x: -6 }}
+                  initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -6 }}
-                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: 0.18 }}
                   className="min-w-0 overflow-hidden"
                 >
-                  <p className="text-sm font-bold tracking-tight text-foreground leading-none whitespace-nowrap">MediScribe</p>
+                  <p className="text-sm font-bold tracking-tight leading-none whitespace-nowrap">MediScribe</p>
                   <p className="text-[10px] text-primary/70 whitespace-nowrap mt-0.5">Agentic AI · Neural</p>
                 </motion.div>
               )}
             </AnimatePresence>
           </Link>
 
-          {/* Pin toggle — only visible when expanded */}
           <AnimatePresence>
             {expanded && (
               <motion.button
-                initial={{ opacity: 0, scale: 0.8 }}
+                initial={{ opacity: 0, scale: 0.75 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
+                exit={{ opacity: 0, scale: 0.75 }}
                 transition={{ duration: 0.15 }}
                 onClick={togglePin}
                 aria-label={pinned ? 'Unpin sidebar' : 'Pin sidebar'}
@@ -153,8 +171,8 @@ export default function AppSidebar() {
           </AnimatePresence>
         </div>
 
-        {/* ── Divider ─────────────────────────────────────── */}
-        <div className="mx-3 h-px bg-border/40 shrink-0" />
+        {/* Divider */}
+        <div className="mx-3 h-px bg-white/10 dark:bg-white/5 shrink-0" />
 
         {/* ── Nav items ───────────────────────────────────── */}
         <div className="flex-1 flex flex-col gap-0.5 overflow-hidden px-2 py-3">
@@ -170,10 +188,10 @@ export default function AppSidebar() {
                   "group relative flex items-center gap-3 rounded-xl px-[14px] py-2.5 cursor-pointer transition-colors duration-150",
                   active
                     ? "bg-primary/10 text-primary border border-primary/20 shadow-[0_0_12px_hsl(191_97%_55%/0.12)]"
-                    : "text-muted-foreground border border-transparent hover:text-foreground hover:bg-accent/40"
+                    : "text-muted-foreground border border-transparent hover:text-foreground hover:bg-white/5 dark:hover:bg-white/[0.06]"
                 )}
               >
-                {/* Active left bar */}
+                {/* Active bar */}
                 {active && (
                   <motion.span
                     layoutId="activeBar"
@@ -197,7 +215,7 @@ export default function AppSidebar() {
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -8 }}
-                      transition={{ duration: 0.16, ease: 'easeOut' }}
+                      transition={{ duration: 0.16 }}
                       className="text-sm font-medium whitespace-nowrap overflow-hidden"
                     >
                       {item.label}
@@ -205,17 +223,17 @@ export default function AppSidebar() {
                   )}
                 </AnimatePresence>
 
-                {/* Hover glow */}
+                {/* Hover radial glow */}
                 <span className={cn(
                   "absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200",
                   "bg-[radial-gradient(ellipse_60%_50%_at_30%_50%,hsl(191_97%_58%/0.06),transparent)]"
                 )} />
 
-                {/* Tooltip when collapsed */}
+                {/* Tooltip (collapsed only) */}
                 {!expanded && (
                   <div className={cn(
                     "pointer-events-none absolute left-full ml-3 z-50",
-                    "flex items-center rounded-lg border border-border/60 bg-popover px-2.5 py-1.5",
+                    "flex items-center rounded-lg border border-border/50 bg-popover/95 backdrop-blur-sm px-2.5 py-1.5",
                     "text-xs font-medium text-popover-foreground shadow-lg",
                     "opacity-0 group-hover:opacity-100 translate-x-0 group-hover:translate-x-0.5",
                     "transition-all duration-150 whitespace-nowrap"
@@ -238,16 +256,12 @@ export default function AppSidebar() {
           })}
         </div>
 
-        {/* ── Divider ─────────────────────────────────────── */}
-        <div className="mx-3 h-px bg-border/40 shrink-0" />
+        {/* Divider */}
+        <div className="mx-3 h-px bg-white/10 dark:bg-white/5 shrink-0" />
 
-        {/* ── Bottom: User avatar ──────────────────────────── */}
+        {/* ── Bottom: User card ────────────────────────────── */}
         <div className="px-2 py-3 shrink-0">
-          <div className={cn(
-            "flex items-center gap-2.5 rounded-xl border border-border/40 px-[14px] py-2.5",
-            "bg-muted/20"
-          )}>
-            {/* Avatar */}
+          <div className="flex items-center gap-2.5 rounded-xl border border-white/10 dark:border-white/[0.06] bg-white/5 px-[14px] py-2.5">
             <div className="h-7 w-7 shrink-0 flex items-center justify-center rounded-lg bg-primary/15 border border-primary/20 text-primary text-xs font-bold">
               {initials}
             </div>
@@ -260,7 +274,7 @@ export default function AppSidebar() {
                   transition={{ duration: 0.16 }}
                   className="min-w-0 overflow-hidden"
                 >
-                  <p className="text-xs font-semibold text-foreground truncate leading-none">
+                  <p className="text-xs font-semibold truncate leading-none">
                     {user.displayName || user.email}
                   </p>
                   <p className="text-[10px] text-muted-foreground capitalize mt-0.5">
@@ -272,9 +286,6 @@ export default function AppSidebar() {
           </div>
         </div>
       </motion.nav>
-
-      {/* Fixed 64px spacer — keeps content clear of the collapsed rail only */}
-      <div style={{ width: RAIL_W }} className="shrink-0 hidden md:block" aria-hidden="true" />
 
       {/* Voice Translator Dialog */}
       <RealtimeVoiceTranslatorDialog
