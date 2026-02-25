@@ -1,370 +1,311 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, BrainCircuit, ShieldCheck, TrendingUp, CreditCard, AlertTriangle, CheckCircle2, Activity } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+import {
+    AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
+    RadialBarChart, RadialBar, Legend, BarChart, Bar, CartesianGrid, Cell,
+} from "recharts";
+import {
+    BrainCircuit, Activity, AlertTriangle, CheckCircle2, TrendingUp,
+    CreditCard, ShieldCheck, Loader2, Clock,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StaggerList, FadeUpItem } from "@/components/ui/MotionCard";
+import { NeuralBadge } from "@/components/ui/NeuralBadge";
+import { format } from "date-fns";
 import type { IScribe } from "@/types";
+import { Badge } from "@/components/ui/badge";
 
-// ─── Risk color helpers ─────────────────────────────────────────────────────
-const riskColors: Record<string, string> = {
-    low: "bg-emerald-500",
-    medium: "bg-yellow-500",
-    high: "bg-orange-500",
-    critical: "bg-red-500",
-};
 const riskBadge: Record<string, string> = {
-    low: "bg-emerald-900/50 text-emerald-400 border-emerald-700",
-    medium: "bg-yellow-900/50 text-yellow-400 border-yellow-700",
-    high: "bg-orange-900/50 text-orange-400 border-orange-700",
-    critical: "bg-red-900/50 text-red-400 border-red-700",
+    low: "bg-emerald-500/10 text-emerald-400 border-emerald-500/25",
+    medium: "bg-yellow-500/10 text-yellow-400 border-yellow-500/25",
+    high: "bg-orange-500/10 text-orange-400 border-orange-500/25",
+    critical: "bg-red-500/10 text-red-400 border-red-500/25",
 };
 
-// ─── Sub-components ─────────────────────────────────────────────────────────
+const RISK_COLORS: Record<string, string> = {
+    low: "hsl(151 55% 52%)",
+    medium: "hsl(38 92% 60%)",
+    high: "hsl(25 88% 58%)",
+    critical: "hsl(0 72% 50%)",
+};
 
-function StatCard({
-    icon: Icon,
-    title,
-    value,
-    sub,
-    color,
-}: {
-    icon: React.ElementType;
-    title: string;
-    value: string | number;
-    sub?: string;
-    color: string;
+function SectionTitle({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
+    return (
+        <div className="flex items-center gap-2 mb-4">
+            <div className="h-7 w-7 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <Icon className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">{label}</h2>
+        </div>
+    );
+}
+
+function StatCard({ icon: Icon, label, value, sub, delay }: {
+    icon: React.ElementType; label: string; value: string | number; sub?: string; delay: number;
 }) {
     return (
-        <Card className="bg-card/80 shadow-lg border border-border/60">
-            <CardContent className="pt-5 pb-4">
-                <div className="flex items-center gap-3">
-                    <div className={cn("rounded-xl p-2.5", color)}>
-                        <Icon className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                        <p className="text-xs text-muted-foreground font-medium">{title}</p>
-                        <p className="text-2xl font-black tabular-nums">{value}</p>
-                        {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
-                    </div>
+        <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+            whileHover={{ y: -2 }}
+            className="glass neural-border rounded-2xl p-5"
+        >
+            <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                    <Icon className="h-4.5 w-4.5 text-primary" style={{ height: "1.125rem", width: "1.125rem" }} />
                 </div>
-            </CardContent>
-        </Card>
-    );
-}
-
-function ConfidenceTrend({ sessions }: { sessions: IScribe[] }) {
-    const recent = sessions.slice(-12);
-    const max = 1;
-
-    return (
-        <Card className="bg-card/80 shadow-lg">
-            <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                    Agent Confidence Trend
-                </CardTitle>
-                <CardDescription>Last {recent.length} sessions</CardDescription>
-            </CardHeader>
-            <Separator />
-            <CardContent className="pt-4">
-                <div className="flex items-end gap-1.5 h-24">
-                    {recent.map((s, i) => {
-                        const pct = Math.round((s.overallConfidence ?? 0.5) * 100);
-                        const color =
-                            pct >= 80 ? "bg-emerald-500" : pct >= 60 ? "bg-yellow-500" : "bg-red-500";
-                        return (
-                            <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
-                                <div
-                                    className={cn("w-full rounded-t-sm transition-all duration-500", color)}
-                                    style={{ height: `${pct}%` }}
-                                />
-                                {/* Tooltip */}
-                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-popover border rounded px-2 py-1 text-[10px] whitespace-nowrap z-10 shadow">
-                                    {s.patientName} · {pct}%
-                                </div>
-                            </div>
-                        );
-                    })}
+                <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+                    <p className="text-xl font-black tabular-nums">{value}</p>
+                    {sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}
                 </div>
-                <div className="flex justify-between text-[10px] text-muted-foreground mt-2">
-                    <span>Oldest</span>
-                    <span>Latest</span>
-                </div>
-            </CardContent>
-        </Card>
+            </div>
+        </motion.div>
     );
 }
 
-function RiskDistribution({ sessions }: { sessions: IScribe[] }) {
-    const counts = useMemo(() => {
-        const c = { low: 0, medium: 0, high: 0, critical: 0 };
-        sessions.forEach((s) => {
-            if (s.riskLevel) c[s.riskLevel] = (c[s.riskLevel] ?? 0) + 1;
-        });
-        return c;
-    }, [sessions]);
-    const total = sessions.filter((s) => s.riskLevel).length || 1;
-
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
     return (
-        <Card className="bg-card/80 shadow-lg">
-            <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-primary" />
-                    Risk Distribution
-                </CardTitle>
-                <CardDescription>{total} sessions with risk data</CardDescription>
-            </CardHeader>
-            <Separator />
-            <CardContent className="pt-4 space-y-3">
-                {(["critical", "high", "medium", "low"] as const).map((level) => {
-                    const n = counts[level] ?? 0;
-                    const pct = Math.round((n / total) * 100);
-                    return (
-                        <div key={level} className="space-y-1">
-                            <div className="flex justify-between text-xs">
-                                <span className="capitalize font-medium">{level}</span>
-                                <span className="text-muted-foreground">{n} ({pct}%)</span>
-                            </div>
-                            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                                <div
-                                    className={cn("h-full rounded-full transition-all duration-700", riskColors[level])}
-                                    style={{ width: `${pct}%` }}
-                                />
-                            </div>
-                        </div>
-                    );
-                })}
-            </CardContent>
-        </Card>
+        <div className="glass rounded-xl border border-primary/20 px-3 py-2 text-xs shadow-xl">
+            <p className="font-semibold text-foreground mb-1">{label}</p>
+            {payload.map((p: any, i: number) => (
+                <p key={i} style={{ color: p.color }} className="tabular-nums">{p.name}: {typeof p.value === 'number' && p.value <= 1 ? `${Math.round(p.value * 100)}%` : p.value}</p>
+            ))}
+        </div>
     );
-}
-
-function TopICDCodes({ sessions }: { sessions: IScribe[] }) {
-    const codes = useMemo(() => {
-        const freq: Record<string, { description: string; count: number }> = {};
-        sessions.forEach((s) => {
-            s.icdCodes?.forEach((c) => {
-                if (!freq[c.code]) freq[c.code] = { description: c.description, count: 0 };
-                freq[c.code].count++;
-            });
-        });
-        return Object.entries(freq)
-            .sort((a, b) => b[1].count - a[1].count)
-            .slice(0, 8);
-    }, [sessions]);
-    const maxCount = codes[0]?.[1].count || 1;
-
-    return (
-        <Card className="bg-card/80 shadow-lg">
-            <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                    <CreditCard className="h-4 w-4 text-primary" />
-                    Top ICD-10 Codes
-                </CardTitle>
-                <CardDescription>Most frequently assigned across sessions</CardDescription>
-            </CardHeader>
-            <Separator />
-            <CardContent className="pt-4 space-y-2.5">
-                {codes.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">No ICD code data yet.<br />Complete a session to see billing analytics.</p>
-                ) : (
-                    codes.map(([code, data]) => (
-                        <div key={code} className="space-y-1">
-                            <div className="flex items-center justify-between text-xs">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-mono font-bold text-primary">{code}</span>
-                                    <span className="text-muted-foreground truncate max-w-[200px]">{data.description}</span>
-                                </div>
-                                <span className="shrink-0 text-muted-foreground ml-2">{data.count}×</span>
-                            </div>
-                            <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                                <div
-                                    className="h-full rounded-full bg-primary transition-all duration-700"
-                                    style={{ width: `${(data.count / maxCount) * 100}%` }}
-                                />
-                            </div>
-                        </div>
-                    ))
-                )}
-            </CardContent>
-        </Card>
-    );
-}
-
-function RecentSessionsTable({ sessions }: { sessions: IScribe[] }) {
-    const recent = [...sessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8);
-
-    return (
-        <Card className="bg-card/80 shadow-lg">
-            <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-primary" />
-                    Recent Sessions
-                </CardTitle>
-                <CardDescription>Agent performance per session</CardDescription>
-            </CardHeader>
-            <Separator />
-            <CardContent className="pt-4">
-                <div className="space-y-2">
-                    {recent.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-6">No sessions yet. Record your first iScribe to see analytics here.</p>
-                    ) : recent.map((s) => {
-                        const confPct = Math.round((s.overallConfidence ?? 0) * 100);
-                        return (
-                            <div key={s.id} className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2 gap-3">
-                                <div className="min-w-0">
-                                    <p className="text-sm font-medium truncate">{s.patientName}</p>
-                                    <p className="text-[10px] text-muted-foreground">
-                                        {new Date(s.date).toLocaleDateString()} {s.specialty ? `· ${s.specialty}` : ''}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                    {s.riskLevel && (
-                                        <Badge className={cn("text-[10px] border capitalize px-1.5 py-0", riskBadge[s.riskLevel])}>
-                                            {s.riskLevel}
-                                        </Badge>
-                                    )}
-                                    {s.requiresHumanReview && (
-                                        <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" title="Review needed" />
-                                    )}
-                                    {s.overallConfidence != null && (
-                                        <span className={cn("text-xs font-mono font-bold", confPct >= 80 ? "text-emerald-400" : confPct >= 60 ? "text-yellow-400" : "text-red-400")}>
-                                            {confPct}%
-                                        </span>
-                                    )}
-                                    {s.agentLatency_ms && (
-                                        <span className="text-[10px] text-muted-foreground hidden sm:inline">{(s.agentLatency_ms / 1000).toFixed(1)}s</span>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
-// ─── Insights Page ───────────────────────────────────────────────────────────
+};
 
 export default function InsightsPage() {
     const { getUserIScribes } = useAuth();
     const [sessions, setSessions] = useState<IScribe[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getUserIScribes().then((data) => {
-            setSessions(data);
-            setIsLoading(false);
-        });
+        getUserIScribes().then(d => { setSessions(d); setLoading(false); });
     }, [getUserIScribes]);
 
-    const agentSessions = useMemo(() => sessions.filter((s) => s.agentSessionId), [sessions]);
-    const avgConfidence = useMemo(() => {
-        const vals = agentSessions.filter((s) => s.overallConfidence != null).map((s) => s.overallConfidence!);
-        return vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) : 0;
-    }, [agentSessions]);
-    const reviewsNeeded = useMemo(() => agentSessions.filter((s) => s.requiresHumanReview).length, [agentSessions]);
-    const avgLatency = useMemo(() => {
-        const vals = agentSessions.filter((s) => s.agentLatency_ms).map((s) => s.agentLatency_ms!);
-        return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length / 1000).toFixed(1) : "—";
-    }, [agentSessions]);
-    const totalICDCodes = useMemo(() => agentSessions.reduce((t, s) => t + (s.icdCodes?.length ?? 0), 0), [agentSessions]);
+    const agentSessions = useMemo(() => sessions.filter(s => s.agentSessionId), [sessions]);
 
-    if (isLoading) {
-        return (
-            <div className="flex min-h-[60vh] items-center justify-center">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+    const avgConf = useMemo(() => {
+        const v = agentSessions.filter(s => s.overallConfidence != null).map(s => s.overallConfidence!);
+        return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length * 100) : 0;
+    }, [agentSessions]);
+
+    const reviewsNeeded = useMemo(() => agentSessions.filter(s => s.requiresHumanReview).length, [agentSessions]);
+
+    const avgLatency = useMemo(() => {
+        const v = agentSessions.filter(s => s.agentLatency_ms).map(s => s.agentLatency_ms!);
+        return v.length ? (v.reduce((a, b) => a + b, 0) / v.length / 1000).toFixed(1) : "—";
+    }, [agentSessions]);
+
+    const totalICD = useMemo(() => agentSessions.reduce((t, s) => t + (s.icdCodes?.length ?? 0), 0), [agentSessions]);
+
+    // Recharts data
+    const confidenceTrend = useMemo(() =>
+        agentSessions.slice(-14).map((s, i) => ({
+            name: format(new Date(s.date), "M/d"),
+            confidence: s.overallConfidence ?? 0,
+            patient: s.patientName,
+        })), [agentSessions]);
+
+    const riskData = useMemo(() => {
+        const counts = { low: 0, medium: 0, high: 0, critical: 0 };
+        agentSessions.forEach(s => { if (s.riskLevel) counts[s.riskLevel]++; });
+        return [
+            { name: "Low", value: counts.low, fill: RISK_COLORS.low },
+            { name: "Medium", value: counts.medium, fill: RISK_COLORS.medium },
+            { name: "High", value: counts.high, fill: RISK_COLORS.high },
+            { name: "Critical", value: counts.critical, fill: RISK_COLORS.critical },
+        ].filter(d => d.value > 0);
+    }, [agentSessions]);
+
+    const icdFreq = useMemo(() => {
+        const freq: Record<string, { desc: string; count: number }> = {};
+        agentSessions.forEach(s => s.icdCodes?.forEach(c => {
+            if (!freq[c.code]) freq[c.code] = { desc: c.description, count: 0 };
+            freq[c.code].count++;
+        }));
+        return Object.entries(freq).sort((a, b) => b[1].count - a[1].count).slice(0, 6)
+            .map(([code, d]) => ({ code, desc: d.desc, count: d.count }));
+    }, [agentSessions]);
+
+    const recent = useMemo(() =>
+        [...agentSessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8),
+        [agentSessions]);
+
+    if (loading) return (
+        <div className="flex min-h-[60vh] items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+                <div className="relative"><Loader2 className="h-9 w-9 animate-spin text-primary" /><div className="absolute inset-0 rounded-full blur-xl bg-primary/20" /></div>
+                <p className="text-xs text-muted-foreground uppercase tracking-widest">Loading analytics</p>
             </div>
-        );
-    }
+        </div>
+    );
 
     return (
-        <div className="container mx-auto py-8 px-4 space-y-8">
-            {/* Header */}
-            <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                    <BrainCircuit className="h-7 w-7 text-primary" />
-                    <h1 className="text-3xl font-black">Clinical Intelligence Insights</h1>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                    Aggregated analytics from your gpt-5.3-codex agent pipeline · {agentSessions.length} processed sessions
-                </p>
-            </div>
+        <div className="container mx-auto max-w-6xl px-4 md:px-6 py-8 space-y-8">
 
-            {/* No agent sessions yet */}
+            {/* Header */}
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">Neural Intelligence</span>
+                </div>
+                <h1 className="text-3xl font-black tracking-tight gradient-text">Clinical Insights</h1>
+                <p className="text-sm text-muted-foreground">Agent pipeline analytics · {agentSessions.length} AI-processed sessions</p>
+            </motion.div>
+
+            {/* No data */}
             {agentSessions.length === 0 && (
-                <Card className="bg-card/80 border-dashed border-2 border-primary/30">
-                    <CardContent className="py-12 text-center space-y-3">
-                        <BrainCircuit className="h-12 w-12 text-primary/50 mx-auto" />
-                        <h2 className="text-lg font-semibold">No agent sessions yet</h2>
-                        <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                            Record and save a patient consultation through the iScribe page to see your
-                            clinical intelligence analytics here. Each session runs through 6 AI agents
-                            in parallel to generate SOAP notes, risk scores, billing codes, and more.
-                        </p>
-                    </CardContent>
-                </Card>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-primary/20 bg-primary/[0.03] py-20 gap-4 text-center">
+                    <BrainCircuit className="h-12 w-12 text-primary/40 animate-float" />
+                    <div className="space-y-1.5 max-w-xs">
+                        <h2 className="font-bold text-lg">No agent sessions yet</h2>
+                        <p className="text-sm text-muted-foreground">Record a consultation through iScribe to populate your AI insights dashboard.</p>
+                    </div>
+                </motion.div>
             )}
 
             {agentSessions.length > 0 && (
                 <>
-                    {/* Stat Cards */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard
-                            icon={BrainCircuit}
-                            title="Avg. Confidence"
-                            value={`${avgConfidence}%`}
-                            sub="Across all agents"
-                            color="bg-primary"
-                        />
-                        <StatCard
-                            icon={Activity}
-                            title="Sessions Processed"
-                            value={agentSessions.length}
-                            sub={`${sessions.length} total iScribes`}
-                            color="bg-blue-600"
-                        />
-                        <StatCard
-                            icon={AlertTriangle}
-                            title="Reviews Needed"
-                            value={reviewsNeeded}
-                            sub="Clinician review flagged"
-                            color={reviewsNeeded > 0 ? "bg-yellow-600" : "bg-emerald-600"}
-                        />
-                        <StatCard
-                            icon={CheckCircle2}
-                            title="Avg. Processing"
-                            value={`${avgLatency}s`}
-                            sub={`${totalICDCodes} ICD codes assigned`}
-                            color="bg-violet-600"
-                        />
+                    {/* KPI Row */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <StatCard icon={BrainCircuit} label="Avg Confidence" value={`${avgConf}%`} sub="Across all agents" delay={0} />
+                        <StatCard icon={Activity} label="Sessions" value={agentSessions.length} sub={`${sessions.length} total iScribes`} delay={0.07} />
+                        <StatCard icon={AlertTriangle} label="Flagged" value={reviewsNeeded} sub="Clinician review" delay={0.14} />
+                        <StatCard icon={Clock} label="Avg Latency" value={`${avgLatency}s`} sub={`${totalICD} ICD codes`} delay={0.21} />
                     </div>
 
                     {/* Charts row */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        <ConfidenceTrend sessions={agentSessions} />
-                        <RiskDistribution sessions={agentSessions} />
-                        <TopICDCodes sessions={agentSessions} />
+                    <div className="grid lg:grid-cols-3 gap-5">
+
+                        {/* Confidence Trend Area Chart */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.25, duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+                            className="lg:col-span-2 glass neural-border rounded-2xl p-6"
+                        >
+                            <SectionTitle icon={TrendingUp} label="Confidence Trend" />
+                            <ResponsiveContainer width="100%" height={180}>
+                                <AreaChart data={confidenceTrend} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
+                                    <defs>
+                                        <linearGradient id="confGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="hsl(191 97% 58%)" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="hsl(191 97% 58%)" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
+                                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                                    <YAxis domain={[0, 1]} tickFormatter={v => `${Math.round(v * 100)}%`} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Area type="monotone" dataKey="confidence" name="Confidence" stroke="hsl(191 97% 58%)" strokeWidth={2} fill="url(#confGrad)" dot={{ r: 3, fill: "hsl(191 97% 58%)", strokeWidth: 0 }} />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </motion.div>
+
+                        {/* Risk Distribution Radial */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.32, duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+                            className="glass neural-border rounded-2xl p-6"
+                        >
+                            <SectionTitle icon={ShieldCheck} label="Risk Distribution" />
+                            {riskData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={180}>
+                                    <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="90%" data={riskData} barSize={14}>
+                                        <RadialBar dataKey="value" cornerRadius={6} label={false} />
+                                        <Legend iconType="circle" iconSize={8} formatter={(v) => <span className="text-[10px] text-muted-foreground capitalize">{v}</span>} />
+                                        <Tooltip content={<CustomTooltip />} />
+                                    </RadialBarChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="h-[180px] flex items-center justify-center text-xs text-muted-foreground">No risk data yet</div>
+                            )}
+                        </motion.div>
                     </div>
+
+                    {/* ICD Frequency Bar Chart */}
+                    {icdFreq.length > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.35, duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+                            className="glass neural-border rounded-2xl p-6"
+                        >
+                            <SectionTitle icon={CreditCard} label="Top ICD-10 Codes" />
+                            <ResponsiveContainer width="100%" height={140}>
+                                <BarChart data={icdFreq} layout="vertical" margin={{ top: 0, right: 12, bottom: 0, left: 8 }}>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" opacity={0.3} />
+                                    <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                                    <YAxis type="category" dataKey="code" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))", fontFamily: "JetBrains Mono, monospace" }} axisLine={false} tickLine={false} width={60} />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Bar dataKey="count" name="Sessions" radius={[0, 4, 4, 0]}>
+                                        {icdFreq.map((_, i) => (
+                                            <Cell key={i} fill={`hsl(191 97% ${58 - i * 5}%)`} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </motion.div>
+                    )}
 
                     {/* Recent Sessions Table */}
-                    <RecentSessionsTable sessions={agentSessions} />
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4, duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+                        className="glass neural-border rounded-2xl p-6"
+                    >
+                        <SectionTitle icon={Activity} label="Recent Sessions" />
+                        <div className="space-y-2">
+                            {recent.map(s => {
+                                const conf = s.overallConfidence != null ? s.overallConfidence : null;
+                                return (
+                                    <div key={s.id} className="flex items-center gap-4 rounded-xl bg-muted/20 border border-border/30 px-4 py-3">
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-semibold truncate">{s.patientName}</p>
+                                            <p className="text-[10px] text-muted-foreground">
+                                                {format(new Date(s.date), "MMM d, yyyy")}
+                                                {s.specialty && ` · ${s.specialty}`}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-3 shrink-0">
+                                            {s.riskLevel && (
+                                                <Badge className={cn("text-[10px] border capitalize px-2 py-0.5 font-medium", riskBadge[s.riskLevel])}>
+                                                    {s.riskLevel}
+                                                </Badge>
+                                            )}
+                                            {s.requiresHumanReview && <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />}
+                                            {conf != null && <NeuralBadge value={conf} size="sm" showBar={false} />}
+                                            {s.agentLatency_ms && (
+                                                <span className="text-[10px] text-muted-foreground font-mono hidden sm:block">
+                                                    {(s.agentLatency_ms / 1000).toFixed(1)}s
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </motion.div>
 
-                    {/* Model Info Banner */}
-                    <div className="flex items-center justify-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 py-4 px-6 text-sm text-muted-foreground">
-                        <BrainCircuit className="h-4 w-4 text-primary shrink-0" />
-                        <span>
-                            Powered by <strong className="text-foreground">gpt-5.3-codex</strong> ·
-                            6-agent parallel pipeline: Transcription → NLP → SOAP → Risk → Billing → Compliance ·
-                            All data stored securely in Firestore
-                        </span>
-                    </div>
+                    {/* Footer banner */}
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                        className="flex items-center justify-center gap-2 rounded-2xl border border-primary/10 bg-primary/[0.03] py-4 px-6"
+                    >
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <p className="text-xs text-muted-foreground text-center">
+                            Powered by <span className="text-foreground font-semibold">gpt-5.3-codex</span> ·
+                            Transcription → NLP → SOAP → Risk → Billing → Compliance ·
+                            All data encrypted at rest in Firestore
+                        </p>
+                    </motion.div>
                 </>
             )}
         </div>

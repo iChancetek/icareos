@@ -1,17 +1,50 @@
-
 "use client";
 
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { PlusCircle, FileText, ExternalLink, Loader2 } from 'lucide-react';
-import type { IScribe } from '@/types';
-import { useAuth } from '@/hooks/useAuth';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { PlusCircle, Mic, Clock, AlertTriangle, TrendingUp, ArrowRight, Activity, ShieldCheck, BrainCircuit, Zap } from "lucide-react";
+import type { IScribe } from "@/types";
+import { useAuth } from "@/hooks/useAuth";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { StaggerList, FadeUpItem } from "@/components/ui/MotionCard";
+import { NeuralBadge } from "@/components/ui/NeuralBadge";
+import { Loader2 } from "lucide-react";
 
+const riskColors: Record<string, string> = {
+  low: "bg-emerald-500/10 text-emerald-400 border-emerald-500/25",
+  medium: "bg-yellow-500/10 text-yellow-400 border-yellow-500/25",
+  high: "bg-orange-500/10 text-orange-400 border-orange-500/25",
+  critical: "bg-red-500/10 text-red-400 border-red-500/25",
+};
+
+function KPICard({ icon: Icon, label, value, sub, color, delay }: {
+  icon: React.ElementType; label: string; value: string | number;
+  sub?: string; color: string; delay: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay, duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+      whileHover={{ y: -3, scale: 1.02 }}
+      className="glass neural-border rounded-2xl p-5 cursor-default"
+    >
+      <div className="flex items-start gap-3">
+        <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border", color)}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">{label}</p>
+          <p className="text-2xl font-black tabular-nums tracking-tight">{value}</p>
+          {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function IScribesPage() {
   const [iscribes, setIScribes] = useState<IScribe[]>([]);
@@ -19,102 +52,171 @@ export default function IScribesPage() {
   const { getUserIScribes } = useAuth();
 
   useEffect(() => {
-    async function loadIScribes() {
-      setIsLoading(true);
-      const userIScribes = await getUserIScribes();
-      setIScribes(userIScribes);
-      setIsLoading(false);
-    }
-    
-    loadIScribes();
+    getUserIScribes().then(d => { setIScribes(d); setIsLoading(false); });
   }, [getUserIScribes]);
 
-  const getStatusBadgeVariant = (status: IScribe['status']) => {
-    switch (status) {
-      case 'Completed': return 'default';
-      case 'Transcribing':
-      case 'Summarizing': return 'secondary';
-      case 'Failed': return 'destructive';
-      default: return 'outline';
-    }
-  };
+  const agentSessions = iscribes.filter(s => s.agentSessionId);
+  const avgConf = agentSessions.length
+    ? Math.round(agentSessions.reduce((s, i) => s + (i.overallConfidence ?? 0), 0) / agentSessions.length * 100)
+    : 0;
+  const flagged = agentSessions.filter(s => s.requiresHumanReview).length;
+  const todaySessions = iscribes.filter(s => new Date(s.date).toDateString() === new Date().toDateString()).length;
 
   if (isLoading) {
-    return <div className="flex min-h-[calc(100vh-15rem)] items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative">
+            <Loader2 className="h-9 w-9 animate-spin text-primary" />
+            <div className="absolute inset-0 rounded-full blur-xl bg-primary/20" />
+          </div>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest">Loading sessions</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-0">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">My iScribes</h1>
-          <p className="text-muted-foreground">View and manage your recorded medical iscribes.</p>
+    <div className="container mx-auto px-4 md:px-6 py-8 space-y-8 max-w-5xl">
+
+      {/* ── Hero header ───────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+        className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5"
+      >
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">Neural Clinical AI</span>
+          </div>
+          <h1 className="text-3xl font-black tracking-tight gradient-text">iScribe Sessions</h1>
+          <p className="text-sm text-muted-foreground">
+            AI-powered SOAP documentation · 6-agent pipeline · gpt-5.3-codex
+          </p>
         </div>
-        <Link href="/dashboard/iscribe/new" passHref>
-          <Button size="lg" className="shadow-md hover:shadow-lg transition-shadow">
-            <PlusCircle className="mr-2 h-5 w-5" />
-            Start New iScribe
-          </Button>
+
+        <Link href="/dashboard/iscribe/new">
+          <motion.button
+            whileHover={{ scale: 1.04, y: -1 }}
+            whileTap={{ scale: 0.97 }}
+            className="btn-neural flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold"
+          >
+            <Mic className="h-4 w-4" />
+            New Session
+          </motion.button>
         </Link>
+      </motion.div>
+
+      {/* ── KPI Cards ─────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KPICard icon={Activity} label="Total Sessions" value={iscribes.length} sub="All time" color="bg-primary/10 border-primary/20 text-primary" delay={0} />
+        <KPICard icon={BrainCircuit} label="AI Confidence" value={avgConf > 0 ? `${avgConf}%` : "—"} sub="Avg across agents" color="bg-violet-500/10 border-violet-500/20 text-violet-400" delay={0.07} />
+        <KPICard icon={AlertTriangle} label="Review Flags" value={flagged} sub="Clinician review needed" color={flagged > 0 ? "bg-yellow-500/10 border-yellow-500/20 text-yellow-400" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"} delay={0.14} />
+        <KPICard icon={Zap} label="Today" value={todaySessions} sub="Sessions recorded today" color="bg-cyan-500/10 border-cyan-500/20 text-cyan-400" delay={0.21} />
       </div>
 
+      {/* ── Session list ──────────────────────────────────────── */}
       {iscribes.length === 0 ? (
-        <Card className="text-center py-12 shadow-lg bg-card/80">
-          <CardHeader>
-            <div className="mx-auto bg-accent/10 rounded-full p-4 w-fit mb-4 shadow-inner">
-              <FileText className="h-12 w-12 text-primary" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-primary/20 bg-primary/[0.03] py-24 text-center gap-6"
+        >
+          <div className="relative">
+            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 animate-float">
+              <Mic className="h-10 w-10 text-primary" />
             </div>
-            <CardTitle className="text-2xl">No iScribes Yet</CardTitle>
-            <CardDescription className="text-lg text-muted-foreground">
-              Start a new iscribe to see your summaries here.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-             <Link href="/dashboard/iscribe/new" passHref>
-              <Button size="lg" className="shadow-md hover:shadow-lg">
-                <PlusCircle className="mr-2 h-5 w-5" />
-                Record First iScribe
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      ) : (
-        <ScrollArea className="h-[calc(100vh-16rem)]"> 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {iscribes.map((iscribe) => (
-              <Card key={iscribe.id} className="flex flex-col justify-between shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card/80">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl">{iscribe.patientName}</CardTitle>
-                     <Badge variant={getStatusBadgeVariant(iscribe.status)} className="capitalize">{iscribe.status}</Badge>
-                  </div>
-                  <CardDescription>
-                    {format(new Date(iscribe.date), "PPP p")}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  {iscribe.summary ? (
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {iscribe.summary}
-                    </p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">
-                      {'Summary not yet available.'}
-                    </p>
-                  )}
-                </CardContent>
-                <CardFooter>
-                  <Link href={`/dashboard/iscribe/${iscribe.id}`} passHref className="w-full">
-                    <Button variant="outline" className="w-full shadow-sm hover:shadow-md">
-                      View Details
-                      <ExternalLink className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
-            ))}
+            <div className="absolute -inset-4 rounded-3xl bg-primary/5 blur-2xl" />
           </div>
-        </ScrollArea>
+          <div className="space-y-2 max-w-xs">
+            <h2 className="text-xl font-bold">No sessions yet</h2>
+            <p className="text-sm text-muted-foreground">
+              Record your first consultation. Our 6-agent AI pipeline generates SOAP notes, risk scores, and billing codes in seconds.
+            </p>
+          </div>
+          <Link href="/dashboard/iscribe/new">
+            <motion.button
+              whileHover={{ scale: 1.04, y: -1 }}
+              whileTap={{ scale: 0.97 }}
+              className="btn-neural flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold"
+            >
+              <Mic className="h-4 w-4" />
+              Start First Session
+            </motion.button>
+          </Link>
+        </motion.div>
+      ) : (
+        <StaggerList className="space-y-2">
+          {[...iscribes]
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .map(iscribe => {
+              const hasAgent = !!iscribe.agentSessionId;
+              const confPct = iscribe.overallConfidence != null ? iscribe.overallConfidence : null;
+              return (
+                <FadeUpItem key={iscribe.id}>
+                  <Link href={`/dashboard/iscribe/${iscribe.id}`}>
+                    <motion.div
+                      whileHover={{ x: 2 }}
+                      className={cn(
+                        "group flex items-center gap-4 rounded-xl border px-5 py-3.5",
+                        "bg-card/50 glass neural-border cursor-pointer",
+                        "hover:border-primary/25 hover:bg-card/70 transition-all duration-200"
+                      )}
+                    >
+                      {/* Status dot */}
+                      <div className={cn(
+                        "shrink-0 h-8 w-8 rounded-xl flex items-center justify-center border",
+                        hasAgent ? "bg-primary/10 border-primary/20" : "bg-muted border-border"
+                      )}>
+                        <ShieldCheck className={cn("h-4 w-4", hasAgent ? "text-primary" : "text-muted-foreground")} />
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0 space-y-0.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="font-semibold text-sm">{iscribe.patientName}</span>
+                          {iscribe.specialty && (
+                            <span className="text-[10px] bg-muted/60 text-muted-foreground rounded-full px-2 py-0.5">
+                              {iscribe.specialty}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{format(new Date(iscribe.date), "MMM d, h:mm a")}</span>
+                          {iscribe.agentLatency_ms && (
+                            <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3" />{(iscribe.agentLatency_ms / 1000).toFixed(1)}s</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right badges */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {iscribe.requiresHumanReview && (
+                          <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />
+                        )}
+                        {iscribe.riskLevel && (
+                          <Badge className={cn("text-[10px] capitalize border font-medium px-2", riskColors[iscribe.riskLevel])}>
+                            {iscribe.riskLevel}
+                          </Badge>
+                        )}
+                        {confPct != null && (
+                          <span className={cn("text-xs font-mono font-bold",
+                            confPct >= 0.8 ? "text-emerald-400" : confPct >= 0.6 ? "text-yellow-400" : "text-orange-400"
+                          )}>
+                            {Math.round(confPct * 100)}%
+                          </span>
+                        )}
+                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                      </div>
+                    </motion.div>
+                  </Link>
+                </FadeUpItem>
+              );
+            })}
+        </StaggerList>
       )}
     </div>
   );

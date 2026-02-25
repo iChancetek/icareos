@@ -1,24 +1,44 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mic, StopCircle, Save, Loader2, AlertTriangle, CheckCircle, LanguagesIcon } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { Mic, StopCircle, Save, Loader2, AlertTriangle, CheckCircle2, Languages, ArrowLeft, BrainCircuit } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
 import { processAudioSession } from '@/services/agentService';
 import { translateText } from '@/ai/flows/translate-text-flow';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { sendDataToHubSpot } from '@/services/hubspotService';
 import type { IScribe } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { WaveformOrb } from '@/components/ui/WaveformOrb';
+import { AgentPipelineTracker, type AgentStep } from '@/components/ui/AgentPipelineTracker';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 type RecordingState = 'idle' | 'recording' | 'processing' | 'success' | 'error';
+
+// Define MediaRecorderErrorEvent & BlobEvent for TS
+interface MediaRecorderErrorEvent extends Event { readonly error: DOMException; }
+interface BlobEvent extends Event { readonly data: Blob; readonly timecode: number; }
+
+const INITIAL_PIPELINE: AgentStep[] = [
+  { name: 'Transcription', shortName: 'Transcribe', status: 'pending' },
+  { name: 'NLP Extraction', shortName: 'NLP', status: 'pending' },
+  { name: 'SOAP Generation', shortName: 'SOAP', status: 'pending' },
+  { name: 'Risk Assessment', shortName: 'Risk', status: 'pending' },
+  { name: 'Billing Codes', shortName: 'Billing', status: 'pending' },
+  { name: 'Compliance Check', shortName: 'Compliance', status: 'pending' },
+];
+
+const SPECIALTIES = [
+  'General / Unspecified', 'Internal Medicine', 'Emergency Medicine', 'Cardiology',
+  'Pediatrics', 'Orthopedics', 'Psychiatry', 'Neurology', 'Oncology', 'Family Medicine',
+];
+
+const LANGUAGES = ['None (Keep Original)', 'English', 'Spanish', 'French', 'German'];
 
 export default function NewIScribePage() {
   const router = useRouter();
@@ -28,291 +48,191 @@ export default function NewIScribePage() {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [progress, setProgress] = useState(0);
   const [patientName, setPatientName] = useState('');
+  const [specialty, setSpecialty] = useState('none');
+  const [targetTranslationLanguage, setTargetTranslationLanguage] = useState('none');
+  const [currentStepMessage, setCurrentStepMessage] = useState('');
+  const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
+  const [isPermissionChecked, setIsPermissionChecked] = useState(false);
+  const [hasMicPermission, setHasMicPermission] = useState(false);
+  const [pipeline, setPipeline] = useState<AgentStep[]>(INITIAL_PIPELINE);
+  const [recordingDuration, setRecordingDuration] = useState(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
-  const effectiveMimeTypeRef = useRef<string>(''); // To store the actual mimeType used
+  const effectiveMimeTypeRef = useRef<string>('');
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [isPermissionChecked, setIsPermissionChecked] = useState(false);
-  const [hasMicPermission, setHasMicPermission] = useState(false);
-
-  const processingSteps = ["Running Clinical Intelligence Agents...", "Translating Transcript (Optional)...", "Saving to your records...", "Finalizing..."];
-  const [currentStepMessage, setCurrentStepMessage] = useState("");
-  const [targetTranslationLanguage, setTargetTranslationLanguage] = useState<string>('none');
-  const [specialty, setSpecialty] = useState<string>('none');
-
-
+  // Mic permission
   useEffect(() => {
-    const getMicPermission = async () => {
-      console.log("NewIScribe: Attempting to get microphone permission...");
+    const check = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const s = await navigator.mediaDevices.getUserMedia({ audio: true });
         setHasMicPermission(true);
-        console.log("NewIScribe: Microphone permission granted.");
-        stream.getTracks().forEach(track => track.stop()); // Release mic immediately
-      } catch (error) {
-        console.error('NewIScribe: Error accessing microphone:', error);
+        s.getTracks().forEach(t => t.stop());
+      } catch {
         setHasMicPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Microphone Access Denied',
-          description: 'Please enable microphone permissions in your browser settings and refresh the page.',
-          duration: 7000,
-        });
-      } finally {
-        setIsPermissionChecked(true);
-        console.log("NewIScribe: Microphone permission check complete. Has permission:", hasMicPermission);
-      }
+        toast({ variant: 'destructive', title: 'Microphone Access Denied', description: 'Enable microphone permissions and refresh.' });
+      } finally { setIsPermissionChecked(true); }
     };
+    if (navigator?.mediaDevices?.getUserMedia && !isPermissionChecked) check();
+    else if (!navigator?.mediaDevices) { setHasMicPermission(false); setIsPermissionChecked(true); }
+  }, [isPermissionChecked, toast]);
 
-    if (typeof navigator !== "undefined" && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      if (!isPermissionChecked) { // Only check if not already checked
-        getMicPermission();
-      }
+  // Recording timer
+  useEffect(() => {
+    if (recordingState === 'recording') {
+      timerRef.current = setInterval(() => setRecordingDuration(d => d + 1), 1000);
     } else {
-      console.error("NewIScribe: Audio recording not supported or permissions blocked.");
-      setHasMicPermission(false);
-      setIsPermissionChecked(true); // Mark as checked even if not supported
-      toast({
-        variant: 'destructive',
-        title: 'Unsupported Browser or Settings',
-        description: 'Audio recording is not supported or microphone permissions are blocked.',
-        duration: 7000,
-      });
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (recordingState === 'idle') setRecordingDuration(0);
     }
-  }, [isPermissionChecked, toast, hasMicPermission]);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [recordingState]);
 
+  const formatDuration = (s: number) =>
+    `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
+  const updatePipeline = (index: number, patch: Partial<AgentStep>) =>
+    setPipeline(prev => prev.map((s, i) => i === index ? { ...s, ...patch } : s));
+
+  // ── Start Recording ──────────────────────────────────────────
   const handleStartRecording = async () => {
-    console.log("NewIScribe: handleStartRecording. Has mic permission:", hasMicPermission, "Permission checked:", isPermissionChecked);
-    if (!patientName.trim()) {
-      toast({ title: "Patient Name Required", description: "Please enter the patient's name before recording.", variant: "destructive" });
-      return;
-    }
-    if (!isPermissionChecked || !hasMicPermission) {
-      toast({ title: "Microphone Access Required", description: "Please enable microphone permissions and try again.", variant: "destructive" });
-      // Optionally try to re-request permission
-      if (!isPermissionChecked) setIsPermissionChecked(false); // Trigger useEffect to re-check
-      return;
-    }
+    if (!patientName.trim()) { toast({ title: "Patient Name Required", variant: "destructive" }); return; }
+    if (!hasMicPermission) { toast({ title: "Microphone Required", variant: "destructive" }); return; }
     let stream: MediaStream | null = null;
     try {
-      console.log("NewIScribe: Requesting media stream for recording...");
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log("NewIScribe: Media stream obtained:", stream);
-
       audioChunksRef.current = [];
       setAudioDataUri(null);
+      setPipeline(INITIAL_PIPELINE);
 
-      const MimeTypes = [
-        'audio/mp4', // Often preferred by Safari/iOS
-        'audio/webm;codecs=opus',
-        'audio/ogg;codecs=opus',
-        'audio/webm',
-        'audio/aac',
-      ];
-      let selectedMimeType = '';
-      for (const type of MimeTypes) {
-        if (MediaRecorder.isTypeSupported(type)) {
-          selectedMimeType = type;
-          console.log("NewIScribe: MediaRecorder.isTypeSupported is true for:", type);
-          break;
-        }
-        console.log("NewIScribe: MediaRecorder.isTypeSupported is false for:", type);
-      }
-      if (!selectedMimeType) {
-        console.log("NewIScribe: No preferred mimeType supported, trying browser default for MediaRecorder.");
-      }
+      const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm', 'audio/aac'];
+      const mime = types.find(t => MediaRecorder.isTypeSupported(t)) || '';
 
       try {
-        mediaRecorderRef.current = selectedMimeType
-          ? new MediaRecorder(stream, { mimeType: selectedMimeType })
-          : new MediaRecorder(stream); // Let browser pick if none are explicitly supported
+        mediaRecorderRef.current = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
         effectiveMimeTypeRef.current = mediaRecorderRef.current.mimeType;
-        console.log("NewIScribe: MediaRecorder instance created with effective mimeType:", effectiveMimeTypeRef.current);
-      } catch (recorderError) {
-        console.error("NewIScribe: Error instantiating MediaRecorder:", recorderError);
-        const errorMessage = (recorderError as Error).message || "Unknown recorder initialization error.";
-        toast({ title: "Recording Error", description: `Could not initialize audio recorder: ${errorMessage}. Your browser might not support the required audio formats.`, variant: "destructive", duration: 7000 });
-        if (stream) stream.getTracks().forEach(track => track.stop());
+      } catch (err) {
+        toast({ title: "Recording Error", description: (err as Error).message, variant: "destructive" });
+        stream.getTracks().forEach(t => t.stop());
         setRecordingState('error');
-        setCurrentStepMessage(`Recorder init failed: ${errorMessage}`);
         return;
       }
 
-
-      mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-          console.log("NewIScribe: MediaRecorder ondataavailable: chunk received, size:", event.data.size, "total chunks:", audioChunksRef.current.length);
-        } else {
-          console.log("NewIScribe: MediaRecorder ondataavailable: received empty chunk.");
-        }
+      mediaRecorderRef.current.ondataavailable = (e: BlobEvent) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
-
-      mediaRecorderRef.current.onerror = (event: Event) => {
-        const mediaRecorderErrorEvent = event as MediaRecorderErrorEvent;
-        const errorDetails = mediaRecorderErrorEvent.error;
-        console.error("NewIScribe: MediaRecorder error event:", event, "DOMException:", errorDetails);
-
-        const errorMessage = errorDetails?.name || errorDetails?.message || 'Unknown recording error';
-
-        toast({
-          title: "Recording Error",
-          description: `An error occurred with the recorder: ${errorMessage}. Please ensure your microphone is working.`,
-          variant: "destructive",
-        });
+      mediaRecorderRef.current.onerror = (e: Event) => {
+        const err = (e as MediaRecorderErrorEvent).error;
+        toast({ title: "Recording Error", description: err?.message || 'Unknown error', variant: "destructive" });
         setRecordingState('error');
-        setCurrentStepMessage(`Recording failed: ${errorMessage}`);
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-          console.log("NewIScribe: Recording stream tracks stopped due to MediaRecorder error.");
-        }
+        stream?.getTracks().forEach(t => t.stop());
       };
-
       mediaRecorderRef.current.onstop = () => {
-        console.log("NewIScribe: MediaRecorder onstop event fired. Total chunks recorded:", audioChunksRef.current.length);
-
-        const actualMimeType = effectiveMimeTypeRef.current || (selectedMimeType || 'audio/webm'); // Fallback if ref wasn't set
-        console.log("NewIScribe: Creating Blob with actual mimeType:", actualMimeType, "Number of chunks:", audioChunksRef.current.length);
-
-        const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
-        console.log("NewIScribe: Audio blob created, size:", audioBlob.size, "type:", audioBlob.type);
-
-        if (audioBlob.size === 0) {
-          toast({
-            title: "Recording Failed",
-            description: "No audio was recorded. Please try again and ensure your microphone is working and you speak for a few seconds.",
-            variant: "destructive",
-          });
-          setRecordingState('idle');
-          setCurrentStepMessage("No audio data recorded.");
-          setAudioDataUri(null);
-          setProgress(0);
-          if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            console.log("NewIScribe: Recording stream tracks stopped. No audio data recorded.");
-          }
+        const actualMime = effectiveMimeTypeRef.current || 'audio/webm';
+        const blob = new Blob(audioChunksRef.current, { type: actualMime });
+        if (blob.size === 0) {
+          toast({ title: "No Audio Recorded", description: "Please try again and speak clearly.", variant: "destructive" });
+          setRecordingState('idle'); setAudioDataUri(null); setProgress(0);
+          stream?.getTracks().forEach(t => t.stop());
           return;
         }
-
         const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
+        reader.readAsDataURL(blob);
         reader.onloadend = () => {
-          const base64Audio = reader.result as string;
-          setAudioDataUri(base64Audio);
-          console.log("NewIScribe: Audio converted to Data URI, length (first 100 chars):", base64Audio.substring(0, 100));
+          setAudioDataUri(reader.result as string);
           setRecordingState('idle');
           setProgress(100);
-          setCurrentStepMessage("Recording complete. Ready to save.");
-          toast({ title: "Recording Stopped", description: `Recorded ${Math.round(audioBlob.size / 1024)} KB of ${actualMimeType}` });
+          setCurrentStepMessage("Recording complete — ready to process.");
+          toast({ title: "Recording Ready", description: `${Math.round(blob.size / 1024)} KB captured` });
         };
-        reader.onerror = (error) => {
-          console.error("NewIScribe: FileReader error when converting blob to Data URI:", error);
-          toast({ title: "Processing Error", description: "Could not process recorded audio data.", variant: "destructive" });
-          setRecordingState('error');
-          setCurrentStepMessage("Error processing audio.");
-        }
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-          console.log("NewIScribe: Recording stream tracks stopped after successful recording stop.");
-        }
+        stream?.getTracks().forEach(t => t.stop());
       };
 
       mediaRecorderRef.current.start();
-      console.log("NewIScribe: MediaRecorder started.");
       setRecordingState('recording');
       setProgress(0);
-      setCurrentStepMessage("Recording in progress... Speak clearly.");
+      setCurrentStepMessage('Recording in progress...');
       toast({ title: "Recording Started" });
     } catch (err: any) {
-      console.error("NewIScribe: Error in handleStartRecording (getUserMedia or MediaRecorder.start):", err);
-      toast({ title: "Recording Setup Error", description: `Could not start recording: ${err.message || 'Unknown error'}. Please ensure microphone is connected and permissions are granted.`, variant: "destructive" });
+      toast({ title: "Recording Error", description: err.message || 'Unknown error', variant: "destructive" });
       setRecordingState('error');
-      setCurrentStepMessage(`Failed to start recording: ${err.message || 'Unknown error'}`);
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-        console.log("NewIScribe: Recording stream tracks stopped due to error in handleStartRecording.");
-      }
+      setCurrentStepMessage(`Failed: ${err.message}`);
+      stream?.getTracks().forEach(t => t.stop());
     }
   };
 
   const handleStopRecording = () => {
-    console.log("NewIScribe: handleStopRecording called.");
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop(); // This will trigger the 'onstop' handler
-      console.log("NewIScribe: MediaRecorder.stop() called.");
-    } else {
-      console.log("NewIScribe: MediaRecorder not active or not available to stop.");
-      // If it's not recording but we think it should be, reset UI
-      if (recordingState === 'recording') {
-        setRecordingState('idle');
-        setCurrentStepMessage("Recording stopped unexpectedly.");
-        toast({ title: "Recording Stopped", description: "Recorder was not active.", variant: "default" });
-      }
+    if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
+    else if (recordingState === 'recording') {
+      setRecordingState('idle');
+      toast({ title: "Recording Stopped" });
     }
   };
 
+  // ── Process + Save ───────────────────────────────────────────
   const handleSaveIScribe = async () => {
-    if (!patientName.trim()) {
-      toast({ title: "Patient Name Required", description: "Please enter the patient's name before saving.", variant: "destructive" });
-      return;
-    }
-    if (!audioDataUri) {
-      toast({ title: "No Audio", description: "Please record audio before saving.", variant: "destructive" });
-      return;
-    }
-    if (!audioDataUri.startsWith('data:audio/')) {
-      toast({ title: "Invalid Audio Data", description: "The recorded audio data is not in a recognized format.", variant: "destructive" });
-      setRecordingState('error');
-      return;
-    }
-    if (!user) {
-      toast({ title: "Authentication Error", description: "You must be logged in to save a iScribe.", variant: "destructive" });
-      return;
-    }
+    if (!patientName.trim()) { toast({ title: "Patient Name Required", variant: "destructive" }); return; }
+    if (!audioDataUri) { toast({ title: "No Audio", variant: "destructive" }); return; }
+    if (!audioDataUri.startsWith('data:audio/')) { toast({ title: "Invalid Audio", variant: "destructive" }); setRecordingState('error'); return; }
+    if (!user) { toast({ title: "Not Authenticated", variant: "destructive" }); return; }
 
     setRecordingState('processing');
-    setProgress(10);
-    setCurrentStepMessage("Running Clinical Intelligence Agents (Transcription → NLP → SOAP → Risk → Billing → Compliance)...");
+    setProgress(5);
+    setCurrentStepMessage('Initialising clinical intelligence agents...');
+
+    // Animate pipeline steps
+    const runPipelineAnimation = async () => {
+      const delays = [0, 800, 1800, 2600, 3400, 4200];
+      for (let i = 0; i < 6; i++) {
+        await new Promise(r => setTimeout(r, i === 0 ? delays[0] : delays[i] - delays[i - 1]));
+        updatePipeline(i, { status: 'running' });
+        setProgress(5 + i * 10);
+      }
+    };
+    runPipelineAnimation();
 
     try {
-      // Run the full multi-agent pipeline
       const session = await processAudioSession(audioDataUri, {
         specialty: specialty !== 'none' ? specialty : undefined,
         language: targetTranslationLanguage !== 'none' ? targetTranslationLanguage : undefined,
       });
 
-      setProgress(60);
-      setCurrentStepMessage("Agents complete. Applying translation...");
+      // Mark all as done
+      setPipeline(INITIAL_PIPELINE.map((s, i) => ({
+        ...s,
+        status: 'done',
+        confidence: [
+          session.transcription.confidence,
+          session.nlp.confidence,
+          session.soap.confidence,
+          session.risk.confidence,
+          session.billing.confidence,
+          session.compliance.confidence,
+        ][i],
+      })));
+      setProgress(75);
+      setCurrentStepMessage('Agents complete. Saving record...');
 
-      // Optional translation of the transcript
       let translatedTranscript: string | undefined;
       let finalTranslationLanguage: string | undefined;
       if (targetTranslationLanguage !== 'none' && session.transcription.transcript.trim()) {
         try {
-          const translationResult = await translateText({ text: session.transcription.transcript, targetLanguage: targetTranslationLanguage });
-          translatedTranscript = translationResult.translatedText;
+          const tr = await translateText({ text: session.transcription.transcript, targetLanguage: targetTranslationLanguage });
+          translatedTranscript = tr.translatedText;
           finalTranslationLanguage = targetTranslationLanguage;
-        } catch {
-          toast({ title: "Translation Warning", description: "Could not translate — saving without.", variant: "default" });
-        }
+        } catch { toast({ title: "Translation skipped", variant: "default" }); }
       }
-
-      setProgress(80);
-      setCurrentStepMessage("Saving clinical record...");
 
       const iScribeToSave: Omit<IScribe, 'id' | 'userId'> = {
         patientName,
         date: new Date().toISOString(),
-        status: session.compliance.passed ? 'Completed' : 'Completed',
+        status: 'Completed',
         transcript: session.transcription.transcript,
         summary: session.soap.structuredSummary,
         audioDataUri,
         translatedTranscript,
         translatedTranscriptLanguage: finalTranslationLanguage,
-        // Agent-enriched clinical data
         soapNote: session.soap.soap,
         laymanSummary: session.soap.laymanSummary,
         icdCodes: session.billing.icdCodes,
@@ -327,213 +247,289 @@ export default function NewIScribePage() {
         specialty: specialty !== 'none' ? specialty : undefined,
       };
 
-      const newIScribeId = await saveIScribe(iScribeToSave);
-      if (!newIScribeId) throw new Error("Failed to save the iScribe to the database.");
+      const newId = await saveIScribe(iScribeToSave);
+      if (!newId) throw new Error("Failed to save record.");
 
-      sendDataToHubSpot({ ...iScribeToSave, id: newIScribeId, userId: user.uid }, audioDataUri).catch(() => { });
-
+      sendDataToHubSpot({ ...iScribeToSave, id: newId, userId: user.uid }, audioDataUri).catch(() => { });
       setProgress(100);
       setRecordingState('success');
-      setCurrentStepMessage("iScribe processed successfully!");
-      toast({ title: "Success", description: `Clinical intelligence complete. Overall confidence: ${Math.round((session.meta.overallConfidence ?? 0) * 100)}%` });
-
-      setTimeout(() => router.push(`/dashboard/iscribe/${newIScribeId}`), 1500);
-
-    } catch (error) {
-      console.error("NewIScribe: Processing error:", error);
+      setCurrentStepMessage('Session complete!');
+      toast({ title: "Session Complete", description: `Confidence: ${Math.round((session.meta.overallConfidence ?? 0) * 100)}%` });
+      setTimeout(() => router.push(`/dashboard/iscribe/${newId}`), 1500);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
       setRecordingState('error');
-      const msg = error instanceof Error ? error.message : "An unknown error occurred.";
-      setCurrentStepMessage(`Failed: ${msg}`);
+      setCurrentStepMessage(`Error: ${msg}`);
+      setPipeline(p => p.map(s => s.status === 'running' ? { ...s, status: 'error' } : s));
       toast({ title: "Processing Error", description: msg, variant: "destructive", duration: 7000 });
     }
   };
 
-  const renderIcon = () => {
-    switch (recordingState) {
-      case 'recording':
-        return <Mic className="h-16 w-16 text-red-500 animate-pulse" />;
-      case 'processing':
-        return <Loader2 className="h-16 w-16 text-primary animate-spin" />;
-      case 'success':
-        return <CheckCircle className="h-16 w-16 text-green-500" />;
-      case 'error':
-        return <AlertTriangle className="h-16 w-16 text-destructive" />;
-      default:
-        return <Mic className="h-16 w-16 text-primary" />;
-    }
-  };
+  const canRecord = isPermissionChecked && hasMicPermission && patientName.trim().length > 0;
+  const isDisabled = recordingState === 'processing' || recordingState === 'recording';
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <Card className="max-w-2xl mx-auto shadow-2xl bg-card/80">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">New iScribe</CardTitle>
-          <CardDescription>Record audio for transcription and summarization.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center space-y-8 py-10">
-          <div className="w-full max-w-md space-y-2">
-            <Label htmlFor="patientName">Patient Name</Label>
-            <Input
-              id="patientName"
-              placeholder="Enter patient's full name"
-              value={patientName}
-              onChange={(e) => setPatientName(e.target.value)}
-              disabled={recordingState === 'recording' || recordingState === 'processing'}
-              className="text-base"
-            />
+    <div className="min-h-screen px-4 md:px-6 py-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="flex items-center gap-3"
+        >
+          <Link href="/dashboard/iscribe">
+            <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-card/50 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all">
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">New iScribe Session</h1>
+            <p className="text-xs text-muted-foreground">6-agent AI clinical documentation · gpt-5.3-codex</p>
           </div>
+        </motion.div>
 
-          <div className="p-6 bg-accent/30 rounded-full animate-pulse-slow-shadow">
-            {renderIcon()}
-          </div>
+        {/* 3-Panel Grid */}
+        <div className="grid lg:grid-cols-3 gap-5">
 
-          {(!isPermissionChecked && recordingState === 'idle') && (
-            <div className="flex items-center space-x-2 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Checking microphone permissions...</span>
+          {/* ── LEFT PANEL: Session Config ─── */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1, duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+            className="glass neural-border rounded-2xl p-6 space-y-6"
+          >
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-6 w-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <span className="text-[10px] font-black text-primary">01</span>
+                </div>
+                <h2 className="text-sm font-semibold">Session Details</h2>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="patientName" className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    Patient Name *
+                  </Label>
+                  <Input
+                    id="patientName"
+                    placeholder="Full name"
+                    value={patientName}
+                    onChange={e => setPatientName(e.target.value)}
+                    disabled={isDisabled}
+                    className="bg-background/50 border-border/60 focus:border-primary/50 rounded-xl text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    Clinical Specialty
+                  </Label>
+                  <Select value={specialty} onValueChange={setSpecialty} disabled={isDisabled}>
+                    <SelectTrigger className="bg-background/50 border-border/60 rounded-xl text-sm">
+                      <SelectValue placeholder="Select specialty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">General / Unspecified</SelectItem>
+                      {SPECIALTIES.slice(1).map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    Translate Transcript
+                  </Label>
+                  <Select value={targetTranslationLanguage} onValueChange={setTargetTranslationLanguage} disabled={isDisabled}>
+                    <SelectTrigger className="bg-background/50 border-border/60 rounded-xl text-sm">
+                      <Languages className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None (Keep Original)</SelectItem>
+                      {LANGUAGES.slice(1).map(l => (
+                        <SelectItem key={l} value={l}>{l}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
-          )}
 
-          {(isPermissionChecked && !hasMicPermission && recordingState === 'idle') && (
-            <Alert variant="destructive" className="w-full max-w-md">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Microphone Access Denied</AlertTitle>
-              <AlertDescription>
-                MediScribe needs microphone access. Please enable it in your browser settings and refresh.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {(recordingState === 'recording' || recordingState === 'processing') && (
-            <div className="w-full px-4">
-              <Progress value={progress} className="w-full h-3" />
-              <p className="text-center mt-2 text-sm text-muted-foreground">{currentStepMessage || 'Processing...'}</p>
+            {/* Mic permission status */}
+            <div className={cn(
+              "flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs",
+              hasMicPermission
+                ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400"
+                : "border-red-500/20 bg-red-500/5 text-red-400"
+            )}>
+              {hasMicPermission
+                ? <><span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />Microphone ready</>
+                : <><AlertTriangle className="h-3.5 w-3.5" />Microphone unavailable</>
+              }
             </div>
-          )}
 
-          {recordingState === 'success' && (
-            <p className="text-center text-lg text-green-600 font-medium">{currentStepMessage}</p>
-          )}
-          {recordingState === 'error' && (
-            <p className="text-center text-lg text-destructive font-medium">{currentStepMessage}</p>
-          )}
+            {/* Recorded audio preview */}
+            {audioDataUri && recordingState === 'idle' && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Preview</p>
+                <audio controls src={audioDataUri} className="w-full h-9 rounded-xl" />
+              </div>
+            )}
+          </motion.div>
 
-          {(recordingState === 'idle' && audioDataUri) && (
-            <div className="w-full max-w-md space-y-2 mt-4">
-              <Label htmlFor="translate-language">Translate Transcript to (Optional)</Label>
-              <Select
-                value={targetTranslationLanguage}
-                onValueChange={setTargetTranslationLanguage}
-                disabled={recordingState !== 'idle'}
-              >
-                <SelectTrigger id="translate-language" className="w-full">
-                  <LanguagesIcon className="mr-2 h-4 w-4 opacity-70" />
-                  <SelectValue placeholder="Select language" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None (Keep Original)</SelectItem>
-                  <SelectItem value="English">English</SelectItem>
-                  <SelectItem value="Spanish">Spanish</SelectItem>
-                  <SelectItem value="French">French</SelectItem>
-                  <SelectItem value="German">German</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* ── CENTER PANEL: Orb + Controls ─── */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+            className="glass neural-border rounded-2xl p-6 flex flex-col items-center justify-between gap-6"
+          >
+            <div className="flex items-center gap-2 w-full">
+              <div className="h-6 w-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <span className="text-[10px] font-black text-primary">02</span>
+              </div>
+              <h2 className="text-sm font-semibold">Live Recording</h2>
+              {recordingState === 'recording' && (
+                <span className="ml-auto font-mono text-xs text-red-400">{formatDuration(recordingDuration)}</span>
+              )}
             </div>
-          )}
 
-        </CardContent>
-        <CardFooter className="flex flex-col sm:flex-row justify-center gap-4 pt-6 border-t">
-          {recordingState === 'idle' && !audioDataUri && (
-            <Button
-              size="lg"
-              onClick={handleStartRecording}
-              className="w-full sm:w-auto shadow-md"
-              disabled={!isPermissionChecked || !hasMicPermission || recordingState === 'recording' || !patientName.trim()}
-            >
-              <Mic className="mr-2 h-5 w-5" />
-              Start Recording
-            </Button>
-          )}
-          {recordingState === 'recording' && (
-            <Button
-              size="lg"
-              variant="destructive"
-              onClick={handleStopRecording}
-              className="w-full sm:w-auto shadow-md"
-            >
-              <StopCircle className="mr-2 h-5 w-5" />
-              Stop Recording
-            </Button>
-          )}
-          {(recordingState === 'idle' && audioDataUri) && (
-            <Button
-              size="lg"
-              onClick={handleSaveIScribe}
-              className="w-full sm:w-auto shadow-md"
-              disabled={recordingState === 'processing' || recordingState === 'recording' || !patientName.trim() || !audioDataUri}
-            >
-              <Save className="mr-2 h-5 w-5" />
-              Save iScribe
-            </Button>
-          )}
-          {(recordingState === 'error' || (recordingState === 'idle' && audioDataUri && !patientName.trim())) && (
-            <Button
-              size="lg"
-              onClick={() => {
-                console.log("NewIScribe: Try Again button clicked. Resetting state.");
-                setRecordingState('idle');
-                setProgress(0);
-                setCurrentStepMessage('');
-                setAudioDataUri(null);
-                audioChunksRef.current = [];
-                effectiveMimeTypeRef.current = '';
-                setTargetTranslationLanguage('none');
-                // Do not reset patientName here
-                if (!isPermissionChecked || !hasMicPermission) { // Re-prompt if permission was denied/not checked
-                  setIsPermissionChecked(false); // This will trigger useEffect to re-check
-                  toast({
-                    variant: 'destructive',
-                    title: 'Microphone Access Issue',
-                    description: 'Please ensure microphone permissions are enabled in your browser settings. Re-checking now.',
-                    duration: 7000,
-                  });
-                } else if (!patientName.trim()) {
-                  toast({ title: "Patient Name Required", description: "Please enter the patient's name.", variant: "destructive" });
-                } else {
-                  toast({
-                    title: 'Ready',
-                    description: 'You can try recording again.',
-                    variant: 'default'
-                  });
-                }
-              }}
-              className="w-full sm:w-auto shadow-md"
-            >
-              Try Again
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
-      <style jsx>{`
-        .animate-pulse-slow-shadow {
-          animation: pulse-shadow 2s infinite ease-in-out;
-        }
-        @keyframes pulse-shadow {
-          0%, 100% { box-shadow: 0 0 0 0px hsl(var(--primary) / 0.3); }
-          50% { box-shadow: 0 0 0 15px hsl(var(--primary) / 0); }
-        }
-      `}</style>
+            {/* Waveform Orb */}
+            <div className="flex-1 flex items-center justify-center py-4">
+              <WaveformOrb state={recordingState} size={160} />
+            </div>
+
+            {/* Status message */}
+            <AnimatePresence mode="wait">
+              {currentStepMessage && (
+                <motion.p
+                  key={currentStepMessage}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  className="text-xs text-center text-muted-foreground max-w-xs"
+                >
+                  {currentStepMessage}
+                </motion.p>
+              )}
+            </AnimatePresence>
+
+            {/* Progress bar */}
+            {(recordingState === 'processing' || recordingState === 'success') && (
+              <div className="w-full space-y-1.5">
+                <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full bg-primary"
+                    style={{ boxShadow: "0 0 8px hsl(191 97% 58% / 0.6)" }}
+                    animate={{ width: `${progress}%` }}
+                    transition={{ duration: 0.4 }}
+                  />
+                </div>
+                <p className="text-right text-[10px] text-muted-foreground font-mono">{progress}%</p>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="w-full space-y-2">
+              {recordingState === 'idle' && !audioDataUri && (
+                <motion.button
+                  whileHover={canRecord ? { scale: 1.03 } : {}}
+                  whileTap={canRecord ? { scale: 0.97 } : {}}
+                  onClick={handleStartRecording}
+                  disabled={!canRecord}
+                  className={cn(
+                    "w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all",
+                    canRecord
+                      ? "btn-neural"
+                      : "bg-muted text-muted-foreground cursor-not-allowed"
+                  )}
+                >
+                  <Mic className="h-4 w-4" />
+                  Start Recording
+                </motion.button>
+              )}
+              {recordingState === 'recording' && (
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleStopRecording}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold bg-red-500/90 text-white hover:bg-red-500 transition-all"
+                >
+                  <StopCircle className="h-4 w-4" />
+                  Stop Recording
+                </motion.button>
+              )}
+              {recordingState === 'idle' && audioDataUri && (
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleSaveIScribe}
+                  disabled={!patientName.trim()}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold btn-neural"
+                >
+                  <BrainCircuit className="h-4 w-4" />
+                  Run AI Agents & Save
+                </motion.button>
+              )}
+              {(recordingState === 'error') && (
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    setRecordingState('idle'); setProgress(0);
+                    setCurrentStepMessage(''); setAudioDataUri(null);
+                    audioChunksRef.current = []; effectiveMimeTypeRef.current = '';
+                    setPipeline(INITIAL_PIPELINE);
+                    setTargetTranslationLanguage('none');
+                  }}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold bg-muted text-foreground hover:bg-muted/80 transition-all"
+                >
+                  Try Again
+                </motion.button>
+              )}
+              {recordingState === 'success' && (
+                <div className="flex items-center justify-center gap-2 text-emerald-400 text-sm font-semibold">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Redirecting to your session...
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* ── RIGHT PANEL: Agent Pipeline ─── */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+            className="glass neural-border rounded-2xl p-6 space-y-4"
+          >
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <span className="text-[10px] font-black text-primary">03</span>
+              </div>
+              <h2 className="text-sm font-semibold">AI Agent Pipeline</h2>
+            </div>
+
+            <AgentPipelineTracker steps={pipeline} />
+
+            {/* Model info */}
+            <div className="pt-2 border-t border-border/40">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                <span>gpt-5.3-codex · Parallel execution</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1.5 leading-relaxed">
+                Agents run in two stages: Transcription → (NLP + SOAP in parallel) → (Risk + Billing + Compliance in parallel).
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </div>
     </div>
   );
-}
-
-// Define MediaRecorderErrorEvent if not available globally (e.g., in older TS lib versions)
-interface MediaRecorderErrorEvent extends Event {
-  readonly error: DOMException;
-}
-
-// Define BlobEvent if not available globally
-interface BlobEvent extends Event {
-  readonly data: Blob;
-  readonly timecode: number;
 }
