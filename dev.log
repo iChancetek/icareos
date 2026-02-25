@@ -1,0 +1,429 @@
+
+> nextn@0.1.0 dev
+> next dev -p 9002
+
+   ▲ Next.js 15.1.9
+   - Local:        http://localhost:9002
+   - Network:      http://192.168.1.204:9002
+   - Environments: .env.local
+
+ ✓ Starting...
+ ○ (pwa) PWA support is disabled.
+ ✓ Ready in 22.3s
+ ○ Compiling / ...
+ ✓ Compiled / in 48.9s (1732 modules)
+Firebase Init API Key Check (first 5 chars): AIzaS dummy? false
+Full Firebase Config: {
+  "apiKey": "AIzaSyDdKIfgLetDTyd81nIUBjWKGdj3HLzNo-I",
+  "authDomain": "mediscribe-221.firebaseapp.com",
+  "projectId": "mediscribe-221",
+  "storageBucket": "mediscribe-221.firebasestorage.app",
+  "messagingSenderId": "707708093410",
+  "appId": "1:707708093410:web:0151a75037e12e2901afbb",
+  "measurementId": "G-N5TNTJTF3W"
+}
+ GET / 200 in 52490ms
+ ✓ Compiled in 3.6s (787 modules)
+ ○ Compiling /dashboard/iscribe ...
+ ✓ Compiled /dashboard/iscribe in 2.5s (951 modules)
+ ✓ Compiled in 9.6s (921 modules)
+ GET /favicon.ico 200 in 13525ms
+Firebase Init API Key Check (first 5 chars): AIzaS dummy? false
+Full Firebase Config: {
+  "apiKey": "AIzaSyDdKIfgLetDTyd81nIUBjWKGdj3HLzNo-I",
+  "authDomain": "mediscribe-221.firebaseapp.com",
+  "projectId": "mediscribe-221",
+  "storageBucket": "mediscribe-221.firebasestorage.app",
+  "messagingSenderId": "707708093410",
+  "appId": "1:707708093410:web:0151a75037e12e2901afbb",
+  "measurementId": "G-N5TNTJTF3W"
+}
+ GET /dashboard/iscribe 200 in 13985ms
+ GET / 200 in 13144ms
+ GET /dashboard/iscribe 200 in 235ms
+ GET /dashboard/iscribe 200 in 264ms
+ GET /dashboard/iscribe 200 in 465ms
+ GET /dashboard/iscribe 200 in 833ms
+ ○ Compiling /dashboard/iscribe/new ...
+ ✓ Compiled /dashboard/iscribe/new in 11.3s (2232 modules)
+Firebase Init API Key Check (first 5 chars): AIzaS dummy? false
+Full Firebase Config: {
+  "apiKey": "AIzaSyDdKIfgLetDTyd81nIUBjWKGdj3HLzNo-I",
+  "authDomain": "mediscribe-221.firebaseapp.com",
+  "projectId": "mediscribe-221",
+  "storageBucket": "mediscribe-221.firebasestorage.app",
+  "messagingSenderId": "707708093410",
+  "appId": "1:707708093410:web:0151a75037e12e2901afbb",
+  "measurementId": "G-N5TNTJTF3W"
+}
+ GET /dashboard/iscribe/new 200 in 13633ms
+ ○ Compiling /dashboard/insights ...
+ ✓ Compiled /dashboard/insights in 34.4s (3280 modules)
+Firebase Init API Key Check (first 5 chars): AIzaS dummy? false
+Full Firebase Config: {
+  "apiKey": "AIzaSyDdKIfgLetDTyd81nIUBjWKGdj3HLzNo-I",
+  "authDomain": "mediscribe-221.firebaseapp.com",
+  "projectId": "mediscribe-221",
+  "storageBucket": "mediscribe-221.firebasestorage.app",
+  "messagingSenderId": "707708093410",
+  "appId": "1:707708093410:web:0151a75037e12e2901afbb",
+  "measurementId": "G-N5TNTJTF3W"
+}
+ GET /dashboard/insights 200 in 43373ms
+ GET /dashboard/insights 200 in 673ms
+ GET /dashboard/iscribe 200 in 1649ms
+ GET /dashboard/iscribe 200 in 165ms
+ GET /dashboard/iscribe/new 200 in 944ms
+ GET /dashboard/insights 200 in 330ms
+ GET /dashboard/iscribe/new 200 in 605ms
+ ○ Compiling /dashboard/recordings ...
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack failed from d:\chancellor\MediScribe\.next\cache\webpack\server-development.pack.gz: RangeError: Array buffer allocation failed
+ ✓ Compiled /dashboard/recordings in 39.6s (3317 modules)
+ GET /dashboard/insights 200 in 41460ms
+ GET /dashboard/recordings 200 in 41743ms
+ GET /dashboard/recordings 200 in 15438ms
+ GET /dashboard/recordings 200 in 15438ms
+ GET /dashboard/recordings 200 in 15439ms
+ GET /dashboard/recordings 200 in 15441ms
+ GET /dashboard/recordings 200 in 89ms
+ GET /dashboard/recordings 200 in 52ms
+ GET /dashboard/recordings 200 in 57ms
+ GET /dashboard/recordings 200 in 57ms
+ GET /dashboard/recordings 200 in 56ms
+ GET /dashboard/recordings 200 in 123ms
+ GET /dashboard/recordings 200 in 103ms
+ GET /dashboard/recordings 200 in 51ms
+ GET /dashboard/insights 200 in 58ms
+ GET /dashboard/insights 200 in 59ms
+ GET /dashboard/insights 200 in 60ms
+ GET /dashboard/insights 200 in 61ms
+ GET /dashboard/insights 200 in 63ms
+ GET /dashboard/insights 200 in 68ms
+ GET /dashboard/insights 200 in 55ms
+ GET /dashboard/iscribe/new 200 in 109ms
+ GET /dashboard/insights 200 in 82ms
+Firebase Init API Key Check (first 5 chars): AIzaS dummy? false
+Full Firebase Config: {
+  "apiKey": "AIzaSyDdKIfgLetDTyd81nIUBjWKGdj3HLzNo-I",
+  "authDomain": "mediscribe-221.firebaseapp.com",
+  "projectId": "mediscribe-221",
+  "storageBucket": "mediscribe-221.firebasestorage.app",
+  "messagingSenderId": "707708093410",
+  "appId": "1:707708093410:web:0151a75037e12e2901afbb",
+  "measurementId": "G-N5TNTJTF3W"
+}
+ GET / 200 in 4474ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 8.3s (1824 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 11s (3318 modules)
+ GET /favicon.ico 200 in 19902ms
+ GET /login 200 in 11837ms
+ GET /login 200 in 64ms
+ GET /dashboard/iscribe 200 in 45ms
+ ○ Compiling /dashboard/recordings ...
+ ✓ Compiled /dashboard/recordings in 1655ms (1830 modules)
+ GET /dashboard/recordings 200 in 2087ms
+ GET /dashboard/insights 200 in 157ms
+ ○ Compiling /dashboard/iskylar ...
+ ✓ Compiled /dashboard/iskylar in 3.3s (3297 modules)
+ GET /dashboard/iskylar 200 in 3810ms
+Error in transcribeAudio: Error: Transcription failed: API returned empty response.
+    at transcribeAudio (src\ai\flows\transcribe-audio.ts:49:12)
+  47 |
+  48 |     if (!transcriptionText) {
+> 49 |       throw new Error('Transcription failed: API returned empty response.');
+     |            ^
+  50 |     }
+  51 |
+  52 |     return { transcription: transcriptionText };
+ ⨯ Error: AI Transcription process failed: Transcription failed: API returned empty response.
+    at transcribeAudio (src\ai\flows\transcribe-audio.ts:56:10)
+  54 |   } catch (error: any) {
+  55 |     console.error(`Error in transcribeAudio:`, error);
+> 56 |     throw new Error(`AI Transcription process failed: ${error.message || 'Unknown error during transcription.'}`);
+     |          ^
+  57 |   }
+  58 | }
+  59 | {
+  digest: '1270627561'
+}
+ POST /dashboard/iskylar 500 in 4513ms
+Error in generateText: Error: 404 This is not a chat model and thus not supported in the v1/chat/completions endpoint. Did you mean to use v1/completions?
+    at async OpenAIService.generateText (src\services\openaiService.ts:56:31)
+    at async askISkylar (src\ai\flows\iskylar-assistant-flow.ts:85:19)
+  54 |             messages.push({ role: 'user', content: prompt });
+  55 |
+> 56 |             const completion = await openai.chat.completions.create({
+     |                               ^
+  57 |                 model: DEFAULT_MODEL,
+  58 |                 messages,
+  59 |                 max_completion_tokens: 2048, {
+  status: 404,
+  headers: Headers {
+    date: 'Wed, 25 Feb 2026 21:10:31 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    'access-control-expose-headers': 'X-Request-ID',
+    'openai-organization': 'user-dvivjoas2qtybtfgm58lgspk',
+    'openai-processing-ms': '22',
+    'openai-project': 'proj_PiX0hnKLa2KAL5IBLZ8ObzT1',
+    'openai-version': '2020-10-01',
+    server: 'cloudflare',
+    'x-ratelimit-limit-requests': '5000',
+    'x-ratelimit-limit-tokens': '1000000',
+    'x-ratelimit-remaining-requests': '4999',
+    'x-ratelimit-remaining-tokens': '999075',
+    'x-ratelimit-reset-requests': '12ms',
+    'x-ratelimit-reset-tokens': '55ms',
+    'x-request-id': 'req_bd40a46ea21d40d88e41ca77bd13684e',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'set-cookie': '__cf_bm=r.t9iHR2A4krJ9tsL89XNJobP6AgctiBZ.UxfirZnxo-1772053830.5594058-1.0.1.1-v.FUelwsd2AtWvAveqg2zS4wLXTyhcxk8SJhPtMdCiN_XKLFcPEyk.iuIFF_bIbMW7SE09_slnXdb8luBr3PjY9HgFEGeKmhqwCuvTzdGX_4mGLn31nSsqlg_xRVK7_S; HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 25 Feb 2026 21:40:31 GMT',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'content-encoding': 'br',
+    'cf-ray': '9d3a3098fb25e563-EWR',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_bd40a46ea21d40d88e41ca77bd13684e',
+  error: [Object],
+  code: null,
+  param: 'model',
+  type: 'invalid_request_error'
+}
+ POST /dashboard/iskylar 200 in 1247ms
+Error in generateText: Error: 404 This is not a chat model and thus not supported in the v1/chat/completions endpoint. Did you mean to use v1/completions?
+    at async OpenAIService.generateText (src\services\openaiService.ts:56:31)
+    at async askISkylar (src\ai\flows\iskylar-assistant-flow.ts:85:19)
+  54 |             messages.push({ role: 'user', content: prompt });
+  55 |
+> 56 |             const completion = await openai.chat.completions.create({
+     |                               ^
+  57 |                 model: DEFAULT_MODEL,
+  58 |                 messages,
+  59 |                 max_completion_tokens: 2048, {
+  status: 404,
+  headers: Headers {
+    date: 'Wed, 25 Feb 2026 21:10:50 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    'access-control-expose-headers': 'X-Request-ID',
+    'openai-organization': 'user-dvivjoas2qtybtfgm58lgspk',
+    'openai-processing-ms': '21',
+    'openai-project': 'proj_PiX0hnKLa2KAL5IBLZ8ObzT1',
+    'openai-version': '2020-10-01',
+    server: 'cloudflare',
+    'x-ratelimit-limit-requests': '5000',
+    'x-ratelimit-limit-tokens': '1000000',
+    'x-ratelimit-remaining-requests': '4999',
+    'x-ratelimit-remaining-tokens': '999075',
+    'x-ratelimit-reset-requests': '12ms',
+    'x-ratelimit-reset-tokens': '55ms',
+    'x-request-id': 'req_772b5e4870304c73af501bc42952c9be',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'set-cookie': '__cf_bm=rSlVvZfSe7HiU0rqzXSbsjx1yUv0jkcocnpjTK1YnTg-1772053848.969119-1.0.1.1-Przrfl_jXkxrqHZppX2IJjlqsPqlN9m.740Y2Y9od7QLzdep7FxRWQ5Am0KiVA1F.6Z9RqTnIZ65z4sYahcLQ2AwcU7bkzSsSNg3MD7XIJ7b0XRHIukORN4NulBQJ_sT; HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 25 Feb 2026 21:40:50 GMT',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'content-encoding': 'br',
+    'cf-ray': '9d3a310c0d1cbe82-EWR',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_772b5e4870304c73af501bc42952c9be',
+  error: [Object],
+  code: null,
+  param: 'model',
+  type: 'invalid_request_error'
+}
+ POST /dashboard/iskylar 200 in 1422ms
+Error in generateText: Error: 404 This is not a chat model and thus not supported in the v1/chat/completions endpoint. Did you mean to use v1/completions?
+    at async OpenAIService.generateText (src\services\openaiService.ts:56:31)
+    at async askISkylar (src\ai\flows\iskylar-assistant-flow.ts:85:19)
+  54 |             messages.push({ role: 'user', content: prompt });
+  55 |
+> 56 |             const completion = await openai.chat.completions.create({
+     |                               ^
+  57 |                 model: DEFAULT_MODEL,
+  58 |                 messages,
+  59 |                 max_completion_tokens: 2048, {
+  status: 404,
+  headers: Headers {
+    date: 'Wed, 25 Feb 2026 21:12:41 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    'access-control-expose-headers': 'X-Request-ID',
+    'openai-organization': 'user-dvivjoas2qtybtfgm58lgspk',
+    'openai-processing-ms': '27',
+    'openai-project': 'proj_PiX0hnKLa2KAL5IBLZ8ObzT1',
+    'openai-version': '2020-10-01',
+    server: 'cloudflare',
+    'x-ratelimit-limit-requests': '5000',
+    'x-ratelimit-limit-tokens': '1000000',
+    'x-ratelimit-remaining-requests': '4999',
+    'x-ratelimit-remaining-tokens': '999077',
+    'x-ratelimit-reset-requests': '12ms',
+    'x-ratelimit-reset-tokens': '55ms',
+    'x-request-id': 'req_2ab43fcc31ca4195a0d81d503fde2c3e',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'set-cookie': '__cf_bm=fke4N7LGu0WTh25AZhNOzKQ_xOP9rENXfOXPPhUwXBI-1772053960.6029212-1.0.1.1-U5WMugYfB2aW7g4clCDci_XgwvgN0S3LsQXn6yiFvOtczVXyzaWsmMGghS4PJtxT.Qx34gTPVJ_oJ4tOM2Lx0_wmj3MTMnp0UuTMbKqi3ZrxGi5pFVQXov00rZmZfAJG; HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 25 Feb 2026 21:42:41 GMT',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'content-encoding': 'br',
+    'cf-ray': '9d3a33c5cefaaa2a-EWR',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_2ab43fcc31ca4195a0d81d503fde2c3e',
+  error: [Object],
+  code: null,
+  param: 'model',
+  type: 'invalid_request_error'
+}
+ POST /dashboard/iskylar 200 in 1465ms
+Error in generateText: Error: 404 This is not a chat model and thus not supported in the v1/chat/completions endpoint. Did you mean to use v1/completions?
+    at async OpenAIService.generateText (src\services\openaiService.ts:56:31)
+    at async askISkylar (src\ai\flows\iskylar-assistant-flow.ts:85:19)
+  54 |             messages.push({ role: 'user', content: prompt });
+  55 |
+> 56 |             const completion = await openai.chat.completions.create({
+     |                               ^
+  57 |                 model: DEFAULT_MODEL,
+  58 |                 messages,
+  59 |                 max_completion_tokens: 2048, {
+  status: 404,
+  headers: Headers {
+    date: 'Wed, 25 Feb 2026 21:19:52 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    'access-control-expose-headers': 'X-Request-ID',
+    'openai-organization': 'user-dvivjoas2qtybtfgm58lgspk',
+    'openai-processing-ms': '20',
+    'openai-project': 'proj_PiX0hnKLa2KAL5IBLZ8ObzT1',
+    'openai-version': '2020-10-01',
+    server: 'cloudflare',
+    'x-ratelimit-limit-requests': '5000',
+    'x-ratelimit-limit-tokens': '1000000',
+    'x-ratelimit-remaining-requests': '4999',
+    'x-ratelimit-remaining-tokens': '999076',
+    'x-ratelimit-reset-requests': '12ms',
+    'x-ratelimit-reset-tokens': '55ms',
+    'x-request-id': 'req_9f5144e9d5214c1e8fb994f1bb62cba3',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'set-cookie': '__cf_bm=AZY8KIfNQVoAw3myneWtM_tYEkdw5elC6y5qiCA5aIU-1772054391.8925486-1.0.1.1-jqgVXCQD9jMVfC8oITuy_01iUEqwScOo3Ddtw0zwyRquMxbDQn9TX0EVfNiM9_hZeebsasW.PwPAjii1OxsLvt7Ub1Nv2QgiKoxxqBxkSAm55xQ5M14cTviWxMnTKW9j; HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 25 Feb 2026 21:49:52 GMT',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'content-encoding': 'br',
+    'cf-ray': '9d3a3e4d5d40e80f-EWR',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_9f5144e9d5214c1e8fb994f1bb62cba3',
+  error: [Object],
+  code: null,
+  param: 'model',
+  type: 'invalid_request_error'
+}
+ POST /dashboard/iskylar 200 in 7969ms
+Error in generateText: Error: 404 This is not a chat model and thus not supported in the v1/chat/completions endpoint. Did you mean to use v1/completions?
+    at async OpenAIService.generateText (src\services\openaiService.ts:56:31)
+    at async askISkylar (src\ai\flows\iskylar-assistant-flow.ts:85:19)
+  54 |             messages.push({ role: 'user', content: prompt });
+  55 |
+> 56 |             const completion = await openai.chat.completions.create({
+     |                               ^
+  57 |                 model: DEFAULT_MODEL,
+  58 |                 messages,
+  59 |                 max_completion_tokens: 2048, {
+  status: 404,
+  headers: Headers {
+    date: 'Wed, 25 Feb 2026 21:21:43 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    'access-control-expose-headers': 'X-Request-ID',
+    'openai-organization': 'user-dvivjoas2qtybtfgm58lgspk',
+    'openai-processing-ms': '20',
+    'openai-project': 'proj_PiX0hnKLa2KAL5IBLZ8ObzT1',
+    'openai-version': '2020-10-01',
+    server: 'cloudflare',
+    'x-ratelimit-limit-requests': '5000',
+    'x-ratelimit-limit-tokens': '1000000',
+    'x-ratelimit-remaining-requests': '4999',
+    'x-ratelimit-remaining-tokens': '999079',
+    'x-ratelimit-reset-requests': '12ms',
+    'x-ratelimit-reset-tokens': '55ms',
+    'x-request-id': 'req_28b1f7f0c2cf4abe98afe780ddf1d50c',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'set-cookie': '__cf_bm=aRehpE4P_4EDzwmexrjWORi12MR9mcKDNRX4nAJ6rvQ-1772054503.5919986-1.0.1.1-AE55LMLu0HWLU31qWTyps1yxHouwzNQwr6RMyMuVYj5YM9.pMqNVuu4oqgiDEhMv_7hGujJZc8L63rUkZcvjGT_rKBvr_9LjsZHn.QnJOsZ_052yBPfP3USCqVGWxeCR; HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 25 Feb 2026 21:51:43 GMT',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'content-encoding': 'br',
+    'cf-ray': '9d3a41077e7841af-EWR',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_28b1f7f0c2cf4abe98afe780ddf1d50c',
+  error: [Object],
+  code: null,
+  param: 'model',
+  type: 'invalid_request_error'
+}
+ POST /dashboard/iskylar 200 in 1305ms
+Error in generateText: Error: 404 This is not a chat model and thus not supported in the v1/chat/completions endpoint. Did you mean to use v1/completions?
+    at async OpenAIService.generateText (src\services\openaiService.ts:56:31)
+    at async askISkylar (src\ai\flows\iskylar-assistant-flow.ts:85:19)
+  54 |             messages.push({ role: 'user', content: prompt });
+  55 |
+> 56 |             const completion = await openai.chat.completions.create({
+     |                               ^
+  57 |                 model: DEFAULT_MODEL,
+  58 |                 messages,
+  59 |                 max_completion_tokens: 2048, {
+  status: 404,
+  headers: Headers {
+    date: 'Wed, 25 Feb 2026 21:25:41 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    'access-control-expose-headers': 'X-Request-ID',
+    'openai-organization': 'user-dvivjoas2qtybtfgm58lgspk',
+    'openai-processing-ms': '25',
+    'openai-project': 'proj_PiX0hnKLa2KAL5IBLZ8ObzT1',
+    'openai-version': '2020-10-01',
+    server: 'cloudflare',
+    'x-ratelimit-limit-requests': '5000',
+    'x-ratelimit-limit-tokens': '1000000',
+    'x-ratelimit-remaining-requests': '4999',
+    'x-ratelimit-remaining-tokens': '999078',
+    'x-ratelimit-reset-requests': '12ms',
+    'x-ratelimit-reset-tokens': '55ms',
+    'x-request-id': 'req_e3285c06f24f4941b09ba4cafb8ea05a',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'set-cookie': '__cf_bm=fcmH3GV3f5FEyH0kn63OZsSa2WFP8Uq5bIahVI4KFDc-1772054740.9483018-1.0.1.1-WkxLLBu7U2jLaL_LOEddYueW8WxcpWT308KSWifQGC82ORy96RxvQ80Oc82rzA7_SMkJwDpVqOYrqHVzOAJr5OfIU8doJGldwJjTRw_zei7vRQKh5VFKBCkpLIFGf4yj; HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 25 Feb 2026 21:55:41 GMT',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'content-encoding': 'br',
+    'cf-ray': '9d3a46d2ea691768-EWR',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_e3285c06f24f4941b09ba4cafb8ea05a',
+  error: [Object],
+  code: null,
+  param: 'model',
+  type: 'invalid_request_error'
+}
+ POST /dashboard/iskylar 200 in 2517ms
+ ✓ Compiled in 10.3s (3304 modules)
+ GET /dashboard/iskylar 200 in 212ms
+ ✓ Compiled in 6.6s (3302 modules)
+ GET /dashboard/iskylar 200 in 289ms
+ ✓ Compiled in 3.4s (3302 modules)
+ GET /dashboard/iskylar 200 in 202ms
+ ✓ Compiled in 3.5s (3302 modules)
+ GET /dashboard/iskylar 200 in 511ms

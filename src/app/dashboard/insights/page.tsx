@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -154,20 +155,83 @@ export default function InsightsPage() {
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
                 <div className="flex items-center gap-2 mb-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">Neural Intelligence</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">Agentic AI · Clinical Intelligence</span>
                 </div>
                 <h1 className="text-3xl font-black tracking-tight gradient-text">Clinical Insights</h1>
-                <p className="text-sm text-muted-foreground">Agent pipeline analytics · {agentSessions.length} AI-processed sessions</p>
+                <p className="text-sm text-muted-foreground">
+                    {agentSessions.length > 0 ? `${agentSessions.length} AI-processed session${agentSessions.length !== 1 ? 's' : ''} · 6-agent pipeline` : 'Start a session to activate your intelligence dashboard'}
+                </p>
             </motion.div>
 
-            {/* No data */}
+            {/* Intelligent Empty State */}
             {agentSessions.length === 0 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-primary/20 bg-primary/[0.03] py-20 gap-4 text-center">
-                    <BrainCircuit className="h-12 w-12 text-primary/40 animate-float" />
-                    <div className="space-y-1.5 max-w-xs">
-                        <h2 className="font-bold text-lg">No agent sessions yet</h2>
-                        <p className="text-sm text-muted-foreground">Record a consultation through iScribe to populate your AI insights dashboard.</p>
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="relative flex flex-col items-center justify-center rounded-2xl border border-primary/10 overflow-hidden py-20 gap-8 text-center"
+                    style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, hsl(191 97% 58% / 0.04), hsl(263 80% 60% / 0.03), transparent)' }}
+                >
+                    {/* Animated neural network SVG */}
+                    <div className="relative w-64 h-48">
+                        <svg viewBox="0 0 260 190" className="w-full h-full" aria-hidden="true">
+                            <defs>
+                                <radialGradient id="nodeGrad" cx="50%" cy="50%" r="50%">
+                                    <stop offset="0%" stopColor="hsl(191 97% 58%)" stopOpacity="0.9" />
+                                    <stop offset="100%" stopColor="hsl(191 97% 58%)" stopOpacity="0.2" />
+                                </radialGradient>
+                            </defs>
+                            {/* Connecting lines */}
+                            {[
+                                [40, 95, 130, 40], [40, 95, 130, 95], [40, 95, 130, 150],
+                                [130, 40, 220, 70], [130, 40, 220, 120],
+                                [130, 95, 220, 70], [130, 95, 220, 120],
+                                [130, 150, 220, 120],
+                            ].map(([x1, y1, x2, y2], i) => (
+                                <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
+                                    stroke="hsl(191 97% 58%)" strokeWidth="0.8" strokeOpacity="0.2"
+                                    style={{ animation: `pulse-gentle ${2 + i * 0.3}s ease-in-out infinite`, animationDelay: `${i * 0.2}s` }}
+                                />
+                            ))}
+                            {/* Nodes */}
+                            {[
+                                [40, 95, 8, 'hsl(191 97% 58%)'],
+                                [130, 40, 6, 'hsl(191 97% 58%)'], [130, 95, 6, 'hsl(263 80% 60%)'], [130, 150, 6, 'hsl(191 97% 58%)'],
+                                [220, 70, 5, 'hsl(191 97% 58%)'], [220, 120, 5, 'hsl(263 80% 60%)'],
+                            ].map(([cx, cy, r, fill], i) => (
+                                <circle key={i} cx={cx} cy={cy} r={r} fill={fill as string} fillOpacity="0.6"
+                                    style={{ animation: `pulse-gentle ${2.5 + i * 0.4}s ease-in-out infinite`, animationDelay: `${i * 0.3}s` }}
+                                />
+                            ))}
+                        </svg>
+                        {/* Central glow */}
+                        <div className="absolute inset-0 flex items-center justify-center" style={{ left: '20%' }}>
+                            <div className="h-16 w-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center animate-glow-pulse">
+                                <BrainCircuit className="h-7 w-7 text-primary" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3 max-w-sm px-4">
+                        <h2 className="text-xl font-bold">Your AI Insights Will Appear Here</h2>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                            Start a voice session to activate real-time analytics, risk detection, and documentation intelligence powered by Agentic AI.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-3">
+                        <Link href="/dashboard/iscribe/new">
+                            <motion.button
+                                whileHover={{ scale: 1.04, y: -1 }}
+                                whileTap={{ scale: 0.97 }}
+                                className="btn-neural flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold"
+                            >
+                                <BrainCircuit className="h-4 w-4" />
+                                Start First Session
+                            </motion.button>
+                        </Link>
+                        <p className="text-[10px] text-muted-foreground">
+                            6-agent pipeline · SOAP · Risk · Billing · Compliance
+                        </p>
                     </div>
                 </motion.div>
             )}
@@ -301,7 +365,7 @@ export default function InsightsPage() {
                     >
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         <p className="text-xs text-muted-foreground text-center">
-                            Powered by <span className="text-foreground font-semibold">gpt-5.3-codex</span> ·
+                            Powered by <span className="text-foreground font-semibold">Agentic AI</span> ·
                             Transcription → NLP → SOAP → Risk → Billing → Compliance ·
                             All data encrypted at rest in Firestore
                         </p>
