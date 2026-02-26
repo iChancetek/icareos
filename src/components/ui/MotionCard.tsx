@@ -21,7 +21,7 @@ export const MotionCard = forwardRef<HTMLDivElement, MotionCardProps>(
             transition={{
                 duration: 0.4,
                 delay,
-                ease: [0.23, 1, 0.32, 1],
+                ease: "easeOut",
             }}
             whileHover={hover ? { y: -2, scale: 1.005 } : undefined}
             className={cn(
@@ -51,7 +51,7 @@ export const fadeUpItem = {
     show: {
         opacity: 1,
         y: 0,
-        transition: { duration: 0.4, ease: [0.23, 1, 0.32, 1] },
+        transition: { duration: 0.4 },
     },
 };
 

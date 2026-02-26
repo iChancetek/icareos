@@ -1,0 +1,57 @@
+
+> nextn@0.1.0 typecheck
+> tsc --noEmit
+
+scripts/test-orchestrator.ts(8,35): error TS5097: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled.
+src/agents/orchestratorAgent.ts(43,12): error TS7022: 'risk' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/agents/orchestratorAgent.ts(46,39): error TS2448: Block-scoped variable 'risk' used before its declaration.
+src/agents/orchestratorAgent.ts(46,39): error TS2454: Variable 'risk' is used before being assigned.
+src/ai-native/core/tools.ts(64,44): error TS2345: Argument of type 'string[] | undefined' is not assignable to parameter of type 'ICDCode[]'.
+  Type 'undefined' is not assignable to type 'ICDCode[]'.
+src/app/dashboard/consultations/[id]/page.tsx(8,15): error TS2305: Module '"@/types"' has no exported member 'Consultation'.
+src/app/dashboard/consultations/[id]/page.tsx(37,11): error TS2339: Property 'getConsultationById' does not exist on type 'AuthContextType'.
+src/app/dashboard/consultations/[id]/page.tsx(37,32): error TS2339: Property 'updateConsultation' does not exist on type 'AuthContextType'.
+src/app/dashboard/consultations/[id]/page.tsx(37,52): error TS2339: Property 'deleteConsultation' does not exist on type 'AuthContextType'.
+src/app/dashboard/consultations/[id]/page.tsx(97,23): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/app/dashboard/consultations/[id]/page.tsx(111,25): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/app/dashboard/consultations/new/page.tsx(69,71): error TS2774: This condition will always return true since this function is always defined. Did you mean to call it instead?
+src/app/dashboard/consultations/new/page.tsx(492,70): error TS2367: This comparison appears to be unintentional because the types '"idle"' and '"recording"' have no overlap.
+src/app/dashboard/consultations/new/page.tsx(514,25): error TS2367: This comparison appears to be unintentional because the types '"idle"' and '"processing"' have no overlap.
+src/app/dashboard/consultations/new/page.tsx(514,60): error TS2367: This comparison appears to be unintentional because the types '"idle"' and '"recording"' have no overlap.
+src/app/dashboard/consultations/page.tsx(9,15): error TS2305: Module '"@/types"' has no exported member 'Consultation'.
+src/app/dashboard/consultations/page.tsx(19,11): error TS2339: Property 'getUserConsultations' does not exist on type 'AuthContextType'.
+src/app/dashboard/iscribe/[id]/page.tsx(231,18): error TS2552: Cannot find name 'AlertDialogTrigger'. Did you mean 'AlertDialogTitle'?
+src/app/dashboard/iscribe/[id]/page.tsx(233,19): error TS2552: Cannot find name 'AlertDialogTrigger'. Did you mean 'AlertDialogTitle'?
+src/app/dashboard/iscribe/new/page.tsx(77,9): error TS2774: This condition will always return true since this function is always defined. Did you mean to call it instead?
+src/app/dashboard/iscribe/new/page.tsx(206,33): error TS2339: Property 'confidence' does not exist on type 'TranscriptionResult'.
+src/app/dashboard/iscribe/new/page.tsx(207,23): error TS2339: Property 'confidence' does not exist on type 'NLPResult'.
+src/app/dashboard/iscribe/new/page.tsx(208,24): error TS2339: Property 'confidence' does not exist on type 'SOAPResult'.
+src/app/dashboard/iscribe/new/page.tsx(209,24): error TS2339: Property 'confidence' does not exist on type 'RiskResult'.
+src/app/dashboard/iscribe/new/page.tsx(210,27): error TS2339: Property 'confidence' does not exist on type 'BillingResult'.
+src/app/dashboard/iscribe/new/page.tsx(211,30): error TS2339: Property 'confidence' does not exist on type 'ComplianceResult'.
+src/app/dashboard/iscribe/new/page.tsx(242,9): error TS2322: Type 'RiskFactor[]' is not assignable to type '{ factor: string; severity: string; note: string; }[]'.
+  Type 'RiskFactor' is not assignable to type '{ factor: string; severity: string; note: string; }'.
+    Types of property 'note' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/app/dashboard/recordings/page.tsx(165,69): error TS2345: Argument of type 'CombinedRecording' is not assignable to parameter of type 'IScribe'.
+  Type 'Translation & { type: "translation" | "iscribe"; }' is missing the following properties from type 'IScribe': patientName, status
+src/app/dashboard/recordings/page.tsx(165,99): error TS2345: Argument of type 'CombinedRecording' is not assignable to parameter of type 'Translation'.
+  Type 'IScribe & { type: "translation" | "iscribe"; }' is missing the following properties from type 'Translation': sourceLanguage, targetLanguage, sourceTranscript, translatedText
+src/app/dashboard/recordings/translation/[id]/page.tsx(169,18): error TS2552: Cannot find name 'AlertDialogTrigger'. Did you mean 'AlertDialogTitle'?
+src/app/dashboard/recordings/translation/[id]/page.tsx(174,19): error TS2552: Cannot find name 'AlertDialogTrigger'. Did you mean 'AlertDialogTitle'?
+src/components/theme-provider.tsx(5,41): error TS2307: Cannot find module 'next-themes/dist/types' or its corresponding type declarations.
+src/components/ui/MotionCard.tsx(73,43): error TS2322: Type '{ hidden: { opacity: number; y: number; }; show: { opacity: number; y: number; transition: { duration: number; ease: number[]; }; }; }' is not assignable to type 'Variants'.
+  Property 'show' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { duration: number; ease: number[]; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { duration: number; ease: number[]; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { duration: number; ease: number[]; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ duration: number; ease: number[]; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ duration: number; ease: number[]; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ duration: number; ease: number[]; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'ease' are incompatible.
+                    Type 'number[]' is not assignable to type 'Easing | Easing[] | undefined'.
+                      Type 'number[]' is not assignable to type 'EasingFunction | Easing[]'.
+                        Type 'number[]' is not assignable to type 'Easing[]'.
+                          Type 'number' is not assignable to type 'Easing'.

@@ -2,7 +2,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, initializeFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, Firestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 
 // Your web app's Firebase configuration
@@ -46,11 +46,11 @@ console.log("Full Firebase Config:", JSON.stringify(firebaseConfig, null, 2));
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 
-let db;
+let db: Firestore;
 try {
   // Only apply long polling on the client-side in production to prevent SSR hanging
   if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'development') {
-    db = initializeFirestore(app, { experimentalForceLongPolling: true });
+    db = initializeFirestore(app, { experimentalForceLongPolling: true }) as Firestore;
   } else {
     db = getFirestore(app);
   }
