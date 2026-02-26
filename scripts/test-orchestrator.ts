@@ -5,7 +5,7 @@
 * Run with: npx tsx scripts/test-orchestrator.ts
 */
 
-import { orchestratorGraph } from "../src/ai-native/core/orchestratorGraph.ts";
+import { orchestratorGraph } from "../src/ai-native/core/orchestratorGraph";
 import { HumanMessage } from "@langchain/core/messages";
 
 async function run() {

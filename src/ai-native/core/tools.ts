@@ -61,7 +61,7 @@ export const riskTool = tool(
 
 export const billingTool = tool(
   async ({ soapNode, icdCodes, specialty }) => {
-    return await runBillingAgent(soapNode, icdCodes, specialty);
+    return await runBillingAgent(soapNode, (icdCodes ?? []) as any, specialty);
   },
   {
     name: "generate_billing_codes",

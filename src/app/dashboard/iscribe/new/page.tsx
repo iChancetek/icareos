@@ -74,7 +74,7 @@ export default function NewIScribePage() {
         toast({ variant: 'destructive', title: 'Microphone Access Denied', description: 'Enable microphone permissions and refresh.' });
       } finally { setIsPermissionChecked(true); }
     };
-    if (navigator?.mediaDevices?.getUserMedia && !isPermissionChecked) check();
+    if (navigator?.mediaDevices && !isPermissionChecked) check();
     else if (!navigator?.mediaDevices) { setHasMicPermission(false); setIsPermissionChecked(true); }
   }, [isPermissionChecked, toast]);
 
@@ -203,12 +203,12 @@ export default function NewIScribePage() {
         ...s,
         status: 'done',
         confidence: [
-          session.transcription.confidence,
-          session.nlp.confidence,
-          session.soap.confidence,
-          session.risk.confidence,
-          session.billing.confidence,
-          session.compliance.confidence,
+          session.transcription.meta.confidence,
+          session.nlp.meta.confidence,
+          session.soap.meta.confidence,
+          session.risk.meta.confidence,
+          session.billing.meta.confidence,
+          session.compliance.meta.confidence,
         ][i],
       })));
       setProgress(75);

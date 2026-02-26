@@ -39,21 +39,12 @@ export async function runOrchestratorAgent(input: OrchestratorInput): Promise<Cl
     ]);
     agentsRun.push('NLPAgent', 'SOAPAgent');
 
-    // ── Step 3: Risk + Billing + Compliance in parallel ───────────────────────
-    const [risk, billing, compliance] = await Promise.all([
-        runRiskAgent(transcript, soap.soap.assessment, nlp.entities),
-        runBillingAgent(soap.soap, nlp.icdCodes, input.specialty),
-        runComplianceAgent(soap.soap, risk?.riskLevel ?? 'low', nlp.entities),
-    ]).catch(async (err) => {
-        // If risk fails first, we can't use its riskLevel for compliance — run sequentially as fallback
-        console.warn('OrchestratorAgent: parallel Step 3 failed, falling back to sequential.', err);
-        const riskResult = await runRiskAgent(transcript, soap.soap.assessment, nlp.entities);
-        const [billingResult, complianceResult] = await Promise.all([
-            runBillingAgent(soap.soap, nlp.icdCodes, input.specialty),
-            runComplianceAgent(soap.soap, riskResult.riskLevel, nlp.entities),
-        ]);
-        return [riskResult, billingResult, complianceResult] as const;
-    });
+    // ── Step 3: Risk first, then Billing + Compliance in parallel ─────────────
+    const risk = await runRiskAgent(transcript, soap.soap.assessment, nlp.entities);
+    const [billing, compliance] = await Promise.all([
+        runBillingAgent(soap.soap, nlp.icdCodes as any, input.specialty),
+        runComplianceAgent(soap.soap, risk.riskLevel, nlp.entities),
+    ]);
     agentsRun.push('RiskAgent', 'BillingAgent', 'ComplianceAgent');
 
     const completedAt = new Date();

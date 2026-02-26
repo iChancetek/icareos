@@ -25,7 +25,7 @@ export interface IScribe {
   cptCodes?: Array<{ code: string; description: string; confidence: number; category: string }>;
   riskLevel?: 'low' | 'medium' | 'high' | 'critical';
   riskScore?: number;
-  riskFactors?: Array<{ factor: string; severity: string; note: string }>;
+  riskFactors?: Array<{ factor: string; severity: string; note?: string }>;
   overallConfidence?: number;
   requiresHumanReview?: boolean;
   agentSessionId?: string;
