@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { PlusCircle, Mic, Clock, AlertTriangle, TrendingUp, ArrowRight, Activity, ShieldCheck, BrainCircuit, Zap } from "lucide-react";
+import { Mic, Clock, AlertTriangle, TrendingUp, ArrowRight, Activity, ShieldCheck, BrainCircuit, Zap, ScanLine, MessageSquare, Camera } from "lucide-react";
 import type { IScribe } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +28,7 @@ function KPICard({ icon: Icon, label, value, sub, color, delay }: {
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay, duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+      transition={{ delay, duration: 0.45, ease: "easeOut" }}
       whileHover={{ y: -3, scale: 1.02 }}
       className="glass neural-border rounded-2xl p-5 cursor-default"
     >
@@ -45,6 +45,37 @@ function KPICard({ icon: Icon, label, value, sub, color, delay }: {
     </motion.div>
   );
 }
+
+// AI Feature cards shown at the top of the dashboard
+const AI_FEATURES = [
+  {
+    href: "/dashboard/cds",
+    title: "Wound Care AI",
+    desc: "Upload wound photos for AI-powered classification, severity grading, and care recommendations.",
+    icon: Camera,
+    color: "from-indigo-500/15 to-purple-500/5 border-indigo-500/25",
+    iconColor: "bg-indigo-500/10 border-indigo-500/20 text-indigo-400",
+    badge: "Vision AI",
+  },
+  {
+    href: "/dashboard/cds",
+    title: "X-Ray Analysis",
+    desc: "AI radiographic support for fracture detection, opacity analysis, and differential ranking.",
+    icon: ScanLine,
+    color: "from-teal-500/15 to-emerald-500/5 border-teal-500/25",
+    iconColor: "bg-teal-500/10 border-teal-500/20 text-teal-400",
+    badge: "Radiology AI",
+  },
+  {
+    href: "/dashboard/cds",
+    title: "AI Conversational Intake",
+    desc: "Goal-driven AI orchestrator conducts adaptive patient intake and routes to clinical agents.",
+    icon: MessageSquare,
+    color: "from-violet-500/15 to-blue-500/5 border-violet-500/25",
+    iconColor: "bg-violet-500/10 border-violet-500/20 text-violet-400",
+    badge: "LangGraph",
+  },
+];
 
 export default function IScribesPage() {
   const [iscribes, setIScribes] = useState<IScribe[]>([]);
@@ -83,7 +114,7 @@ export default function IScribesPage() {
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
         className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5"
       >
         <div className="space-y-1">
@@ -108,6 +139,45 @@ export default function IScribesPage() {
           </motion.button>
         </Link>
       </motion.div>
+
+      {/* ── AI-Native Feature Cards ─────────────────────────── */}
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">AI-Native Clinical Features</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {AI_FEATURES.map((f, i) => (
+            <Link href={f.href} key={f.title}>
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.07, duration: 0.4, ease: "easeOut" }}
+                whileHover={{ y: -3, scale: 1.02 }}
+                className={cn(
+                  "group relative rounded-2xl border bg-gradient-to-br p-4 cursor-pointer transition-all",
+                  f.color
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={cn("h-9 w-9 shrink-0 flex items-center justify-center rounded-xl border", f.iconColor)}>
+                    <f.icon className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold">{f.title}</p>
+                      <span className="text-[9px] font-bold uppercase tracking-wider bg-white/10 text-foreground/60 rounded-full px-2 py-0.5 border border-white/10">
+                        {f.badge}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{f.desc}</p>
+                    <p className="text-xs text-primary mt-2 flex items-center gap-1 group-hover:gap-2 transition-all">
+                      Open <ArrowRight className="h-3 w-3" />
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            </Link>
+          ))}
+        </div>
+      </div>
 
       {/* ── KPI Cards ─────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

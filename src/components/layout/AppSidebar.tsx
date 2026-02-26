@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Bot, Languages, FolderKanban, BarChart2,
-  ShieldAlert, Activity, PanelLeft, PanelLeftClose,
+  ShieldAlert, Activity, PanelLeft, PanelLeftClose, Stethoscope, ScanLine,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -74,7 +74,7 @@ export default function AppSidebar() {
 
   const navItems: NavItem[] = [
     { href: '/dashboard/iscribe', label: 'iScribe', icon: LayoutDashboard },
-    { href: '/dashboard/recordings', label: 'Recordings', icon: FolderKanban, matchStartsWith: true },
+    { href: '/dashboard/cds', label: 'CDS · AI Analysis', icon: ScanLine, matchStartsWith: true },
     { href: '/dashboard/insights', label: 'Insights', icon: BarChart2, matchStartsWith: true },
     { href: '/dashboard/iskylar', label: 'iSkylar', icon: Bot },
     { label: 'Translator', icon: Languages, action: () => setIsVoiceTranslatorOpen(true) },
