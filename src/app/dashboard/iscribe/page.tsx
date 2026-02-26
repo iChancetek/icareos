@@ -117,8 +117,62 @@ export default function IScribesPage() {
         <KPICard icon={Zap} label="Today" value={todaySessions} sub="Sessions recorded today" color="bg-cyan-500/10 border-cyan-500/20 text-cyan-400" delay={0.21} />
       </div>
 
-      {/* ── Session list ──────────────────────────────────────── */}
-      {iscribes.length === 0 ? (
+      {/* ── Multimodal CDS Panels (Phase 7) ───────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="p-5 border rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/5">
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldCheck className="h-5 w-5 text-indigo-500" />
+            <h2 className="text-sm font-bold text-indigo-500 uppercase tracking-wider">Wound Intelligence</h2>
+          </div>
+          <p className="text-2xl font-black tabular-nums tracking-tight">12</p>
+          <p className="text-xs text-muted-foreground mt-1">High-risk healing progressions tracking</p>
+        </div>
+        <div className="p-5 border rounded-2xl bg-gradient-to-br from-teal-500/10 to-emerald-500/5">
+          <div className="flex items-center gap-2 mb-2">
+            <Activity className="h-5 w-5 text-teal-500" />
+            <h2 className="text-sm font-bold text-teal-500 uppercase tracking-wider">Radiology Support</h2>
+          </div>
+          <p className="text-2xl font-black tabular-nums tracking-tight">3</p>
+          <p className="text-xs text-muted-foreground mt-1">Fracture alerts awaiting clinician sign-off</p>
+        </div>
+      </div>
+
+      {/* ── AI Triage Queue (Phase 5 Enhancement) ───────────── */}
+      {iscribes.filter(s => s.escationRequired).length > 0 && (
+        <div className="mb-8 p-5 bg-red-500/10 border border-red-500/30 rounded-2xl">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            <h2 className="text-lg font-bold text-red-500">AI Triage Escalation Queue</h2>
+          </div>
+          <p className="text-sm text-red-400 mb-4">The following sessions were escalated by the Safety Governance Layer and require immediate clinician review.</p>
+          <StaggerList className="space-y-2">
+            {iscribes.filter(s => s.escationRequired).map(iscribe => (
+              <FadeUpItem key={`esc-${iscribe.id}`}>
+                <Link href={`/dashboard/iscribe/${iscribe.id}`}>
+                  <div className="group flex items-center justify-between rounded-xl border border-red-500/40 bg-red-500/5 px-5 py-3 hover:bg-red-500/10 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-4">
+                      <ShieldCheck className="h-5 w-5 text-red-400" />
+                      <div>
+                        <p className="font-semibold text-white">{iscribe.patientName}</p>
+                        <p className="text-xs text-red-300">Risk Level: {iscribe.riskLevel?.toUpperCase()} | Sent to Triage</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-red-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </Link>
+              </FadeUpItem>
+            ))}
+          </StaggerList>
+        </div>
+      )}
+
+      {/* ── Standard Session list ──────────────────────────────────────── */}
+      <div className="flex items-center gap-2 mb-4 mt-8">
+        <Activity className="h-5 w-5 text-muted-foreground" />
+        <h2 className="text-lg font-bold text-foreground">Standard Sessions</h2>
+      </div>
+
+      {iscribes.filter(s => !s.escationRequired).length === 0 ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -132,7 +186,7 @@ export default function IScribesPage() {
             <div className="absolute -inset-4 rounded-3xl bg-primary/5 blur-2xl" />
           </div>
           <div className="space-y-2 max-w-xs">
-            <h2 className="text-xl font-bold">No sessions yet</h2>
+            <h2 className="text-xl font-bold">No standard sessions yet</h2>
             <p className="text-sm text-muted-foreground">
               Record your first consultation. Our 6-agent AI pipeline generates SOAP notes, risk scores, and billing codes in seconds.
             </p>
@@ -151,6 +205,7 @@ export default function IScribesPage() {
       ) : (
         <StaggerList className="space-y-2">
           {[...iscribes]
+            .filter(s => !s.escationRequired)
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
             .map(iscribe => {
               const hasAgent = !!iscribe.agentSessionId;
@@ -194,9 +249,6 @@ export default function IScribesPage() {
 
                       {/* Right badges */}
                       <div className="flex items-center gap-2 shrink-0">
-                        {iscribe.requiresHumanReview && (
-                          <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />
-                        )}
                         {iscribe.riskLevel && (
                           <Badge className={cn("text-[10px] capitalize border font-medium px-2", riskColors[iscribe.riskLevel])}>
                             {iscribe.riskLevel}

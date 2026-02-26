@@ -31,6 +31,33 @@ export interface IScribe {
   agentSessionId?: string;
   agentLatency_ms?: number;
   specialty?: string;
+  // --- AI-Native Redesign (Phase 3 Enhancements) ---
+  langgraphThreadId?: string; // Short-Term Memory mapping
+  embeddingId?: string; // Long-Term Memory (Vector Reference)
+  decisionLogs?: Array<{
+    agent: string;
+    action: string;
+    reasoning: string;
+    confidence: number;
+    timestamp: string;
+  }>; // Agent trace records and reasoning chains
+  escationRequired?: boolean; // Safety & Governance flag
+
+  // --- Multimodal Clinical Decision Support (CDS) (Phase 7 Enhancements) ---
+  cdsImages?: Array<{
+    url: string;
+    type: 'wound' | 'xray' | 'other';
+    uploadedAt: string;
+    patientConsentGiven: boolean; // Mandatory Regulatory Safeguard
+  }>;
+  cdsFindings?: {
+    visualFeatures?: string[];
+    differentialRankings?: Array<{ condition: string; confidence: number }>;
+    suggestedCare?: string[];
+    urgencyLevel?: 'routine' | 'elevated' | 'immediate';
+    clinicianReviewedAt?: string | null; // Human-in-the-loop tracking
+    aiDisclaimerAcknowledged?: boolean;
+  };
 }
 
 export type TranslationLanguage = 'English' | 'Spanish' | 'French' | 'German' | 'Chinese' | 'Hebrew' | 'Mandarin' | 'Arabic';
