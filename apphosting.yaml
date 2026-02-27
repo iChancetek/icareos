@@ -10,4 +10,4 @@ env:
   - variable: PINECONE_HOST
     secret: PINECONE_HOST
   - variable: PINECONE_INDEX
-    secret: PINECONE_INDEX
+    value: "mediscribe"
