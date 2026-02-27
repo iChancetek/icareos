@@ -22,6 +22,7 @@ interface NavItem {
   href?: string;
   label: string;
   icon: React.ElementType;
+  color: string;
   matchStartsWith?: boolean;
   action?: () => void;
   adminOnly?: boolean;
@@ -78,7 +79,7 @@ export default function AppSidebar() {
     { href: '/dashboard/insights', label: 'Insights', icon: BarChart2, matchStartsWith: true, color: '#3B82F6' },
     { href: '/dashboard/iskylar', label: 'iSkylar', icon: Bot, color: '#6366F1' },
     { label: 'Translator', icon: Languages, action: () => setIsVoiceTranslatorOpen(true), color: '#0D9488' },
-    { href: '/dashboard/admin', label: 'Admin', icon: ShieldAlert, adminOnly: true, color: '#475569' },
+    { href: '/dashboard/admin', label: 'Admin', icon: ShieldAlert, adminOnly: true, color: '#64748B' },
   ];
 
   const isActive = (item: NavItem) => {
@@ -119,9 +120,9 @@ export default function AppSidebar() {
           "fixed z-50 hidden md:flex flex-col overflow-hidden",
           "rounded-2xl",
           "backdrop-blur-md",
-          "dark:bg-background/10 bg-white/10",
+          "dark:bg-[#0F172A]/40 bg-white/40",
           "border border-white/10 dark:border-white/[0.06]",
-          "shadow-[0_8px_32px_rgba(0,0,0,0.28),0_0_0_1px_rgba(255,255,255,0.04),0_0_24px_hsl(191_97%_58%/0.07)]",
+          "shadow-[0_8px_32px_rgba(0,0,0,0.28),0_0_0_1px_rgba(255,255,255,0.04)]",
         )}
         style={{
           top: INSET,
@@ -134,9 +135,9 @@ export default function AppSidebar() {
         {/* ── Top: Logo + Pin ─────────────────────────────── */}
         <div className="flex items-center justify-between gap-2 px-[14px] py-4 shrink-0">
           <Link href="/dashboard/iscribe" className="flex items-center gap-2.5 min-w-0">
-            <div className="relative shrink-0 flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-[0_0_16px_hsl(191_97%_55%/0.25)]">
-              <Activity className="h-4 w-4 text-primary" />
-              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary animate-pulse" />
+            <div className="relative shrink-0 ios-squircle h-9 w-9 bg-black border border-white/5">
+              <Activity className="h-4.5 w-4.5 text-primary" style={{ filter: 'drop-shadow(0 0 4px #00E5FF)' }} />
+              <div className="ios-gloss" />
             </div>
             <AnimatePresence>
               {expanded && (
@@ -186,10 +187,10 @@ export default function AppSidebar() {
                 onClick={item.action}
                 whileHover={!active ? { x: 1 } : {}}
                 className={cn(
-                  "group relative flex items-center gap-3 rounded-xl px-[14px] py-2.5 cursor-pointer transition-colors duration-150",
+                  "group relative flex items-center gap-3 rounded-xl px-[14px] py-2.5 cursor-pointer transition-colors duration-200",
                   active
-                    ? "bg-primary/5 text-primary border border-primary/20 shadow-[0_0_12px_hsl(191_97%_55%/0.08)]"
-                    : "text-muted-foreground border border-transparent hover:text-foreground hover:bg-white/5 dark:hover:bg-white/[0.04]"
+                    ? "bg-white/5 dark:bg-white/5 text-foreground border border-white/10"
+                    : "text-muted-foreground border border-transparent hover:text-foreground hover:bg-white/10 dark:hover:bg-white/[0.04]"
                 )}
               >
                 {/* Active bar */}
@@ -198,38 +199,26 @@ export default function AppSidebar() {
                     layoutId="activeBar"
                     className="absolute left-0 inset-y-2 w-0.5 rounded-full"
                     style={{
-                      backgroundColor: item.color || 'var(--primary)',
-                      boxShadow: `0 0 10px ${item.color || 'var(--primary)'}`
+                      backgroundColor: item.color,
+                      boxShadow: `0 0 12px ${item.color}`
                     }}
                   />
                 )}
 
-                {/* Icon with colored glass container */}
-                <div
-                  className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-300"
-                  style={{
-                    backgroundColor: active ? `${item.color}25` : `${item.color}08`,
-                    boxShadow: active ? `0 0 15px ${item.color}30` : 'none',
-                    border: active ? `1px solid ${item.color}40` : `1px solid ${item.color}15`,
-                    transform: active ? 'scale(1.05)' : 'none'
-                  }}
-                >
+                {/* iOS Style Rich Icon */}
+                <div className="relative shrink-0 h-9 w-9 ios-squircle bg-[#1a1a1e] border border-white/5 shadow-xl transition-all duration-300 group-hover:scale-105">
                   <item.icon
-                    className={cn(
-                      "h-[18px] w-[18px] shrink-0 transition-all duration-300",
-                    )}
+                    className="h-5 w-5 shrink-0 z-10 transition-all duration-300"
                     style={{
                       color: item.color,
-                      opacity: active ? 1 : 0.7,
-                      filter: active ? `drop-shadow(0 0 8px ${item.color}80)` : `drop-shadow(0 0 2px ${item.color}30)`
+                      filter: `drop-shadow(0 0 8px ${item.color}60)`
                     }}
                   />
-                  {/* Subtle persistent glow for idle */}
+                  <div className="ios-gloss" />
+                  {/* Subtle back-glow */}
                   <div
-                    className="absolute inset-0 rounded-lg opacity-40 group-hover:opacity-100 transition-opacity duration-300"
-                    style={{
-                      background: `radial-gradient(circle at center, ${item.color}15 0%, transparent 80%)`,
-                    }}
+                    className="ios-icon-glow"
+                    style={{ backgroundColor: item.color }}
                   />
                 </div>
 
@@ -242,7 +231,7 @@ export default function AppSidebar() {
                       exit={{ opacity: 0, x: -8 }}
                       transition={{ duration: 0.16 }}
                       className={cn(
-                        "text-sm font-medium whitespace-nowrap overflow-hidden transition-colors",
+                        "text-sm font-semibold whitespace-nowrap overflow-hidden transition-colors",
                         active ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
                       )}
                     >
@@ -251,21 +240,13 @@ export default function AppSidebar() {
                   )}
                 </AnimatePresence>
 
-                {/* Hover radial glow shadow */}
-                <span className={cn(
-                  "absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200",
-                )} style={{
-                  background: `radial-gradient(ellipse 60% 50% at 30% 50%, ${item.color}12, transparent)`
-                }} />
-
                 {/* Tooltip (collapsed only) */}
                 {!expanded && (
                   <div className={cn(
-                    "pointer-events-none absolute left-full ml-3 z-50",
-                    "flex items-center rounded-lg border border-border/50 bg-popover/95 backdrop-blur-sm px-2.5 py-1.5",
-                    "text-xs font-medium text-popover-foreground shadow-lg",
-                    "opacity-0 group-hover:opacity-100 translate-x-0 group-hover:translate-x-0.5",
-                    "transition-all duration-150 whitespace-nowrap"
+                    "pointer-events-none absolute left-full ml-4 z-50",
+                    "flex items-center rounded-xl border border-white/10 bg-black/90 backdrop-blur-xl px-3 py-2",
+                    "text-xs font-bold text-white shadow-2xl",
+                    "opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-200"
                   )}>
                     {item.label}
                   </div>
