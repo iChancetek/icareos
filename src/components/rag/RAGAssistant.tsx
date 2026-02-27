@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export function RAGAssistant() {
     const [isOpen, setIsOpen] = useState(false);
@@ -161,15 +162,17 @@ export function RAGAssistant() {
                                     </div>
                                 )}
                                 {messages.map((m, i) => (
-                                    <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                                        <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${m.role === "user"
+                                    <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"} mb-2`}>
+                                        <div className={`max-w-[90%] p-4 rounded-[1.5rem] shadow-sm ${m.role === "user"
                                             ? "bg-primary text-primary-foreground rounded-tr-none"
-                                            : "bg-muted text-foreground rounded-tl-none border border-border/50 prose prose-sm dark:prose-invert"
+                                            : "bg-muted/80 backdrop-blur-md text-foreground rounded-tl-none border border-border/40"
                                             }`}>
                                             {m.role === "bot" ? (
-                                                <ReactMarkdown>{m.content}</ReactMarkdown>
+                                                <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-headings:mb-2 prose-headings:mt-4 first:prose-headings:mt-0">
+                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                                                </div>
                                             ) : (
-                                                m.content
+                                                <span className="text-sm font-medium leading-relaxed">{m.content}</span>
                                             )}
                                         </div>
                                     </div>
