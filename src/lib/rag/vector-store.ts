@@ -27,6 +27,7 @@ export class VectorStore {
 
         if (!apiKey) {
             console.error("[VectorStore] CRITICAL: PINECONE_API_KEY is missing from process.env");
+            throw new Error("Missing PINECONE_API_KEY environment variable. Pincone cannot be initialized.");
         }
 
         this.pc = new Pinecone({

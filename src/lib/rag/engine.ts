@@ -7,6 +7,7 @@ const getClient = () => {
     const key = process.env.OPENAI_API_KEY;
     if (!key || key.includes("dummy")) {
         console.error("[RAGEngine] CRITICAL: OPENAI_API_KEY is not set or using dummy value.");
+        throw new Error("Missing OPENAI_API_KEY environment variable. RAG Engine cannot function.");
     } else {
         console.log(`[RAGEngine] Using API Key: ${key.substring(0, 7)}...`);
     }
