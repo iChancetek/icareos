@@ -105,9 +105,18 @@ export function Hero() {
                                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                             </Button>
                         </Link>
-                        <Link href="/learn-more" passHref>
+                        <Link href="mailto:Demo@MediScribe.us" passHref>
                             <Button size="lg" variant="outline" className="h-14 px-8 text-base font-semibold rounded-full border-border hover:bg-muted/50 transition-all duration-300 backdrop-blur-sm">
                                 Request Demo
+                            </Button>
+                        </Link>
+                    </div>
+
+                    <div className="flex">
+                        <Link href="/learn-more" passHref>
+                            <Button variant="link" className="text-primary font-bold tracking-tight hover:no-underline px-0 h-auto group">
+                                Learn More about MediScribe
+                                <span className="ml-2 w-8 h-px bg-primary transform origin-left group-hover:scale-x-150 transition-transform" />
                             </Button>
                         </Link>
                     </div>
