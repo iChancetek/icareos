@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, BrainCircuit, History } from "lucide-react";
+import { ShieldCheck, BrainCircuit, History, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import CdsImageUpload from "@/components/chat/CdsImageUpload";
 import CdsHistoryPanel from "@/components/chat/CdsHistoryPanel";
 
@@ -85,9 +86,23 @@ export default function CdsPage() {
                         </div>
                     </div>
                     {/* Dynamically import AiIntakeChat to avoid SSR issues */}
-                    <div className="rounded-2xl border border-border/40 bg-card/40 p-5 text-center text-muted-foreground text-sm min-h-[200px] flex items-center justify-center">
-                        <p>Navigate to <span className="font-mono text-primary">/dashboard/iskylar</span> for full AI conversational intake and agent orchestration.</p>
-                    </div>
+                    <Link href="/dashboard/iskylar" className="block group">
+                        <div className="rounded-2xl border border-violet-500/30 bg-violet-500/5 p-6 text-center transition-all hover:bg-violet-500/10 hover:border-violet-500/40 min-h-[220px] flex flex-col items-center justify-center gap-4">
+                            <div className="relative">
+                                <BrainCircuit className="h-12 w-12 text-violet-400 animate-pulse" />
+                                <div className="absolute inset-0 bg-violet-500/20 blur-xl rounded-full" />
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="text-sm font-bold uppercase tracking-widest text-violet-300">Launch Orchestrator</h3>
+                                <p className="text-xs text-muted-foreground max-w-[200px] mx-auto">
+                                    Start a goal-driven clinical intake session powered by LangGraph.
+                                </p>
+                            </div>
+                            <div className="mt-2 inline-flex items-center gap-2 text-xs font-bold text-violet-400 group-hover:gap-3 transition-all">
+                                Open iSkylar <ArrowRight className="h-3 w-3" />
+                            </div>
+                        </div>
+                    </Link>
                 </motion.div>
             </div>
 

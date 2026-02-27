@@ -67,7 +67,7 @@ const AI_FEATURES = [
     badge: "Radiology AI",
   },
   {
-    href: "/dashboard/cds",
+    href: "/dashboard/iskylar",
     title: "AI Conversational Intake",
     desc: "Goal-driven AI orchestrator conducts adaptive patient intake and routes to clinical agents.",
     icon: MessageSquare,
