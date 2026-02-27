@@ -4,6 +4,25 @@ import withPWAInit from '@ducanh2912/next-pwa';
 const withPWA = withPWAInit({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
+  fallbacks: {
+    document: "/~offline",
+  },
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        urlPattern: /^https:\/\/mediscribe-.*\.svc\..*\.pinecone\.io/,
+        handler: 'NetworkOnly',
+      },
+      {
+        urlPattern: /\/api\/ai\/.*/,
+        handler: 'NetworkOnly',
+      },
+      {
+        urlPattern: /\/api\/.*/,
+        handler: 'NetworkOnly',
+      }
+    ],
+  }
 });
 
 let firebaseEnv = {};
@@ -27,6 +46,9 @@ if (process.env.FIREBASE_WEBAPP_CONFIG) {
 const nextConfig: NextConfig = {
   env: {
     ...firebaseEnv,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    PINECONE_API_KEY: process.env.PINECONE_API_KEY,
+    PINECONE_HOST: process.env.PINECONE_HOST,
   },
   typescript: {
     ignoreBuildErrors: true,

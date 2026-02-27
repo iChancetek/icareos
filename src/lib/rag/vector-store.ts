@@ -17,10 +17,20 @@ export class VectorStore {
     private host: string;
 
     constructor() {
+        const apiKey = process.env.PINECONE_API_KEY;
+        const host = process.env.PINECONE_HOST;
+
+        console.log(`[VectorStore] Initializing with Host: ${host ? 'present' : 'MISSING'}`);
+        console.log(`[VectorStore] API Key present: ${apiKey ? 'YES' : 'NO'}`);
+
+        if (!apiKey) {
+            console.error("[VectorStore] CRITICAL: PINECONE_API_KEY is missing from process.env");
+        }
+
         this.pc = new Pinecone({
-            apiKey: process.env.PINECONE_API_KEY || '',
+            apiKey: apiKey || '',
         });
-        this.host = process.env.PINECONE_HOST || '';
+        this.host = host || '';
     }
 
     /**
