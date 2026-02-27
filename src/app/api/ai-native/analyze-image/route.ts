@@ -61,7 +61,7 @@ When analyzing a wound, skin condition, rash, lesion, or pressure sore image, re
   },
   "escalationRequired": false,
   "escalationReason": null,
-  "confidenceScore": 0,
+  "confidenceScore": 0, // Scale 0-100
   "auditLog": {
     "modelUsed": "MediScribe AI",
     "analysisTimestamp": "ISO string",
@@ -110,7 +110,7 @@ When analyzing an X-ray or radiographic image, respond ONLY with structured JSON
   },
   "escalationRequired": false,
   "escalationReason": null,
-  "confidenceScore": 0,
+  "confidenceScore": 0, // Scale 0-100
   "auditLog": {
     "modelUsed": "MediScribe AI",
     "analysisTimestamp": "ISO string",
@@ -180,8 +180,12 @@ export async function POST(req: NextRequest) {
     console.log("[CDS ImageAnalysis] Parsing AI response...");
     const analysis = JSON.parse(rawContent);
 
-    // Enforce escalation
-    const conf = analysis.confidenceScore ?? 100;
+    // Enforce escalation & metric normalization
+    let conf = analysis.confidenceScore ?? 100;
+    // Normalize if the model returned a decimal (e.g., 0.85 -> 85)
+    if (conf > 0 && conf <= 1) conf = conf * 100;
+    analysis.confidenceScore = Math.round(conf);
+
     const hasInfectionSigns = analysis.visualObservations?.signs?.infectionSigns;
     if (conf < 65 || hasInfectionSigns) {
       analysis.escalationRequired = true;

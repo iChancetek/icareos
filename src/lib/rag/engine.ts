@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { VectorStore, DocumentChunk } from "./vector-store";
+import { ENGINE_MODEL } from "@/services/openaiService";
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -43,13 +44,14 @@ export class RAGEngine {
     `;
 
         const response = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: ENGINE_MODEL,
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: query }
             ],
             stream: true,
             temperature: 0.3,
+            max_completion_tokens: 1024,
         });
 
         // Convert OpenAI stream to a Web ReadableStream
