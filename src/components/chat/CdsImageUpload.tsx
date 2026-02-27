@@ -2,13 +2,13 @@
 
 import { useState, useRef, useCallback } from "react";
 import {
-    Upload, AlertTriangle, ShieldCheck, Loader2, Camera,
-    ScanLine, RotateCcw, ZoomIn, Activity, Clock,
-    Microscope, TriangleAlert, CheckCircle2, ArrowRight, Info,
+    Upload, AlertTriangle, Loader2, Camera,
+    ScanLine, RotateCcw, Activity,
+    Microscope, TriangleAlert, CheckCircle2, ArrowRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
+import { useAuth } from "@/hooks/useAuth";
 
 // ── Types ──────────────────────────────────────────────────────────────
 type ImageType = "wound" | "xray";
@@ -339,7 +339,12 @@ function WoundReport({ r }: { r: AnalysisResult }) {
 }
 
 // ── Main Component ────────────────────────────────────────────────────
-export default function CdsImageUpload() {
+interface CdsImageUploadProps {
+    onAnalysisComplete?: () => void;
+}
+
+export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadProps = {}) {
+    const { user } = useAuth();
     const [file, setFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [type, setType] = useState<ImageType>("wound");
@@ -380,6 +385,7 @@ export default function CdsImageUpload() {
             formData.append("image", file);
             formData.append("type", type);
             formData.append("context", context);
+            if (user?.uid) formData.append("userId", user.uid);
 
             const res = await fetch("/api/ai-native/analyze-image", {
                 method: "POST",
@@ -393,6 +399,8 @@ export default function CdsImageUpload() {
 
             const data = await res.json();
             setResult(data.analysis);
+            // Notify parent to refresh history panel
+            if (onAnalysisComplete) onAnalysisComplete();
         } catch (err: any) {
             setError(err.message || "Analysis failed. Please try again.");
         } finally {

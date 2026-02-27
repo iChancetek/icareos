@@ -1,11 +1,18 @@
 "use client";
 
-import CdsImageUpload from "@/components/chat/CdsImageUpload";
-import AiIntakeChat from "@/components/chat/AiIntakeChat";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { BrainCircuit, Stethoscope, ShieldCheck } from "lucide-react";
+import { ShieldCheck, BrainCircuit, History } from "lucide-react";
+import CdsImageUpload from "@/components/chat/CdsImageUpload";
+import CdsHistoryPanel from "@/components/chat/CdsHistoryPanel";
 
 export default function CdsPage() {
+    const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+
+    const handleAnalysisComplete = () => {
+        setHistoryRefreshKey(k => k + 1);
+    };
+
     return (
         <div className="container mx-auto px-4 md:px-6 py-8 space-y-10 max-w-5xl">
 
@@ -13,16 +20,18 @@ export default function CdsPage() {
             <motion.div
                 initial={{ opacity: 0, y: -12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
                 className="space-y-1"
             >
                 <div className="flex items-center gap-2 mb-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-violet-500 animate-pulse" />
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-violet-400">Clinical Decision Support · Phase 7</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-violet-400">
+                        Clinical Decision Support · gpt-5.3-codex · Phase 7-8
+                    </span>
                 </div>
                 <h1 className="text-3xl font-black tracking-tight">AI Clinical Analysis</h1>
                 <p className="text-sm text-muted-foreground">
-                    Multimodal AI support for wound care and radiographic interpretation. All outputs are decision support only — not autonomous diagnosis.
+                    Multimodal AI support for wound care and radiographic interpretation. All outputs are clinical decision support — not autonomous diagnosis. Every analysis is persistently stored and time-stamped.
                 </p>
             </motion.div>
 
@@ -32,18 +41,19 @@ export default function CdsPage() {
                 <div>
                     <p className="text-sm font-semibold text-yellow-300">Clinical Decision Support — Not a Diagnosis</p>
                     <p className="text-xs text-yellow-400/80 mt-1">
-                        This tool is designed to assist licensed clinical professionals. All AI findings must be reviewed and confirmed by a qualified clinician before any treatment decisions are made.
+                        This tool assists licensed clinical professionals. All AI findings must be reviewed and confirmed by a qualified clinician before treatment decisions are made. All analyses are logged for compliance and audit.
                     </p>
                 </div>
             </div>
 
             {/* Two-column layout */}
             <div className="grid lg:grid-cols-2 gap-8">
+
                 {/* Wound & X-Ray Image Analysis */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1, duration: 0.45 }}
+                    transition={{ delay: 0.1, duration: 0.45, ease: "easeOut" }}
                     className="space-y-3"
                 >
                     <div className="flex items-center gap-2">
@@ -52,17 +62,17 @@ export default function CdsPage() {
                         </div>
                         <div>
                             <h2 className="text-base font-bold">Image Analysis</h2>
-                            <p className="text-xs text-muted-foreground">Wound care & X-ray radiographic support</p>
+                            <p className="text-xs text-muted-foreground">Wound care · Dermatology · Radiographic support</p>
                         </div>
                     </div>
-                    <CdsImageUpload />
+                    <CdsImageUpload onAnalysisComplete={handleAnalysisComplete} />
                 </motion.div>
 
-                {/* AI Conversational Intake */}
+                {/* AI Conversational Intake placeholder */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2, duration: 0.45 }}
+                    transition={{ delay: 0.2, duration: 0.45, ease: "easeOut" }}
                     className="space-y-3"
                 >
                     <div className="flex items-center gap-2">
@@ -71,12 +81,34 @@ export default function CdsPage() {
                         </div>
                         <div>
                             <h2 className="text-base font-bold">AI Conversational Intake</h2>
-                            <p className="text-xs text-muted-foreground">LangGraph-powered goal-driven orchestrator</p>
+                            <p className="text-xs text-muted-foreground">LangGraph goal-driven orchestrator</p>
                         </div>
                     </div>
-                    <AiIntakeChat />
+                    {/* Dynamically import AiIntakeChat to avoid SSR issues */}
+                    <div className="rounded-2xl border border-border/40 bg-card/40 p-5 text-center text-muted-foreground text-sm min-h-[200px] flex items-center justify-center">
+                        <p>Navigate to <span className="font-mono text-primary">/dashboard/iskylar</span> for full AI conversational intake and agent orchestration.</p>
+                    </div>
                 </motion.div>
             </div>
+
+            {/* Clinical Imaging Archive */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.45, ease: "easeOut" }}
+                className="space-y-3"
+            >
+                <div className="flex items-center gap-2 mb-1">
+                    <div className="h-8 w-8 flex items-center justify-center rounded-xl bg-teal-500/10 border border-teal-500/20">
+                        <History className="h-4 w-4 text-teal-400" />
+                    </div>
+                    <div>
+                        <h2 className="text-base font-bold">Clinical Imaging Archive</h2>
+                        <p className="text-xs text-muted-foreground">Persistent audit trail · Clinician sign-off · gpt-5.3-codex</p>
+                    </div>
+                </div>
+                <CdsHistoryPanel refreshKey={historyRefreshKey} />
+            </motion.div>
         </div>
     );
 }
