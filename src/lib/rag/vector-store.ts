@@ -23,7 +23,8 @@ export class VectorStore {
         const indexName = process.env.PINECONE_INDEX || 'mediscribe';
 
         console.log(`[VectorStore] Initializing with Host: ${host ? 'present' : 'MISSING'}`);
-        console.log(`[VectorStore] API Key present: ${apiKey ? 'YES' : 'NO'}`);
+        console.log(`[VectorStore] PINECONE_API_KEY present: ${!!apiKey}`);
+        console.log(`[VectorStore] PINECONE_API_KEY length: ${apiKey?.length || 0}`);
 
         if (!apiKey) {
             console.error("[VectorStore] CRITICAL: PINECONE_API_KEY is missing from process.env");
