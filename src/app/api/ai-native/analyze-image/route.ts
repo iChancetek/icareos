@@ -121,6 +121,7 @@ When analyzing an X-ray or radiographic image, respond ONLY with structured JSON
 
 // ── Route Handler ──────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  console.log("[CDS ImageAnalysis] POST request received");
   try {
     const formData = await req.formData();
     const imageFile = formData.get("image") as File | null;
@@ -128,11 +129,15 @@ export async function POST(req: NextRequest) {
     const context = formData.get("context") as string || "";
     const userId = formData.get("userId") as string || "anonymous";
 
+    console.log(`[CDS ImageAnalysis] Type: ${imageType}, Context: ${context.substring(0, 20)}..., User: ${userId}`);
+
     if (!imageFile) {
+      console.error("[CDS ImageAnalysis] Missing image file");
       return NextResponse.json({ error: "Image file is required" }, { status: 400 });
     }
 
     // Convert to base64
+    console.log("[CDS ImageAnalysis] Processing image buffer...");
     const imageBuffer = await imageFile.arrayBuffer();
     const base64Image = Buffer.from(imageBuffer).toString("base64");
     const mimeType = imageFile.type || "image/jpeg";
@@ -144,6 +149,7 @@ export async function POST(req: NextRequest) {
       ? `Analyze this radiographic image and provide a comprehensive AI-assisted radiographic interpretation report. ${context ? `Additional context: ${context}` : ""}`
       : `Analyze this clinical image of a wound/skin condition and provide a comprehensive clinical decision support analysis. ${context ? `Additional context: ${context}` : ""}`;
 
+    console.log("[CDS ImageAnalysis] Calling OpenAI GPT-4o Vision...");
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       max_completion_tokens: 2000,
@@ -164,8 +170,12 @@ export async function POST(req: NextRequest) {
     });
 
     const rawContent = response.choices[0]?.message?.content;
-    if (!rawContent) throw new Error("No response from AI model");
+    if (!rawContent) {
+      console.error("[CDS ImageAnalysis] Empty response from OpenAI");
+      throw new Error("No response from AI model");
+    }
 
+    console.log("[CDS ImageAnalysis] Parsing AI response...");
     const analysis = JSON.parse(rawContent);
 
     // Enforce escalation
@@ -190,16 +200,24 @@ export async function POST(req: NextRequest) {
     // ── Persist to Firestore ───────────────────────────────────────
     let recordId: string | null = null;
     if (userId !== "anonymous") {
-      recordId = await saveCdsAnalysis(
-        userId,
-        imageDataUri,
-        imageFile.name || "clinical-image",
-        imageType,
-        context,
-        analysis
-      );
+      console.log(`[CDS ImageAnalysis] Saving to Firestore for user: ${userId}`);
+      try {
+        recordId = await saveCdsAnalysis(
+          userId,
+          imageDataUri,
+          imageFile.name || "clinical-image",
+          imageType,
+          context,
+          analysis
+        );
+        console.log(`[CDS ImageAnalysis] Saved successfully. ID: ${recordId}`);
+      } catch (fsError) {
+        console.error("[CDS ImageAnalysis] Firestore save failed:", fsError);
+        // We still return the analysis even if save fails, but log the error
+      }
     }
 
+    console.log("[CDS ImageAnalysis] Request completed successfully");
     return NextResponse.json({ success: true, analysis, recordId });
   } catch (error: any) {
     console.error("[CDS ImageAnalysis] Error:", error);

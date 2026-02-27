@@ -402,6 +402,7 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
             // Notify parent to refresh history panel
             if (onAnalysisComplete) onAnalysisComplete();
         } catch (err: any) {
+            console.error("[CdsImageUpload] Analysis error:", err);
             setError(err.message || "Analysis failed. Please try again.");
         } finally {
             setIsProcessing(false);
@@ -550,7 +551,7 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
                                 {isProcessing ? (
                                     <>
                                         <Loader2 className="h-4 w-4 animate-spin" />
-                                        Analyzing with GPT-4o Vision…
+                                        Running AI Analysis (GPT-5.3 Codex)…
                                     </>
                                 ) : (
                                     <>
