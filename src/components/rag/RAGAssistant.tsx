@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import ReactMarkdown from "react-markdown";
 
 export function RAGAssistant() {
     const [isOpen, setIsOpen] = useState(false);
@@ -163,9 +164,13 @@ export function RAGAssistant() {
                                     <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                                         <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${m.role === "user"
                                             ? "bg-primary text-primary-foreground rounded-tr-none"
-                                            : "bg-muted text-foreground rounded-tl-none border border-border/50"
+                                            : "bg-muted text-foreground rounded-tl-none border border-border/50 prose prose-sm dark:prose-invert"
                                             }`}>
-                                            {m.content}
+                                            {m.role === "bot" ? (
+                                                <ReactMarkdown>{m.content}</ReactMarkdown>
+                                            ) : (
+                                                m.content
+                                            )}
                                         </div>
                                     </div>
                                 ))}
