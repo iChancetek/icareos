@@ -19,6 +19,7 @@ export class VectorStore {
     constructor() {
         const apiKey = process.env.PINECONE_API_KEY;
         const host = process.env.PINECONE_HOST;
+        const indexName = process.env.PINECONE_INDEX || 'mediscribe';
 
         console.log(`[VectorStore] Initializing with Host: ${host ? 'present' : 'MISSING'}`);
         console.log(`[VectorStore] API Key present: ${apiKey ? 'YES' : 'NO'}`);
@@ -43,7 +44,7 @@ export class VectorStore {
         }
 
         try {
-            const index = this.pc.index('mediscribe', this.host);
+            const index = this.pc.index(process.env.PINECONE_INDEX || 'mediscribe', this.host);
 
             const queryResponse = await index.query({
                 vector: queryEmbedding,
@@ -72,7 +73,7 @@ export class VectorStore {
         if (!this.host) return;
 
         try {
-            const index = this.pc.index('mediscribe', this.host);
+            const index = this.pc.index(process.env.PINECONE_INDEX || 'mediscribe', this.host);
             const vectors = chunks.map(chunk => ({
                 id: chunk.id,
                 values: chunk.embedding || [],
