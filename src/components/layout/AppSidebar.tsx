@@ -73,12 +73,12 @@ export default function AppSidebar() {
   const currentW = expanded ? PANEL_W : RAIL_W;
 
   const navItems: NavItem[] = [
-    { href: '/dashboard/iscribe', label: 'iScribe', icon: LayoutDashboard },
-    { href: '/dashboard/cds', label: 'CDS · AI Analysis', icon: ScanLine, matchStartsWith: true },
-    { href: '/dashboard/insights', label: 'Insights', icon: BarChart2, matchStartsWith: true },
-    { href: '/dashboard/iskylar', label: 'iSkylar', icon: Bot },
-    { label: 'Translator', icon: Languages, action: () => setIsVoiceTranslatorOpen(true) },
-    { href: '/dashboard/admin', label: 'Admin', icon: ShieldAlert, adminOnly: true },
+    { href: '/dashboard/iscribe', label: 'iScribe', icon: LayoutDashboard, color: '#00E5FF' },
+    { href: '/dashboard/cds', label: 'CDS · AI Analysis', icon: ScanLine, matchStartsWith: true, color: '#10B981' },
+    { href: '/dashboard/insights', label: 'Insights', icon: BarChart2, matchStartsWith: true, color: '#3B82F6' },
+    { href: '/dashboard/iskylar', label: 'iSkylar', icon: Bot, color: '#6366F1' },
+    { label: 'Translator', icon: Languages, action: () => setIsVoiceTranslatorOpen(true), color: '#0D9488' },
+    { href: '/dashboard/admin', label: 'Admin', icon: ShieldAlert, adminOnly: true, color: '#475569' },
   ];
 
   const isActive = (item: NavItem) => {
@@ -103,12 +103,6 @@ export default function AppSidebar() {
 
   return (
     <>
-      {/*
-       * The fixed floating rail sits inset from the screen edges.
-       * A static spacer of (RAIL_W + INSET) always reserves room
-       * for the collapsed state — the expanded panel floats OVER
-       * the right side of the spacer, so nothing is ever hidden.
-       */}
       <div
         style={{ width: RAIL_W + INSET, minWidth: RAIL_W + INSET }}
         className="hidden md:block shrink-0 relative"
@@ -122,14 +116,10 @@ export default function AppSidebar() {
         animate={{ width: currentW }}
         transition={{ duration: 0.30, ease: [0.4, 0, 0.2, 1] }}
         className={cn(
-          // floating: fixed + inset from all edges
           "fixed z-50 hidden md:flex flex-col overflow-hidden",
-          // detached look: margin from edges, fully rounded
           "rounded-2xl",
-          // glassmorphism — highly translucent so page content shows through clearly
           "backdrop-blur-md",
           "dark:bg-background/10 bg-white/10",
-          // border + dual shadow (depth + glow)
           "border border-white/10 dark:border-white/[0.06]",
           "shadow-[0_8px_32px_rgba(0,0,0,0.28),0_0_0_1px_rgba(255,255,255,0.04),0_0_24px_hsl(191_97%_58%/0.07)]",
         )}
@@ -207,17 +197,38 @@ export default function AppSidebar() {
                   <motion.span
                     layoutId="activeBar"
                     className="absolute left-0 inset-y-2 w-0.5 rounded-full bg-primary"
-                    style={{ boxShadow: '0 0 6px hsl(191 97% 58% / 0.7)' }}
+                    style={{ boxShadow: `0 0 10px ${item.color || 'var(--primary)'}` }}
                   />
                 )}
 
-                {/* Icon */}
-                <item.icon
-                  className={cn(
-                    "h-[18px] w-[18px] shrink-0 transition-colors",
-                    active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                {/* Icon with colored glass container */}
+                <div
+                  className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-110"
+                  style={{
+                    backgroundColor: active ? `${item.color}15` : 'transparent',
+                    boxShadow: active ? `0 0 15px ${item.color}20` : 'none',
+                    border: active ? `1px solid ${item.color}30` : '1px solid transparent'
+                  }}
+                >
+                  <item.icon
+                    className={cn(
+                      "h-[18px] w-[18px] shrink-0 transition-all duration-300",
+                    )}
+                    style={{
+                      color: active ? item.color : 'inherit',
+                      filter: active ? `drop-shadow(0 0 5px ${item.color}60)` : 'none'
+                    }}
+                  />
+                  {!active && (
+                    <div
+                      className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{
+                        background: `radial-gradient(circle at center, ${item.color}20 0%, transparent 70%)`,
+                        border: `1px solid ${item.color}20`
+                      }}
+                    />
                   )}
-                />
+                </div>
 
                 {/* Label */}
                 <AnimatePresence>
@@ -237,8 +248,9 @@ export default function AppSidebar() {
                 {/* Hover radial glow */}
                 <span className={cn(
                   "absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200",
-                  "bg-[radial-gradient(ellipse_60%_50%_at_30%_50%,hsl(191_97%_58%/0.06),transparent)]"
-                )} />
+                )} style={{
+                  background: `radial-gradient(ellipse 60% 50% at 30% 50%, ${item.color}08, transparent)`
+                }} />
 
                 {/* Tooltip (collapsed only) */}
                 {!expanded && (
