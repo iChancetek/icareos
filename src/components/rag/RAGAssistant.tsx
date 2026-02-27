@@ -85,11 +85,20 @@ export function RAGAssistant() {
         }
     };
 
-    const playTTS = (text: string) => {
-        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 1.1;
-            window.speechSynthesis.speak(utterance);
+    const playTTS = async (text: string) => {
+        try {
+            const response = await fetch("/api/tts", {
+                method: "POST",
+                body: JSON.stringify({ text }),
+            });
+            if (!response.ok) throw new Error("TTS request failed");
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            audio.play();
+        } catch (error) {
+            console.error("TTS playback error:", error);
         }
     };
 
