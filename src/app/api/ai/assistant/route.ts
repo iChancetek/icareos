@@ -64,7 +64,9 @@ export async function POST(req: NextRequest) {
             },
         });
     } catch (error: any) {
-        console.error("RAG Assistant API Error:", error);
-        return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+        console.error("[RAG API] ERROR:", error);
+        const status = error.status || 500;
+        const msg = error.message || "Internal Server Error";
+        return NextResponse.json({ error: msg }, { status });
     }
 }

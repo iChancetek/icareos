@@ -46,7 +46,10 @@ export function RAGAssistant() {
                 body: JSON.stringify({ query: userMessage }),
             });
 
-            if (!response.ok) throw new Error("Failed to get response");
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Server responded with ${response.status}`);
+            }
 
             const reader = response.body?.getReader();
             if (!reader) throw new Error("No reader available");

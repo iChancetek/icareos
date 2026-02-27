@@ -2,9 +2,17 @@ import OpenAI from "openai";
 import { VectorStore, DocumentChunk } from "./vector-store";
 import { ENGINE_MODEL } from "@/services/openaiService";
 
-const getClient = () => new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY || "dummy-openai-api-key-to-bypass-build-crash",
-});
+const getClient = () => {
+    const key = process.env.OPENAI_API_KEY;
+    if (!key || key.includes("dummy")) {
+        console.error("[RAGEngine] CRITICAL: OPENAI_API_KEY is not set or using dummy value.");
+    } else {
+        console.log(`[RAGEngine] Using API Key: ${key.substring(0, 7)}...`);
+    }
+    return new OpenAI({
+        apiKey: key || "dummy-key",
+    });
+};
 
 export class RAGEngine {
     private vectorStore: VectorStore;

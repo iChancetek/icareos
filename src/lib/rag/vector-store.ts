@@ -33,7 +33,7 @@ export class VectorStore {
         }
 
         try {
-            const index = this.pc.index('', this.host);
+            const index = this.pc.index('mediscribe', this.host);
 
             const queryResponse = await index.query({
                 vector: queryEmbedding,
@@ -62,7 +62,7 @@ export class VectorStore {
         if (!this.host) return;
 
         try {
-            const index = this.pc.index('', this.host);
+            const index = this.pc.index('mediscribe', this.host);
             const vectors = chunks.map(chunk => ({
                 id: chunk.id,
                 values: chunk.embedding || [],
