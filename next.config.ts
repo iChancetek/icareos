@@ -46,10 +46,6 @@ if (process.env.FIREBASE_WEBAPP_CONFIG) {
 const nextConfig: NextConfig = {
   env: {
     ...firebaseEnv,
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-    PINECONE_API_KEY: process.env.PINECONE_API_KEY,
-    PINECONE_HOST: process.env.PINECONE_HOST,
-    PINECONE_INDEX: process.env.PINECONE_INDEX,
   },
   typescript: {
     ignoreBuildErrors: true,

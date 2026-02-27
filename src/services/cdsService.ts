@@ -9,7 +9,7 @@ import {
     query, where, orderBy, serverTimestamp, Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { DEFAULT_AI_LABEL } from "@/services/openaiService";
+import { DEFAULT_AI_LABEL } from "@/services/constants";
 
 // ── Types ───────────────────────────────────────────────────────────────
 export interface CdsImageRecord {

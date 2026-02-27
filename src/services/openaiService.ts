@@ -1,13 +1,10 @@
+import 'server-only';
 import OpenAI from 'openai';
+import { ENGINE_MODEL, DEFAULT_AI_LABEL } from './constants';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY || "dummy-openai-api-key-to-bypass-build-crash",
-    dangerouslyAllowBrowser: true,
 });
-
-// Internal engine configuration - Public does not need to know specific version
-export const ENGINE_MODEL = "gpt-5.2";
-export const DEFAULT_AI_LABEL = "MediScribe AI Intelligence";
 
 export class OpenAIService {
     /**

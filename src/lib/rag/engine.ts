@@ -1,6 +1,7 @@
+import 'server-only';
 import OpenAI from "openai";
 import { VectorStore, DocumentChunk } from "./vector-store";
-import { ENGINE_MODEL } from "@/services/openaiService";
+import { ENGINE_MODEL } from "@/services/constants";
 
 const getClient = () => {
     const key = process.env.OPENAI_API_KEY;
