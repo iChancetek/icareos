@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { saveCdsAnalysis } from "@/services/cdsService";
+import { DEFAULT_MODEL } from "@/services/openaiService";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Platform-wide AI model identifier
-const MODEL_LABEL = "gpt-5.3-codex";
+// Platform-wide AI model identifier (Engine: gpt-4o / Brand: gpt-5.3-codex)
+const MODEL_LABEL = DEFAULT_MODEL;
 
 // ── Clinical prompts ───────────────────────────────────────────────────
 const WOUND_SYSTEM_PROMPT = `You are a clinical decision support AI specialized in wound care and dermatology.
@@ -149,9 +150,9 @@ export async function POST(req: NextRequest) {
       ? `Analyze this radiographic image and provide a comprehensive AI-assisted radiographic interpretation report. ${context ? `Additional context: ${context}` : ""}`
       : `Analyze this clinical image of a wound/skin condition and provide a comprehensive clinical decision support analysis. ${context ? `Additional context: ${context}` : ""}`;
 
-    console.log("[CDS ImageAnalysis] Calling OpenAI GPT-4o Vision...");
+    console.log(`[CDS ImageAnalysis] Calling OpenAI ${DEFAULT_MODEL} Vision...`);
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: DEFAULT_MODEL,
       max_completion_tokens: 2000,
       messages: [
         { role: "system", content: systemPrompt },
@@ -197,28 +198,27 @@ export async function POST(req: NextRequest) {
       analysisTimestamp: new Date().toISOString(),
     };
 
-    // ── Persist to Firestore ───────────────────────────────────────
-    let recordId: string | null = null;
+    // ── Persist to Firestore (Non-blocking background task) ─────────
     if (userId !== "anonymous") {
-      console.log(`[CDS ImageAnalysis] Saving to Firestore for user: ${userId}`);
-      try {
-        recordId = await saveCdsAnalysis(
-          userId,
-          imageDataUri,
-          imageFile.name || "clinical-image",
-          imageType,
-          context,
-          analysis
-        );
-        console.log(`[CDS ImageAnalysis] Saved successfully. ID: ${recordId}`);
-      } catch (fsError) {
-        console.error("[CDS ImageAnalysis] Firestore save failed:", fsError);
-        // We still return the analysis even if save fails, but log the error
-      }
+      console.log(`[CDS ImageAnalysis] Scheduling Firestore archival for user: ${userId}`);
+      // Run as a background promise so we don't hold up the AI response
+      saveCdsAnalysis(
+        userId,
+        "archived_in_storage", // Placeholder until Firebase Storage is configured
+        imageFile.name || "clinical-image",
+        imageType,
+        context,
+        analysis
+      ).then(id => {
+        if (id) console.log(`[CDS ImageAnalysis] Background save successful. ID: ${id}`);
+        else console.warn("[CDS ImageAnalysis] Background save failed (null ID)");
+      }).catch(e => {
+        console.error("[CDS ImageAnalysis] Background save error:", e);
+      });
     }
 
-    console.log("[CDS ImageAnalysis] Request completed successfully");
-    return NextResponse.json({ success: true, analysis, recordId });
+    console.log("[CDS ImageAnalysis] Request completed successfully. Returning response.");
+    return NextResponse.json({ success: true, analysis });
   } catch (error: any) {
     console.error("[CDS ImageAnalysis] Error:", error);
     return NextResponse.json(

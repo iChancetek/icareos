@@ -41,8 +41,6 @@ if (!firebaseConfig.apiKey) {
 }
 
 // Initialize Firebase
-console.log("Firebase Init API Key Check (first 5 chars):", firebaseConfig.apiKey ? firebaseConfig.apiKey.substring(0, 5) : "MISSING", "dummy?", firebaseConfig.apiKey === "dummy-api-key-to-bypass-build-crash");
-console.log("Full Firebase Config:", JSON.stringify(firebaseConfig, null, 2));
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 

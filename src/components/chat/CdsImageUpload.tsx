@@ -375,18 +375,66 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
         if (dropped) handleFileSelect(dropped);
     }, [handleFileSelect]);
 
+    const compressImage = async (file: File): Promise<Blob> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new (window as any).Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 1200; // Optimal for vision analysis without being too large
+
+                    if (width > height) {
+                        if (width > maxDim) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        }
+                    } else {
+                        if (height > maxDim) {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    ctx?.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob(
+                        (blob) => {
+                            if (blob) resolve(blob);
+                            else reject(new Error("Compression failed"));
+                        },
+                        "image/jpeg",
+                        0.85 // High quality but significantly smaller
+                    );
+                };
+            };
+            reader.onerror = (e) => reject(e);
+        });
+    };
+
     const handleAnalyze = async () => {
-        if (!file || !consentGiven) return;
+        if (!file || !consentGiven || isProcessing) return;
+
         setIsProcessing(true);
         setError(null);
+        setResult(null);
 
         try {
+            console.log("[CdsImageUpload] Starting analysis workflow...");
+            const compressedBlob = await compressImage(file);
             const formData = new FormData();
-            formData.append("image", file);
+            formData.append("image", compressedBlob, file.name || "image.jpg");
             formData.append("type", type);
             formData.append("context", context);
             if (user?.uid) formData.append("userId", user.uid);
 
+            console.log("[CdsImageUpload] Sending request to AI API (GPT-5.3 Codex)...");
             const res = await fetch("/api/ai-native/analyze-image", {
                 method: "POST",
                 body: formData,
