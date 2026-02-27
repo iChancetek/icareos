@@ -38,6 +38,8 @@ export async function POST(req: NextRequest) {
     // Diagnostic logging requested by user
     console.log("[RAG API] PINECONE_API_KEY present:", !!process.env.PINECONE_API_KEY);
     console.log("[RAG API] PINECONE_API_KEY length:", process.env.PINECONE_API_KEY?.length || 0);
+    console.log("[RAG API] ALL PINECONE KEYS:", Object.keys(process.env).filter(k => k.toUpperCase().includes('PINECONE')));
+    console.log("[RAG API] DIRECT VALUE TEST:", process.env.PINECONE_API_KEY ? "EXISTS" : "UNDEFINED");
 
     try {
         const { query } = await req.json();
