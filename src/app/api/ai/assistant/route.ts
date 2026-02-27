@@ -39,15 +39,22 @@ export async function POST(req: NextRequest) {
         const { query } = await req.json();
 
         if (!query) {
+            console.warn("[RAG API] Missing query in request");
             return NextResponse.json({ error: "Query is required" }, { status: 400 });
         }
 
+        console.log(`[RAG API] Processing query: "${query}"`);
+
         // Seed on first request if not already done
         // (In a real production app, this would be a separate build-time/migration step)
+        console.log("[RAG API] Checking knowledge base status...");
         await seedKnowledge();
+        console.log("[RAG API] Knowledge base ready.");
 
         const ragEngine = await getEngine();
+        console.log("[RAG API] Calling RAG Engine answerQuery...");
         const stream = await ragEngine.answerQuery(query);
+        console.log("[RAG API] Stream obtained, returning response.");
 
         return new Response(stream, {
             headers: {

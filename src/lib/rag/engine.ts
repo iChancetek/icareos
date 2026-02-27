@@ -2,8 +2,8 @@ import OpenAI from "openai";
 import { VectorStore, DocumentChunk } from "./vector-store";
 import { ENGINE_MODEL } from "@/services/openaiService";
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+const getClient = () => new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY || "dummy-openai-api-key-to-bypass-build-crash",
 });
 
 export class RAGEngine {
@@ -17,10 +17,12 @@ export class RAGEngine {
      * Generate an embedding for a given text
      */
     async generateEmbedding(text: string): Promise<number[]> {
-        const response = await openai.embeddings.create({
+        console.log(`[RAGEngine] Generating embedding for text length: ${text.length}`);
+        const response = await getClient().embeddings.create({
             model: "text-embedding-3-small",
             input: text.replace(/\n/g, " "),
         });
+        console.log("[RAGEngine] Embedding generated successfully.");
         return response.data[0].embedding;
     }
 
@@ -28,8 +30,12 @@ export class RAGEngine {
      * Answer a query based on retrieved context
      */
     async answerQuery(query: string): Promise<ReadableStream> {
+        console.log("[RAGEngine] Generating query embedding...");
         const queryEmbedding = await this.generateEmbedding(query);
+
+        console.log("[RAGEngine] Performing similarity search in Pinecone...");
         const relevantChunks = await this.vectorStore.similaritySearch(queryEmbedding, 4);
+        console.log(`[RAGEngine] Found ${relevantChunks.length} relevant chunks.`);
 
         const context = relevantChunks.map(c => `[Category: ${c.metadata.category || 'General'}] ${c.content}`).join("\n\n");
 
@@ -43,7 +49,8 @@ export class RAGEngine {
       ${context}
     `;
 
-        const response = await openai.chat.completions.create({
+        console.log(`[RAGEngine] Calling OpenAI Chat Completion (${ENGINE_MODEL})...`);
+        const response = await getClient().chat.completions.create({
             model: ENGINE_MODEL,
             messages: [
                 { role: "system", content: systemPrompt },
@@ -53,6 +60,7 @@ export class RAGEngine {
             temperature: 0.3,
             max_completion_tokens: 1024,
         });
+        console.log("[RAGEngine] Stream response started.");
 
         // Convert OpenAI stream to a Web ReadableStream
         return new ReadableStream({

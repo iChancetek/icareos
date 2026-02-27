@@ -6,7 +6,7 @@ const openai = new OpenAI({
 });
 
 // Internal engine configuration - Public does not need to know specific version
-const ENGINE_MODEL = "gpt-5.2";
+export const ENGINE_MODEL = "gpt-5.2";
 export const DEFAULT_AI_LABEL = "MediScribe AI Intelligence";
 
 export class OpenAIService {
