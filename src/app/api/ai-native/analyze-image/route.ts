@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { saveCdsAnalysis } from "@/services/cdsService";
-import { DEFAULT_MODEL } from "@/services/openaiService";
+import { DEFAULT_AI_LABEL } from "@/services/openaiService";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Platform-wide AI model identifier (Engine: gpt-4o / Brand: gpt-5.3-codex)
-const MODEL_LABEL = DEFAULT_MODEL;
+// Generic label for privacy
+const MODEL_LABEL = DEFAULT_AI_LABEL;
+const ENGINE_MODEL = "gpt-5.2";
 
 // ── Clinical prompts ───────────────────────────────────────────────────
 const WOUND_SYSTEM_PROMPT = `You are a clinical decision support AI specialized in wound care and dermatology.
@@ -62,7 +63,7 @@ When analyzing a wound, skin condition, rash, lesion, or pressure sore image, re
   "escalationReason": null,
   "confidenceScore": 0,
   "auditLog": {
-    "modelUsed": "gpt-5.3-codex",
+    "modelUsed": "MediScribe AI",
     "analysisTimestamp": "ISO string",
     "visualFeaturesExtracted": ["string"],
     "guidelinesReferenced": ["string"],
@@ -111,7 +112,7 @@ When analyzing an X-ray or radiographic image, respond ONLY with structured JSON
   "escalationReason": null,
   "confidenceScore": 0,
   "auditLog": {
-    "modelUsed": "gpt-5.3-codex",
+    "modelUsed": "MediScribe AI",
     "analysisTimestamp": "ISO string",
     "visualFeaturesExtracted": ["string"],
     "guidelinesReferenced": ["string"],
@@ -150,9 +151,9 @@ export async function POST(req: NextRequest) {
       ? `Analyze this radiographic image and provide a comprehensive AI-assisted radiographic interpretation report. ${context ? `Additional context: ${context}` : ""}`
       : `Analyze this clinical image of a wound/skin condition and provide a comprehensive clinical decision support analysis. ${context ? `Additional context: ${context}` : ""}`;
 
-    console.log(`[CDS ImageAnalysis] Calling OpenAI ${DEFAULT_MODEL} Vision...`);
+    console.log(`[CDS ImageAnalysis] Calling OpenAI Vision...`);
     const response = await openai.chat.completions.create({
-      model: DEFAULT_MODEL,
+      model: ENGINE_MODEL,
       max_completion_tokens: 2000,
       messages: [
         { role: "system", content: systemPrompt },

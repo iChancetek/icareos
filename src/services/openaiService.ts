@@ -5,8 +5,9 @@ const openai = new OpenAI({
     dangerouslyAllowBrowser: true,
 });
 
-// GPT-5.3 Codex as the primary reasoning model
-export const DEFAULT_MODEL = "gpt-5.3-codex";
+// Internal engine configuration - Public does not need to know specific version
+const ENGINE_MODEL = "gpt-5.2";
+export const DEFAULT_AI_LABEL = "MediScribe AI Intelligence";
 
 export class OpenAIService {
     /**
@@ -54,7 +55,7 @@ export class OpenAIService {
             messages.push({ role: 'user', content: prompt });
 
             const completion = await openai.chat.completions.create({
-                model: DEFAULT_MODEL,
+                model: ENGINE_MODEL,
                 messages,
                 max_completion_tokens: 2048,
             });
@@ -82,7 +83,7 @@ export class OpenAIService {
             ];
 
             const completion = await openai.chat.completions.create({
-                model: DEFAULT_MODEL,
+                model: ENGINE_MODEL,
                 messages,
                 response_format: {
                     type: "json_schema",

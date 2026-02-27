@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import AppHeader from '@/components/layout/AppHeader';
 import AppSidebar from '@/components/layout/AppSidebar';
 import { Loader2 } from 'lucide-react';
-import { textToSpeech } from '@/ai/flows/text-to-speech-flow';
+import { textToSpeech } from '@/actions/ai/text-to-speech';
 import { useToast } from '@/hooks/use-toast';
 
 

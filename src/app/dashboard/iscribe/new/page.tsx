@@ -9,7 +9,7 @@ import { Mic, StopCircle, Save, Loader2, AlertTriangle, CheckCircle2, Languages,
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
 import { processAudioSession } from '@/services/agentService';
-import { translateText } from '@/ai/flows/translate-text-flow';
+import { translateText } from '@/actions/ai/translate-text-flow';
 import { sendDataToHubSpot } from '@/services/hubspotService';
 import type { IScribe } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -286,7 +286,7 @@ export default function NewIScribePage() {
           </Link>
           <div>
             <h1 className="text-xl font-bold tracking-tight">New iScribe Session</h1>
-            <p className="text-xs text-muted-foreground">6-agent AI clinical documentation · gpt-5.3-codex</p>
+            <p className="text-xs text-muted-foreground">6-agent AI clinical documentation · MediScribe AI</p>
           </div>
         </motion.div>
 
@@ -521,7 +521,7 @@ export default function NewIScribePage() {
             <div className="pt-2 border-t border-border/40">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                <span>gpt-5.3-codex · Parallel execution</span>
+                <span>MediScribe AI · Parallel execution</span>
               </div>
               <p className="text-[10px] text-muted-foreground mt-1.5 leading-relaxed">
                 Agents run in two stages: Transcription → (NLP + SOAP in parallel) → (Risk + Billing + Compliance in parallel).

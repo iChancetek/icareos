@@ -124,7 +124,7 @@ export default function IScribesPage() {
           </div>
           <h1 className="text-3xl font-black tracking-tight gradient-text">iScribe Sessions</h1>
           <p className="text-sm text-muted-foreground">
-            AI-powered SOAP documentation · 6-agent pipeline · gpt-5.3-codex
+            AI-powered SOAP documentation · 6-agent pipeline · MediScribe AI
           </p>
         </div>
 

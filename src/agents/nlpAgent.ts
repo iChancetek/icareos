@@ -1,6 +1,6 @@
 'use server';
 
-import { OpenAIService, DEFAULT_MODEL } from '@/services/openaiService';
+import { OpenAIService, DEFAULT_AI_LABEL } from '@/services/openaiService';
 import type { NLPResult, MedicalEntity, ICDCode, AgentMeta } from '@/types/agents';
 
 const NLP_SCHEMA = {
@@ -54,7 +54,7 @@ interface NLPStructuredOutput {
 export async function runNLPAgent(transcript: string, patientContext?: string): Promise<NLPResult> {
     const start = Date.now();
 
-    const systemPrompt = `You are a senior Medical NLP Engineer and clinical coding specialist using ${DEFAULT_MODEL}.
+    const systemPrompt = `You are a senior Medical NLP Engineer and clinical coding specialist.
 Your role is to extract all clinically relevant entities from a medical transcript, suggest ICD-10 codes, and detect the clinical specialty involved.
 Be precise. Include confidence scores between 0 and 1 for every entity and code.
 Respond ONLY in the specified JSON format.`;
@@ -84,7 +84,7 @@ ${transcript}`;
 
         const meta: AgentMeta = {
             agentName: 'NLPAgent',
-            modelVersion: DEFAULT_MODEL,
+            modelVersion: DEFAULT_AI_LABEL,
             confidence,
             latency_ms,
             requiresHumanReview: confidence < 0.65,

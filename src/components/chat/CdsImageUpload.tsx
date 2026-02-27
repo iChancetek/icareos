@@ -599,7 +599,7 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
                                 {isProcessing ? (
                                     <>
                                         <Loader2 className="h-4 w-4 animate-spin" />
-                                        Running AI Analysis (GPT-5.3 Codex)…
+                                        Running AI Analysis…
                                     </>
                                 ) : (
                                     <>

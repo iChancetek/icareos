@@ -1,6 +1,6 @@
 'use server';
 
-import { OpenAIService, DEFAULT_MODEL } from '@/services/openaiService';
+import { OpenAIService, DEFAULT_AI_LABEL } from '@/services/openaiService';
 import type { SOAPResult, SOAPNote, AgentMeta } from '@/types/agents';
 
 const SOAP_SCHEMA = {
@@ -33,7 +33,7 @@ export async function runSOAPAgent(
 ): Promise<SOAPResult> {
     const start = Date.now();
 
-    const systemPrompt = `You are an expert clinical documentation specialist powered by ${DEFAULT_MODEL}.
+    const systemPrompt = `You are an expert clinical documentation specialist.
 Your role is to generate accurate, complete SOAP notes from medical transcripts.
 ${specialty ? `Specialty context: ${specialty}` : ''}
 Include:
@@ -59,7 +59,7 @@ Rate your confidence in the SOAP note from 0 to 1.`;
 
         const meta: AgentMeta = {
             agentName: 'SOAPAgent',
-            modelVersion: DEFAULT_MODEL,
+            modelVersion: DEFAULT_AI_LABEL,
             confidence,
             latency_ms,
             requiresHumanReview: confidence < 0.7,

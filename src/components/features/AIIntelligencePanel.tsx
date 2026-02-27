@@ -84,7 +84,7 @@ export function AIIntelligencePanel({ session, className }: AIIntelligencePanelP
             <div className="flex items-center justify-between bg-gradient-to-r from-primary/10 to-primary/5 px-5 py-4 border-b border-border">
                 <div>
                     <h2 className="text-base font-semibold tracking-tight">⚡ AI Intelligence Report</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">gpt-5.3-codex · {meta.agentsRun.length} agents · {(meta.totalLatency_ms / 1000).toFixed(1)}s</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Clinical Decision Support · {meta.agentsRun.length} agents · {(meta.totalLatency_ms / 1000).toFixed(1)}s</p>
                 </div>
                 <div className="flex flex-col items-end">
                     <span className="text-2xl font-bold tabular-nums">{overallPct}%</span>

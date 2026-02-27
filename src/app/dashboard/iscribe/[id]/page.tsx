@@ -26,7 +26,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { translateText } from '@/ai/flows/translate-text-flow';
+import { translateText } from '@/actions/ai/translate-text-flow';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -478,7 +478,7 @@ export default function IScribeDetailPage() {
                 {iscribe.agentLatency_ms && (
                   <div>
                     <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground mb-1">Processing Time</p>
-                    <p className="text-sm text-muted-foreground">{(iscribe.agentLatency_ms / 1000).toFixed(1)}s · gpt-5.3-codex</p>
+                    <p className="text-sm text-muted-foreground">{(iscribe.agentLatency_ms / 1000).toFixed(1)}s · MediScribe AI</p>
                   </div>
                 )}
                 {iscribe.requiresHumanReview && (

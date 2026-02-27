@@ -4,6 +4,7 @@ import { StateGraph, Annotation, messagesStateReducer } from "@langchain/langgra
 import { ChatOpenAI } from "@langchain/openai";
 import { BaseMessage } from "@langchain/core/messages";
 import { isSystemMessage } from "@langchain/core/messages";
+import { ENGINE_MODEL } from "@/services/openaiService";
 
 // The state type for the intake flow
 export const IntakeStateAnnotation = Annotation.Root({
@@ -28,7 +29,7 @@ Do NOT give medical advice.
 
 export async function intakeNode(state: typeof IntakeStateAnnotation.State, config?: RunnableConfig) {
     const model = new ChatOpenAI({
-        modelName: "gpt-5.3-codex",
+        modelName: ENGINE_MODEL,
         temperature: 0.1,
         maxCompletionTokens: 1000,
     });

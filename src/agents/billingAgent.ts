@@ -1,6 +1,6 @@
 'use server';
 
-import { OpenAIService, DEFAULT_MODEL } from '@/services/openaiService';
+import { OpenAIService, DEFAULT_AI_LABEL } from '@/services/openaiService';
 import type { BillingResult, CPTCode, ICDCode, AgentMeta } from '@/types/agents';
 
 const BILLING_SCHEMA = {
@@ -57,7 +57,7 @@ export async function runBillingAgent(
 ): Promise<BillingResult> {
     const start = Date.now();
 
-    const systemPrompt = `You are an expert medical billing and coding specialist powered by ${DEFAULT_MODEL}.
+    const systemPrompt = `You are an expert medical billing and coding specialist.
 ${specialty ? `Specialty: ${specialty}` : ''}
 Your task is to:
 1. Confirm or improve ICD-10 codes from the clinical assessment
@@ -89,7 +89,7 @@ ${nlpCodeSummary || 'None identified'}`;
 
         const meta: AgentMeta = {
             agentName: 'BillingAgent',
-            modelVersion: DEFAULT_MODEL,
+            modelVersion: DEFAULT_AI_LABEL,
             confidence,
             latency_ms,
             requiresHumanReview: confidence < 0.7,

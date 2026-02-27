@@ -280,7 +280,7 @@ export default function CdsHistoryPanel({ refreshKey = 0 }: CdsHistoryPanelProps
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Clinical Imaging Archive</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{records.length} record{records.length !== 1 ? "s" : ""} · gpt-5.3-codex · Time-stamped</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{records.length} record{records.length !== 1 ? "s" : ""} · Secure AI Archival</p>
                 </div>
                 <button onClick={loadHistory} className="h-7 w-7 flex items-center justify-center rounded-lg border border-border/40 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors">
                     <RotateCcw className="h-3.5 w-3.5" />

@@ -14,7 +14,7 @@ export const woundCareTool = tool(
     async ({ imageUrl, patientHistory, durationDays }) => {
         console.log(`[WoundCareAgent] Analyzing image: ${imageUrl.substring(0, 30)}...`);
 
-        // In production, this would pass the base64/URL to a Vision-capable LLM like gpt-4o or gpt-5.3-codex
+        // In production, this would pass the base64/URL to a Vision-capable LLM 
         // with a strict structured output schema. For this architectural MVP, we simulate the inference.
 
         await new Promise((resolve) => setTimeout(resolve, 1500));

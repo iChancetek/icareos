@@ -1,6 +1,6 @@
 'use server';
 
-import { OpenAIService, DEFAULT_MODEL } from '@/services/openaiService';
+import { OpenAIService, DEFAULT_AI_LABEL } from '@/services/openaiService';
 import type { RiskResult, RiskFactor, RiskLevel, AgentMeta } from '@/types/agents';
 
 const RISK_SCHEMA = {
@@ -43,7 +43,7 @@ export async function runRiskAgent(
 ): Promise<RiskResult> {
     const start = Date.now();
 
-    const systemPrompt = `You are a clinical risk detection AI powered by ${DEFAULT_MODEL}.
+    const systemPrompt = `You are a clinical risk detection AI.
 Evaluate the patient's clinical risk based on their transcript and SOAP assessment.
 Identify specific risk factors (e.g., drug interactions, fall risk, sepsis indicators, suicide risk, abnormal vitals).
 Assign:
@@ -70,7 +70,7 @@ Err on the side of caution. If in doubt, flag for human review.`;
 
         const meta: AgentMeta = {
             agentName: 'RiskAgent',
-            modelVersion: DEFAULT_MODEL,
+            modelVersion: DEFAULT_AI_LABEL,
             confidence,
             latency_ms,
             requiresHumanReview: riskData.riskLevel === 'high' || riskData.riskLevel === 'critical' || confidence < 0.7,

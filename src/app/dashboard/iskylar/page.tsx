@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Bot, Loader2, Mic, StopCircle, BrainCircuit, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { askISkylar } from '@/ai/flows/iskylar-assistant-flow';
+import { askISkylar } from '@/actions/ai/iskylar-assistant';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WaveformOrb } from '@/components/ui/WaveformOrb';

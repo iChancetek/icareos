@@ -11,9 +11,9 @@ import {
   Copy, Download, X, ChevronRight, Languages, Loader2, BrainCircuit,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { transcribeAudio } from '@/ai/flows/transcribe-audio';
-import { translateText } from '@/ai/flows/translate-text-flow';
-import { summarizeIScribe } from '@/ai/flows/summarize-iscribe';
+import { transcribeAudio } from '@/actions/ai/transcribe-audio';
+import { translateText } from '@/actions/ai/translate-text-flow';
+import { summarizeIScribe } from '@/actions/ai/summarize-iscribe';
 import { useAuth } from '@/hooks/useAuth';
 import type { TranslationLanguage } from '@/types';
 import { WaveformOrb } from '@/components/ui/WaveformOrb';

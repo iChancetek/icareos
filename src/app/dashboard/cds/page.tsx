@@ -26,7 +26,7 @@ export default function CdsPage() {
                 <div className="flex items-center gap-2 mb-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-violet-500 animate-pulse" />
                     <span className="text-[10px] font-semibold uppercase tracking-widest text-violet-400">
-                        Clinical Decision Support · gpt-5.3-codex · Phase 7-8
+                        Clinical Decision Support · MediScribe AI
                     </span>
                 </div>
                 <h1 className="text-3xl font-black tracking-tight">AI Clinical Analysis</h1>
@@ -104,7 +104,7 @@ export default function CdsPage() {
                     </div>
                     <div>
                         <h2 className="text-base font-bold">Clinical Imaging Archive</h2>
-                        <p className="text-xs text-muted-foreground">Persistent audit trail · Clinician sign-off · gpt-5.3-codex</p>
+                        <p className="text-xs text-muted-foreground">Persistent audit trail · Clinician sign-off · MediScribe AI</p>
                     </div>
                 </div>
                 <CdsHistoryPanel refreshKey={historyRefreshKey} />

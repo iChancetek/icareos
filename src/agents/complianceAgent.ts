@@ -1,6 +1,6 @@
 'use server';
 
-import { OpenAIService, DEFAULT_MODEL } from '@/services/openaiService';
+import { OpenAIService, DEFAULT_AI_LABEL } from '@/services/openaiService';
 import type { ComplianceResult, ComplianceCheck, AgentMeta } from '@/types/agents';
 
 const COMPLIANCE_SCHEMA = {
@@ -42,7 +42,7 @@ export async function runComplianceAgent(
 ): Promise<ComplianceResult> {
     const start = Date.now();
 
-    const systemPrompt = `You are a clinical compliance and documentation quality specialist powered by ${DEFAULT_MODEL}.
+    const systemPrompt = `You are a clinical compliance and documentation quality specialist.
 Your role is to validate that a SOAP note meets clinical documentation standards.
 Run these checks:
 1. COMPLETENESS — All SOAP sections are adequately filled
@@ -82,7 +82,7 @@ Key Entities: ${entitySummary}`;
 
         const meta: AgentMeta = {
             agentName: 'ComplianceAgent',
-            modelVersion: DEFAULT_MODEL,
+            modelVersion: DEFAULT_AI_LABEL,
             confidence,
             latency_ms,
             requiresHumanReview: hasErrors || confidence < 0.7,

@@ -9,6 +9,7 @@ import {
     query, where, orderBy, serverTimestamp, Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { DEFAULT_AI_LABEL } from "@/services/openaiService";
 
 // ── Types ───────────────────────────────────────────────────────────────
 export interface CdsImageRecord {
@@ -62,7 +63,7 @@ export async function saveCdsAnalysis(
             severityLevel,
             confidenceScore: analysis.confidenceScore ?? 0,
             escalationRequired: analysis.escalationRequired ?? false,
-            modelVersion: "gpt-5.3-codex",
+            modelVersion: DEFAULT_AI_LABEL,
             uploadedAt: serverTimestamp(),
             clinicianStatus: "pending",
             clinicianNotes: null,

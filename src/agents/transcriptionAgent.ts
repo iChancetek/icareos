@@ -1,7 +1,7 @@
 'use server';
 
-import { OpenAIService, DEFAULT_MODEL } from '@/services/openaiService';
-import { transcribeAudio } from '@/ai/flows/transcribe-audio';
+import { OpenAIService, DEFAULT_AI_LABEL } from '@/services/openaiService';
+import { transcribeAudio } from '@/actions/ai/transcribe-audio';
 import type { TranscriptionResult, AgentMeta } from '@/types/agents';
 
 export async function runTranscriptionAgent(

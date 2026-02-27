@@ -41,7 +41,7 @@ Return the final result to the user when the goal is complete. If the system fla
 
 export async function orchestratorNode(state: typeof OrchestratorStateAnnotation.State) {
     const model = new ChatOpenAI({
-        modelName: "gpt-5.3-codex",
+        modelName: "gpt-5.2",
         temperature: 0.1,
         maxCompletionTokens: 1000,
     }).bindTools(allClinicalTools);
