@@ -27,6 +27,11 @@ export function Navbar() {
             </Link>
 
             <nav className="flex items-center gap-4">
+                <Link href="/learn-more" passHref>
+                    <Button variant="ghost" className="hidden md:inline-flex text-muted-foreground hover:text-foreground">
+                        Learn More
+                    </Button>
+                </Link>
                 <ThemeToggle />
                 <Link href="/login" passHref>
                     <Button variant="ghost" className="hidden sm:inline-flex text-muted-foreground hover:text-foreground">

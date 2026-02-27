@@ -8,6 +8,7 @@ import { AIIntelligence } from "./components/AIIntelligence";
 import { SecuritySection } from "./components/SecuritySection";
 import { Testimonials } from "./components/Testimonials";
 import { CTASection } from "./components/CTASection";
+import { RAGAssistant } from "@/components/rag/RAGAssistant";
 
 export default function LandingPage() {
   return (
@@ -37,6 +38,8 @@ export default function LandingPage() {
           </p>
         </div>
       </footer>
+
+      <RAGAssistant />
     </div>
   );
 }

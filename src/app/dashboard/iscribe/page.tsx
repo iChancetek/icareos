@@ -208,33 +208,35 @@ export default function IScribesPage() {
       </div>
 
       {/* ── AI Triage Queue (Phase 5 Enhancement) ───────────── */}
-      {iscribes.filter(s => s.escationRequired).length > 0 && (
-        <div className="mb-8 p-5 bg-red-500/10 border border-red-500/30 rounded-2xl">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
-            <h2 className="text-lg font-bold text-red-500">AI Triage Escalation Queue</h2>
-          </div>
-          <p className="text-sm text-red-400 mb-4">The following sessions were escalated by the Safety Governance Layer and require immediate clinician review.</p>
-          <StaggerList className="space-y-2">
-            {iscribes.filter(s => s.escationRequired).map(iscribe => (
-              <FadeUpItem key={`esc-${iscribe.id}`}>
-                <Link href={`/dashboard/iscribe/${iscribe.id}`}>
-                  <div className="group flex items-center justify-between rounded-xl border border-red-500/40 bg-red-500/5 px-5 py-3 hover:bg-red-500/10 transition-colors cursor-pointer">
-                    <div className="flex items-center gap-4">
-                      <ShieldCheck className="h-5 w-5 text-red-400" />
-                      <div>
-                        <p className="font-semibold text-white">{iscribe.patientName}</p>
-                        <p className="text-xs text-red-300">Risk Level: {iscribe.riskLevel?.toUpperCase()} | Sent to Triage</p>
+      {
+        iscribes.filter(s => s.escationRequired).length > 0 && (
+          <div className="mb-8 p-5 bg-red-500/10 border border-red-500/30 rounded-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <h2 className="text-lg font-bold text-red-500">AI Triage Escalation Queue</h2>
+            </div>
+            <p className="text-sm text-red-400 mb-4">The following sessions were escalated by the Safety Governance Layer and require immediate clinician review.</p>
+            <StaggerList className="space-y-2">
+              {iscribes.filter(s => s.escationRequired).map(iscribe => (
+                <FadeUpItem key={`esc-${iscribe.id}`}>
+                  <Link href={`/dashboard/iscribe/${iscribe.id}`}>
+                    <div className="group flex items-center justify-between rounded-xl border border-red-500/40 bg-red-500/5 px-5 py-3 hover:bg-red-500/10 transition-colors cursor-pointer">
+                      <div className="flex items-center gap-4">
+                        <ShieldCheck className="h-5 w-5 text-red-400" />
+                        <div>
+                          <p className="font-semibold text-white">{iscribe.patientName}</p>
+                          <p className="text-xs text-red-300">Risk Level: {iscribe.riskLevel?.toUpperCase()} | Sent to Triage</p>
+                        </div>
                       </div>
+                      <ArrowRight className="h-4 w-4 text-red-400 group-hover:translate-x-1 transition-transform" />
                     </div>
-                    <ArrowRight className="h-4 w-4 text-red-400 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </Link>
-              </FadeUpItem>
-            ))}
-          </StaggerList>
-        </div>
-      )}
+                  </Link>
+                </FadeUpItem>
+              ))}
+            </StaggerList>
+          </div>
+        )
+      }
 
       {/* ── Standard Session list ──────────────────────────────────────── */}
       <div className="flex items-center gap-2 mb-4 mt-8">
@@ -242,104 +244,106 @@ export default function IScribesPage() {
         <h2 className="text-lg font-bold text-foreground">Standard Sessions</h2>
       </div>
 
-      {iscribes.filter(s => !s.escationRequired).length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-primary/20 bg-primary/[0.03] py-24 text-center gap-6"
-        >
-          <div className="relative">
-            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 animate-float">
-              <Mic className="h-10 w-10 text-primary" />
+      {
+        iscribes.filter(s => !s.escationRequired).length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-primary/20 bg-primary/[0.03] py-24 text-center gap-6"
+          >
+            <div className="relative">
+              <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 animate-float">
+                <Mic className="h-10 w-10 text-primary" />
+              </div>
+              <div className="absolute -inset-4 rounded-3xl bg-primary/5 blur-2xl" />
             </div>
-            <div className="absolute -inset-4 rounded-3xl bg-primary/5 blur-2xl" />
-          </div>
-          <div className="space-y-2 max-w-xs">
-            <h2 className="text-xl font-bold">No standard sessions yet</h2>
-            <p className="text-sm text-muted-foreground">
-              Record your first consultation. Our 6-agent AI pipeline generates SOAP notes, risk scores, and billing codes in seconds.
-            </p>
-          </div>
-          <Link href="/dashboard/iscribe/new">
-            <motion.button
-              whileHover={{ scale: 1.04, y: -1 }}
-              whileTap={{ scale: 0.97 }}
-              className="btn-neural flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold"
-            >
-              <Mic className="h-4 w-4" />
-              Start First Session
-            </motion.button>
-          </Link>
-        </motion.div>
-      ) : (
-        <StaggerList className="space-y-2">
-          {[...iscribes]
-            .filter(s => !s.escationRequired)
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-            .map(iscribe => {
-              const hasAgent = !!iscribe.agentSessionId;
-              const confPct = iscribe.overallConfidence != null ? iscribe.overallConfidence : null;
-              return (
-                <FadeUpItem key={iscribe.id}>
-                  <Link href={`/dashboard/iscribe/${iscribe.id}`}>
-                    <motion.div
-                      whileHover={{ x: 2 }}
-                      className={cn(
-                        "group flex items-center gap-4 rounded-xl border px-5 py-3.5",
-                        "bg-card/50 glass neural-border cursor-pointer",
-                        "hover:border-primary/25 hover:bg-card/70 transition-all duration-200"
-                      )}
-                    >
-                      {/* Status dot */}
-                      <div className={cn(
-                        "shrink-0 h-8 w-8 rounded-xl flex items-center justify-center border",
-                        hasAgent ? "bg-primary/10 border-primary/20" : "bg-muted border-border"
-                      )}>
-                        <ShieldCheck className={cn("h-4 w-4", hasAgent ? "text-primary" : "text-muted-foreground")} />
-                      </div>
+            <div className="space-y-2 max-w-xs">
+              <h2 className="text-xl font-bold">No standard sessions yet</h2>
+              <p className="text-sm text-muted-foreground">
+                Record your first consultation. Our 6-agent AI pipeline generates SOAP notes, risk scores, and billing codes in seconds.
+              </p>
+            </div>
+            <Link href="/dashboard/iscribe/new">
+              <motion.button
+                whileHover={{ scale: 1.04, y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                className="btn-neural flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold"
+              >
+                <Mic className="h-4 w-4" />
+                Start First Session
+              </motion.button>
+            </Link>
+          </motion.div>
+        ) : (
+          <StaggerList className="space-y-2">
+            {[...iscribes]
+              .filter(s => !s.escationRequired)
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+              .map(iscribe => {
+                const hasAgent = !!iscribe.agentSessionId;
+                const confPct = iscribe.overallConfidence != null ? iscribe.overallConfidence : null;
+                return (
+                  <FadeUpItem key={iscribe.id}>
+                    <Link href={`/dashboard/iscribe/${iscribe.id}`}>
+                      <motion.div
+                        whileHover={{ x: 2 }}
+                        className={cn(
+                          "group flex items-center gap-4 rounded-xl border px-5 py-3.5",
+                          "bg-card/50 glass neural-border cursor-pointer",
+                          "hover:border-primary/25 hover:bg-card/70 transition-all duration-200"
+                        )}
+                      >
+                        {/* Status dot */}
+                        <div className={cn(
+                          "shrink-0 h-8 w-8 rounded-xl flex items-center justify-center border",
+                          hasAgent ? "bg-primary/10 border-primary/20" : "bg-muted border-border"
+                        )}>
+                          <ShieldCheck className={cn("h-4 w-4", hasAgent ? "text-primary" : "text-muted-foreground")} />
+                        </div>
 
-                      {/* Info */}
-                      <div className="flex-1 min-w-0 space-y-0.5">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="font-semibold text-sm">{iscribe.patientName}</span>
-                          {iscribe.specialty && (
-                            <span className="text-[10px] bg-muted/60 text-muted-foreground rounded-full px-2 py-0.5">
-                              {iscribe.specialty}
+                        {/* Info */}
+                        <div className="flex-1 min-w-0 space-y-0.5">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-semibold text-sm">{iscribe.patientName}</span>
+                            {iscribe.specialty && (
+                              <span className="text-[10px] bg-muted/60 text-muted-foreground rounded-full px-2 py-0.5">
+                                {iscribe.specialty}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{format(new Date(iscribe.date), "MMM d, h:mm a")}</span>
+                            {iscribe.agentLatency_ms && (
+                              <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3" />{(iscribe.agentLatency_ms / 1000).toFixed(1)}s</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Right badges */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {iscribe.riskLevel && (
+                            <Badge className={cn("text-[10px] capitalize border font-medium px-2", riskColors[iscribe.riskLevel])}>
+                              {iscribe.riskLevel}
+                            </Badge>
+                          )}
+                          {confPct != null && (
+                            <span className={cn("text-xs font-mono font-bold",
+                              confPct >= 0.8 ? "text-emerald-400" : confPct >= 0.6 ? "text-yellow-400" : "text-orange-400"
+                            )}>
+                              {Math.round(confPct * 100)}%
                             </span>
                           )}
+                          <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{format(new Date(iscribe.date), "MMM d, h:mm a")}</span>
-                          {iscribe.agentLatency_ms && (
-                            <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3" />{(iscribe.agentLatency_ms / 1000).toFixed(1)}s</span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Right badges */}
-                      <div className="flex items-center gap-2 shrink-0">
-                        {iscribe.riskLevel && (
-                          <Badge className={cn("text-[10px] capitalize border font-medium px-2", riskColors[iscribe.riskLevel])}>
-                            {iscribe.riskLevel}
-                          </Badge>
-                        )}
-                        {confPct != null && (
-                          <span className={cn("text-xs font-mono font-bold",
-                            confPct >= 0.8 ? "text-emerald-400" : confPct >= 0.6 ? "text-yellow-400" : "text-orange-400"
-                          )}>
-                            {Math.round(confPct * 100)}%
-                          </span>
-                        )}
-                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                      </div>
-                    </motion.div>
-                  </Link>
-                </FadeUpItem>
-              );
-            })}
-        </StaggerList>
-      )}
-    </div>
+                      </motion.div>
+                    </Link>
+                  </FadeUpItem>
+                );
+              })}
+          </StaggerList>
+        )
+      }
+    </div >
   );
 }

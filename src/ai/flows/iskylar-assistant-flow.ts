@@ -9,6 +9,8 @@
 
 import { OpenAIService } from '@/services/openaiService';
 import { z } from 'zod';
+import { orchestratorGraph } from "@/ai-native/core/orchestratorGraph";
+import { HumanMessage } from "@langchain/core/messages";
 
 const ISkylarAssistantInputSchema = z.object({
   question: z.string().describe("The user's question for iSkylar."),
@@ -82,12 +84,37 @@ ${MEDISCRIBE_CONTEXT}
 `;
 
   try {
-    const answer = await OpenAIService.generateText(input.question, systemPrompt);
-    if (!answer) {
-      throw new Error();
+    const threadId = `iskylar_${Date.now()}`;
+    const inputState = {
+      messages: [new HumanMessage(input.question)],
+      currentGoal: "intake",
+      context: { persona: "iSkylar", system_prompt_override: systemPrompt }
+    };
+
+    const config = {
+      configurable: {
+        thread_id: threadId
+      }
+    };
+
+    let finalAnswer = "I'm sorry, I'm having trouble thinking clearly right now.";
+
+    const stream = await orchestratorGraph.stream(inputState, config);
+
+    for await (const event of stream) {
+      for (const [node, state] of Object.entries(event)) {
+        if ((state as any).messages && (state as any).messages.length > 0) {
+          const lastMessage = (state as any).messages[(state as any).messages.length - 1];
+          if (node === 'orchestrator' || node === 'intake') {
+            finalAnswer = lastMessage.content;
+          }
+        }
+      }
     }
-    return { answer };
+
+    return { answer: finalAnswer };
   } catch (err: any) {
+    console.error("iSkylar Orchestration Error:", err);
     return { answer: "I'm sorry, I encountered an issue trying to process your request. Please try again." };
   }
 }
