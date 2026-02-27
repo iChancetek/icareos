@@ -188,26 +188,30 @@ export default function AppSidebar() {
                 className={cn(
                   "group relative flex items-center gap-3 rounded-xl px-[14px] py-2.5 cursor-pointer transition-colors duration-150",
                   active
-                    ? "bg-primary/10 text-primary border border-primary/20 shadow-[0_0_12px_hsl(191_97%_55%/0.12)]"
-                    : "text-muted-foreground border border-transparent hover:text-foreground hover:bg-white/5 dark:hover:bg-white/[0.06]"
+                    ? "bg-primary/5 text-primary border border-primary/20 shadow-[0_0_12px_hsl(191_97%_55%/0.08)]"
+                    : "text-muted-foreground border border-transparent hover:text-foreground hover:bg-white/5 dark:hover:bg-white/[0.04]"
                 )}
               >
                 {/* Active bar */}
                 {active && (
                   <motion.span
                     layoutId="activeBar"
-                    className="absolute left-0 inset-y-2 w-0.5 rounded-full bg-primary"
-                    style={{ boxShadow: `0 0 10px ${item.color || 'var(--primary)'}` }}
+                    className="absolute left-0 inset-y-2 w-0.5 rounded-full"
+                    style={{
+                      backgroundColor: item.color || 'var(--primary)',
+                      boxShadow: `0 0 10px ${item.color || 'var(--primary)'}`
+                    }}
                   />
                 )}
 
                 {/* Icon with colored glass container */}
                 <div
-                  className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-110"
+                  className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-300"
                   style={{
-                    backgroundColor: active ? `${item.color}15` : 'transparent',
-                    boxShadow: active ? `0 0 15px ${item.color}20` : 'none',
-                    border: active ? `1px solid ${item.color}30` : '1px solid transparent'
+                    backgroundColor: active ? `${item.color}25` : `${item.color}08`,
+                    boxShadow: active ? `0 0 15px ${item.color}30` : 'none',
+                    border: active ? `1px solid ${item.color}40` : `1px solid ${item.color}15`,
+                    transform: active ? 'scale(1.05)' : 'none'
                   }}
                 >
                   <item.icon
@@ -215,19 +219,18 @@ export default function AppSidebar() {
                       "h-[18px] w-[18px] shrink-0 transition-all duration-300",
                     )}
                     style={{
-                      color: active ? item.color : 'inherit',
-                      filter: active ? `drop-shadow(0 0 5px ${item.color}60)` : 'none'
+                      color: item.color,
+                      opacity: active ? 1 : 0.7,
+                      filter: active ? `drop-shadow(0 0 8px ${item.color}80)` : `drop-shadow(0 0 2px ${item.color}30)`
                     }}
                   />
-                  {!active && (
-                    <div
-                      className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{
-                        background: `radial-gradient(circle at center, ${item.color}20 0%, transparent 70%)`,
-                        border: `1px solid ${item.color}20`
-                      }}
-                    />
-                  )}
+                  {/* Subtle persistent glow for idle */}
+                  <div
+                    className="absolute inset-0 rounded-lg opacity-40 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{
+                      background: `radial-gradient(circle at center, ${item.color}15 0%, transparent 80%)`,
+                    }}
+                  />
                 </div>
 
                 {/* Label */}
@@ -238,18 +241,21 @@ export default function AppSidebar() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -8 }}
                       transition={{ duration: 0.16 }}
-                      className="text-sm font-medium whitespace-nowrap overflow-hidden"
+                      className={cn(
+                        "text-sm font-medium whitespace-nowrap overflow-hidden transition-colors",
+                        active ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
+                      )}
                     >
                       {item.label}
                     </motion.span>
                   )}
                 </AnimatePresence>
 
-                {/* Hover radial glow */}
+                {/* Hover radial glow shadow */}
                 <span className={cn(
                   "absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200",
                 )} style={{
-                  background: `radial-gradient(ellipse 60% 50% at 30% 50%, ${item.color}08, transparent)`
+                  background: `radial-gradient(ellipse 60% 50% at 30% 50%, ${item.color}12, transparent)`
                 }} />
 
                 {/* Tooltip (collapsed only) */}

@@ -6,7 +6,8 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
+    --background: 0 0% 100%;
+    /* Pure White */
     --foreground: 224 71% 4%;
     --card: 0 0% 100%;
     --card-foreground: 224 71% 4%;
@@ -37,12 +38,12 @@
   }
 
   .dark {
-    /* ── Neural dark — deep navy with faint blue cast ── */
-    --background: 222 50% 4%;
+    /* ── Solid Dark Blue ── */
+    --background: 222 47% 7%;
     --foreground: 210 25% 90%;
-    --card: 222 45% 7%;
+    --card: 222 47% 10%;
     --card-foreground: 210 25% 90%;
-    --popover: 222 48% 6%;
+    --popover: 222 47% 8%;
     --popover-foreground: 210 25% 90%;
 
     /* Electric cyan primary */
@@ -94,21 +95,15 @@
   }
 
   /* Dynamic ambient background for dark mode */
+  /* solid background for dark mode */
   .dark body {
-    background-image:
-      radial-gradient(ellipse 90% 60% at 20% -10%, hsl(191 97% 58% / 0.06) 0%, transparent 60%),
-      radial-gradient(ellipse 70% 50% at 80% 90%, hsl(263 80% 60% / 0.05) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 40% at 50% 50%, hsl(222 50% 8% / 1) 0%, hsl(222 50% 4%) 100%);
+    background: hsl(var(--background));
     min-height: 100vh;
   }
 
-  /* Brilliant Light Mode dynamic background */
+  /* solid background for light mode */
   body:not(.dark) {
-    background-image:
-      radial-gradient(ellipse 80% 50% at 50% -10%, hsl(191 97% 45% / 0.04) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 40% at 10% 80%, hsl(263 80% 60% / 0.03) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 30% at 90% 20%, hsl(191 97% 45% / 0.02) 0%, transparent 50%),
-      linear-gradient(to bottom, hsl(220 20% 98%), hsl(220 20% 96%));
+    background: #FFFFFF;
     min-height: 100vh;
   }
 
