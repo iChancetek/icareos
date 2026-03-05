@@ -22,7 +22,7 @@ export function Navbar() {
                     <Stethoscope className="h-8 w-8 text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.8)]" />
                 </motion.div>
                 <span className="text-xl font-bold tracking-tight text-foreground transition-colors group-hover:text-primary">
-                    MediScribe
+                    iCareOS
                 </span>
             </Link>
 

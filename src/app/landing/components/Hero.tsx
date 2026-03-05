@@ -85,17 +85,17 @@ export function Hero() {
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                         </span>
-                        <span className="text-sm font-medium tracking-wide">Next-Gen Medical AI is Here</span>
+                        <span className="text-sm font-medium tracking-wide">iCareOS · AI-Native Clinical OS</span>
                     </div>
 
                     <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground leading-[1.1]">
-                        AI That Writes <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Clinical Notes</span> <br />
-                        So You Don't Have To.
+                        The AI Platform <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Running Modern</span> <br />
+                        Clinical Care.
                     </h1>
 
                     <p className="text-xl text-muted-foreground leading-relaxed max-w-xl">
-                        Real-time transcription. Intelligent SOAP generation. Seamless EHR integration. Reclaim your time and focus on what truly matters: your patients.
+                        iCareOS orchestrates 9 agentic AI modules — from real-time transcription and SOAP generation to revenue optimization, clinical guardrails, and care coordination. One platform. Every workflow.
                     </p>
 
                     <div className="flex flex-wrap items-center gap-4">
@@ -105,7 +105,7 @@ export function Hero() {
                                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                             </Button>
                         </Link>
-                        <Link href="mailto:Demo@MediScribe.us" passHref>
+                        <Link href="mailto:Demo@icareos.tech" passHref>
                             <Button size="lg" variant="outline" className="h-14 px-8 text-base font-semibold rounded-full border-border hover:bg-muted/50 transition-all duration-300 backdrop-blur-sm">
                                 Request Demo
                             </Button>
@@ -115,7 +115,7 @@ export function Hero() {
                     <div className="flex">
                         <Link href="/learn-more" passHref>
                             <Button variant="link" className="text-primary font-bold tracking-tight hover:no-underline px-0 h-auto group">
-                                Learn More about MediScribe
+                                Explore iCareOS Platform
                                 <span className="ml-2 w-8 h-px bg-primary transform origin-left group-hover:scale-x-150 transition-transform" />
                             </Button>
                         </Link>

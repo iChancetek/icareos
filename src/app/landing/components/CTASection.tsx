@@ -35,7 +35,7 @@ export function CTASection() {
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Focus on Patients.</span>
                     </h2>
                     <p className="text-xl text-muted-foreground mb-10 leading-relaxed max-w-2xl mx-auto">
-                        Experience the future of clinical documentation. Start using MediScribe today and eliminate after-hours charting forever.
+                        Experience the future of clinical care. iCareOS brings together 9 agentic AI modules into one platform — from documentation to billing to care coordination.
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -45,7 +45,7 @@ export function CTASection() {
                                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             </Button>
                         </Link>
-                        <Link href="mailto:Demo@MediScribe.us" passHref>
+                        <Link href="mailto:Demo@icareos.tech" passHref>
                             <Button size="lg" variant="outline" className="h-14 px-8 text-lg font-semibold rounded-full border-border hover:bg-muted/50 transition-all duration-300 backdrop-blur-sm w-full sm:w-auto">
                                 Request Demo
                             </Button>
@@ -55,7 +55,7 @@ export function CTASection() {
                     <div className="mt-8 flex justify-center">
                         <Link href="/learn-more" passHref>
                             <Button variant="link" className="text-primary font-bold tracking-tight hover:no-underline px-0 h-auto group">
-                                Learn More about MediScribe
+                                Explore iCareOS Platform
                                 <span className="ml-2 w-8 h-px bg-primary transform origin-left group-hover:scale-x-150 transition-transform" />
                             </Button>
                         </Link>

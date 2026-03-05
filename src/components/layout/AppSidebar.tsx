@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, Bot, Languages, FolderKanban, BarChart2,
-  ShieldAlert, Activity, PanelLeft, PanelLeftClose, Stethoscope, ScanLine,
+  LayoutDashboard, Bot, Languages, BarChart2,
+  ShieldAlert, Activity, PanelLeft, PanelLeftClose, ScanLine,
+  CreditCard, HeartPulse, ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -14,9 +15,9 @@ import RealtimeVoiceTranslatorDialog from '@/components/features/RealtimeVoiceTr
 
 // ── Constants ────────────────────────────────────────────────
 const RAIL_W = 64;   // collapsed px
-const PANEL_W = 240;  // expanded px
+const PANEL_W = 260;  // expanded px
 const INSET = 12;   // gap from screen edges (px)
-const STORAGE = 'mediscribe-sidebar-pinned';
+const STORAGE = 'icareOS-sidebar-pinned';
 
 interface NavItem {
   href?: string;
@@ -26,6 +27,7 @@ interface NavItem {
   matchStartsWith?: boolean;
   action?: () => void;
   adminOnly?: boolean;
+  badge?: string;
 }
 
 export default function AppSidebar() {
@@ -46,7 +48,7 @@ export default function AppSidebar() {
   const togglePin = () => {
     if (pinned) {
       setPinned(false);
-      setSuppressHover(true); // Force collapse immediately
+      setSuppressHover(true);
       try { localStorage.setItem(STORAGE, 'false'); } catch { }
     } else {
       setPinned(true);
@@ -64,7 +66,7 @@ export default function AppSidebar() {
     if (pinned) return;
     leaveTimer.current = setTimeout(() => {
       setHovered(false);
-      setSuppressHover(false); // Reset suppression once they leave the rail
+      setSuppressHover(false);
     }, 120);
   }, [pinned]);
 
@@ -74,10 +76,13 @@ export default function AppSidebar() {
   const currentW = expanded ? PANEL_W : RAIL_W;
 
   const navItems: NavItem[] = [
-    { href: '/dashboard/iscribe', label: 'iScribe', icon: LayoutDashboard, color: '#00E5FF' },
-    { href: '/dashboard/cds', label: 'CDS · AI Analysis', icon: ScanLine, matchStartsWith: true, color: '#10B981' },
-    { href: '/dashboard/insights', label: 'Insights', icon: BarChart2, matchStartsWith: true, color: '#3B82F6' },
+    { href: '/dashboard/iscribe', label: 'MediScribe', icon: LayoutDashboard, color: '#00E5FF' },
+    { href: '/dashboard/insights', label: 'Insight', icon: BarChart2, matchStartsWith: true, color: '#3B82F6' },
+    { href: '/dashboard/cds', label: 'WoundIQ · RadiologyIQ', icon: ScanLine, matchStartsWith: true, color: '#10B981' },
     { href: '/dashboard/iskylar', label: 'iSkylar', icon: Bot, color: '#6366F1' },
+    { href: '/dashboard/billingiq', label: 'BillingIQ', icon: CreditCard, matchStartsWith: true, color: '#F59E0B', badge: 'New' },
+    { href: '/dashboard/riskiq', label: 'RiskIQ', icon: ShieldCheck, matchStartsWith: true, color: '#EF4444', badge: 'New' },
+    { href: '/dashboard/carecoordiq', label: 'CareCoordIQ', icon: HeartPulse, matchStartsWith: true, color: '#EC4899', badge: 'New' },
     { label: 'Translator', icon: Languages, action: () => setIsVoiceTranslatorOpen(true), color: '#0D9488' },
     { href: '/dashboard/admin', label: 'Admin', icon: ShieldAlert, adminOnly: true, color: '#64748B' },
   ];
@@ -148,8 +153,8 @@ export default function AppSidebar() {
                   transition={{ duration: 0.18 }}
                   className="min-w-0 overflow-hidden"
                 >
-                  <p className="text-sm font-bold tracking-tight leading-none whitespace-nowrap">MediScribe</p>
-                  <p className="text-[10px] text-primary/70 whitespace-nowrap mt-0.5">Agentic AI · Neural</p>
+                  <p className="text-sm font-bold tracking-tight leading-none whitespace-nowrap">iCareOS</p>
+                  <p className="text-[10px] text-primary/70 whitespace-nowrap mt-0.5">AI-Native Clinical OS</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -177,7 +182,7 @@ export default function AppSidebar() {
         <div className="mx-3 h-px bg-white/10 dark:bg-white/5 shrink-0" />
 
         {/* ── Nav items ───────────────────────────────────── */}
-        <div className="flex-1 flex flex-col gap-0.5 overflow-hidden px-2 py-3">
+        <div className="flex-1 flex flex-col gap-0.5 overflow-y-auto overflow-x-hidden px-2 py-3 scrollbar-none">
           {navItems.map(item => {
             if (item.adminOnly && user?.role !== 'admin') return null;
             const active = isActive(item);
@@ -215,28 +220,41 @@ export default function AppSidebar() {
                     }}
                   />
                   <div className="ios-gloss" />
-                  {/* Subtle back-glow */}
                   <div
                     className="ios-icon-glow"
                     style={{ backgroundColor: item.color }}
                   />
                 </div>
 
-                {/* Label */}
+                {/* Label + Badge */}
                 <AnimatePresence>
                   {expanded && (
-                    <motion.span
+                    <motion.div
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -8 }}
                       transition={{ duration: 0.16 }}
-                      className={cn(
+                      className="flex items-center gap-2 min-w-0"
+                    >
+                      <span className={cn(
                         "text-sm font-semibold whitespace-nowrap overflow-hidden transition-colors",
                         active ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
+                      )}>
+                        {item.label}
+                      </span>
+                      {item.badge && (
+                        <span
+                          className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border"
+                          style={{
+                            color: item.color,
+                            borderColor: `${item.color}40`,
+                            backgroundColor: `${item.color}15`,
+                          }}
+                        >
+                          {item.badge}
+                        </span>
                       )}
-                    >
-                      {item.label}
-                    </motion.span>
+                    </motion.div>
                   )}
                 </AnimatePresence>
 
@@ -288,7 +306,7 @@ export default function AppSidebar() {
                     {user.displayName || user.email}
                   </p>
                   <p className="text-[10px] text-muted-foreground capitalize mt-0.5">
-                    {user.role || 'User'}
+                    {user.role || 'Clinician'}
                   </p>
                 </motion.div>
               )}

@@ -42,7 +42,7 @@ export default function AppHeader() {
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
           <Activity className="h-3.5 w-3.5 text-primary" />
         </div>
-        <span className="text-sm font-bold tracking-tight">MediScribe</span>
+        <span className="text-sm font-bold tracking-tight">iCareOS</span>
       </Link>
 
       <div className="flex-1" />
@@ -52,10 +52,10 @@ export default function AppHeader() {
         {/* Agentic AI status pill */}
         <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1.5 text-xs text-muted-foreground">
           <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-          <span className="font-medium">Agentic AI</span>
+          <span className="font-medium">iCareOS Core</span>
           <span className="h-3 w-px bg-border/60" />
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Neural Active</span>
+          <span>All Agents Active</span>
         </div>
 
         {/* Dark / Light toggle */}

@@ -155,11 +155,11 @@ export default function InsightsPage() {
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
                 <div className="flex items-center gap-2 mb-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">Agentic AI · Clinical Intelligence</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">iCareOS · Clinical Intelligence</span>
                 </div>
                 <h1 className="text-3xl font-black tracking-tight gradient-text">Clinical Insights</h1>
                 <p className="text-sm text-muted-foreground">
-                    {agentSessions.length > 0 ? `${agentSessions.length} AI-processed session${agentSessions.length !== 1 ? 's' : ''} · 6-agent pipeline` : 'Start a session to activate your intelligence dashboard'}
+                    {agentSessions.length > 0 ? `${agentSessions.length} AI-processed session${agentSessions.length !== 1 ? 's' : ''} · iCareOS 9-agent pipeline` : 'Start a session to activate your intelligence dashboard'}
                 </p>
             </motion.div>
 
@@ -365,8 +365,8 @@ export default function InsightsPage() {
                     >
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         <p className="text-xs text-muted-foreground text-center">
-                            Powered by <span className="text-foreground font-semibold">Agentic AI</span> ·
-                            Transcription → NLP → SOAP → Risk → Billing → Compliance ·
+                            Powered by <span className="text-foreground font-semibold">iCareOS</span> ·
+                            Transcription → NLP → SOAP → Risk → Billing → Compliance → CareCoord ·
                             All data encrypted at rest in Firestore
                         </p>
                     </motion.div>

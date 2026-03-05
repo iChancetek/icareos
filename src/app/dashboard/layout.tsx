@@ -88,7 +88,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {children}
         </main>
         <footer className="border-t bg-background/80 p-4 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} MediScribe. All Rights Reserved. | ChanceTEK LLC
+          © {new Date().getFullYear()} iCareOS by ChanceTEK. All Rights Reserved. | icareos.tech
         </footer>
       </div>
 

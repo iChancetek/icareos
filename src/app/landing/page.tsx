@@ -31,10 +31,13 @@ export default function LandingPage() {
             <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center border border-primary/30">
               <div className="w-3 h-3 text-primary stroke-[3px]" />
             </div>
-            <span className="font-bold tracking-tight text-foreground">MediScribe</span>
+            <span className="font-bold tracking-tight text-foreground">iCareOS</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} MediScribe. All Rights Reserved. | ChanceTEK LLC
+            © {new Date().getFullYear()} iCareOS by ChanceTEK. All Rights Reserved.
+          </p>
+          <p className="text-xs text-muted-foreground/60 mt-1">
+            <a href="https://icareos.tech" className="hover:text-primary transition-colors">icareos.tech</a>
           </p>
         </div>
       </footer>
