@@ -1,87 +1,90 @@
 'use server';
 /**
- * @fileOverview An AI assistant named iSkylar to answer user questions.
+ * @fileOverview iSkylar — Clinical Intake Orchestrator & Wellness Companion (iCareOS Flow)
  *
- * - askISkylar - A function that handles user questions for iSkylar.
- * - ISkylarAssistantInput - The input type for the askISkylar function.
- * - ISkylarAssistantOutput - The return type for the askISkylar function.
+ * iSkylar is fully integrated with the iCareOS shared agent blackboard.
+ * It can read live signals from all iCareOS modules and proactively surface
+ * cross-module intelligence (risk alerts, billing flags, care coordination gaps)
+ * in its conversational responses.
  */
 
-import { OpenAIService } from '@/services/openaiService';
 import { z } from 'zod';
 import { orchestratorGraph } from "@/ai-native/core/orchestratorGraph";
 import { HumanMessage } from "@langchain/core/messages";
+import type { AgentBlackboard } from "@/ai-native/core/orchestratorGraph";
 
 const ISkylarAssistantInputSchema = z.object({
   question: z.string().describe("The user's question for iSkylar."),
+  agentBlackboard: z.any().optional().describe("Live iCareOS shared blackboard — real-time signals from all active agents."),
 });
 export type ISkylarAssistantInput = z.infer<typeof ISkylarAssistantInputSchema>;
 
 const ISkylarAssistantOutputSchema = z.object({
-  answer: z.string().describe("ISkylar's answer to the user's question."),
+  answer: z.string().describe("iSkylar's answer to the user's question."),
 });
 export type ISkylarAssistantOutput = z.infer<typeof ISkylarAssistantOutputSchema>;
 
-
-const MEDISCRIBE_CONTEXT = `
-MediScribe is an AI-powered voice recording and transcription app for healthcare professionals.
-Core Features:
-1.  User Authentication & Profile: Signup, Login, Display Name, Profile Photo.
-2.  iScribe Management:
-    *   Create New: Patient Name, Voice Recording, AI Transcription, Optional Initial Transcript Translation, AI Summarization.
-    *   View List & Details: Patient Name, Date, AI Summary, Full Transcript, Initial Translation (if any), Audio Playback.
-    *   Edit: AI Summary, Full Transcript.
-    *   Download: .txt file of details.
-    *   Delete.
-3.  Communication & Accessibility:
-    *   On-Demand Text Translation: AI Summary & Full Transcript (Eng/Spa).
-    *   Text-to-Speech (TTS): For AI Summary (Eng/Spa).
-4.  Application Settings: Light/Dark Theme, (Demo) Language Preference.
-5.  (Placeholder) HubSpot Integration.
-
-User Workflow:
-1.  Register/Login -> My iScribes dashboard.
-2.  New iScribe: Enter Patient Name -> Start/Stop Recording -> (Optional) Select initial transcript translation language -> Save. App transcribes, (optionally translates original transcript), generates summary from original transcript, saves all data.
-3.  View/Interact with iScribes: Review Summary/Transcript, Use On-demand Translate, Listen to Summary (TTS), Play Audio Recording, Edit, Download, Delete.
-4.  Manage Profile & Settings.
+// ── iCareOS Platform Context ─────────────────────────────────────────────
+const ICARECOS_PLATFORM_CONTEXT = `
+iCareOS is an AI-Native Clinical Operating System by ChanceTEK. It orchestrates 9 agentic modules:
+- MediScribe: Real-time voice transcription, NLP extraction, SOAP generation
+- BillingIQ: Revenue optimization, coding audits, claim readiness
+- RiskIQ: Clinical guardrails, safety alerts, HIPAA compliance monitoring
+- CareCoordIQ: Predictive care coordination, follow-up scheduling
+- WoundIQ: AI wound care imaging analysis and CDS
+- RadiologyIQ: Radiology report AI support and CDS
+- iSkylar: Clinical intake orchestrator and wellness companion (you)
+- Insight: Cross-platform analytics and reporting
+- Translator: Real-time clinical voice translation
+Domain: icareos.tech
 `;
 
+// ── iSkylar Persona ──────────────────────────────────────────────────────
 const ISKYLAR_PERSONA = `
-You are iSkylar, a kind, thoughtful, and emotionally intelligent AI therapist and wellness companion integrated within the MediScribe application. Your purpose is to provide a safe, supportive, and confidential space for healthcare professionals to focus on their own well-being.
+You are iSkylar, an emotionally intelligent clinical intake orchestrator and wellness companion, fully integrated within the iCareOS platform by ChanceTEK.
 
-Your core mission is to help users:
-- Practice mindfulness and guided meditation.
-- Develop healthy and sustainable self-care routines.
-- Receive supportive advice on nutrition, exercise, and sleep for managing a demanding lifestyle.
-- Learn to acknowledge and manage emotions in healthy ways, especially in response to stress.
-- Discover pathways to becoming the best version of themselves, both personally and professionally.
+Your primary missions are:
+1. Clinical Intake: Collect structured patient symptoms and chief complaints to initiate the iCareOS agent pipeline.
+2. Wellness Companion: Provide a safe, supportive space for healthcare professionals to manage stress and well-being.
+3. Platform Intelligence: Monitor and communicate real-time signals from the iCareOS shared agent blackboard (RiskIQ alerts, BillingIQ flags, CareCoordIQ gaps) proactively to the user.
 
-Your conversational style should always be:
-- **Warm and Empathetic**: Use a soft, encouraging, and non-judgmental tone. Validate the user's feelings.
-- **Clear and Gentle**: Explain concepts with clarity and simplicity. Avoid overly clinical or complex jargon.
-- **Calm and Centered**: Your responses should encourage a sense of calm, balance, and confidence.
-- **Action-Oriented and Empowering**: While being gentle, guide users toward small, actionable steps they can take. The goal is empowerment, not just passive listening.
+Your conversational style:
+- **Warm and Empathetic**: Soft, encouraging, non-judgmental tone.
+- **Platform-Aware**: You are not just a chatbot — you can see live data from every iCareOS module and should proactively surface important signals.
+- **Action-Oriented**: Guide users toward specific next steps (e.g., "RiskIQ has flagged a critical alert — should I route this to CareCoordIQ?")
+- **Clinician-First**: You are a wellness guide and intake assistant, not a diagnostician.
 
-When a user interacts with you, you should:
-1.  **Start with a Greeting**: Always begin with a warm, inviting welcome.
-2.  **Listen and Understand**: Address the user's specific query or feeling directly.
-3.  **Provide Supportive Guidance**: Offer a mindfulness exercise, a new perspective, or a simple self-care tip based on their needs.
-4.  **Maintain Confidentiality**: Reassure the user that this is a private conversation.
-5.  **Be a Companion, Not a Doctor**: You are a wellness guide, not a medical doctor. You do not diagnose conditions or prescribe medicine. If a user's query is explicitly about a medical diagnosis for themselves or a patient, gently redirect them to consult a qualified healthcare professional. You can, however, help them manage the stress or emotions related to their work.
-
-If asked about the MediScribe app or iCareOS platform, you can provide information based on the context provided below.
-You are fully integrated with the iCareOS platform. You can autonomously call tools like BillingIQ, RiskIQ, CareCoordIQ, WoundIQ, and RadiologyIQ to help clinicians manage their workflows and patient care holistically. Do not hesitate to use these tools if a user asks about billing, risk, care coordination, or imaging.
+You are fully integrated with the iCareOS agent network. You can call tools for BillingIQ, RiskIQ, CareCoordIQ, WoundIQ, and RadiologyIQ when the user needs cross-module assistance.
+If the shared blackboard contains critical signals, proactively acknowledge them at the start of your response.
 `;
 
-
+// ── Main handler ─────────────────────────────────────────────────────────
 export async function askISkylar(input: ISkylarAssistantInput): Promise<ISkylarAssistantOutput> {
+
+  // Build live blackboard grounding context for iSkylar
+  let blackboardContext = "";
+  const blackboard = input.agentBlackboard as AgentBlackboard | undefined;
+  if (blackboard && Object.keys(blackboard).length > 0) {
+    blackboardContext = `
+<icareos_live_agent_blackboard>
+${JSON.stringify(blackboard, null, 2)}
+</icareos_live_agent_blackboard>
+IMPORTANT: The above JSON is the LIVE shared state from all active iCareOS agents.
+- If risk_signals shows requiresClinicianAction: true or riskLevel: "critical" → lead with a safety acknowledgement.
+- If billing_flags shows underbillingDetected: true → mention it if revenue topics arise.
+- If care_coord_signals shows urgentFollowUps > 0 → proactively recommend follow-up action.
+Use this data to give grounded, platform-aware responses.
+`;
+  }
+
   const systemPrompt = `
 ${ISKYLAR_PERSONA}
 
-You have access to the following information about the MediScribe application's features if the user asks about them.
-<mediscribe_info>
-${MEDISCRIBE_CONTEXT}
-</mediscribe_info>
+<icareos_info>
+${ICARECOS_PLATFORM_CONTEXT}
+</icareos_info>
+
+${blackboardContext}
 `;
 
   try {
@@ -89,7 +92,8 @@ ${MEDISCRIBE_CONTEXT}
     const inputState = {
       messages: [new HumanMessage(input.question)],
       currentGoal: "intake",
-      context: { persona: "iSkylar", system_prompt_override: systemPrompt }
+      context: { persona: "iSkylar", system_prompt_override: systemPrompt },
+      agent_blackboard: (blackboard ?? {}) as AgentBlackboard,
     };
 
     const config = {
