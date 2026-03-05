@@ -2,8 +2,9 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { runNLPAgent } from "@/agents/nlpAgent";
 import { runSOAPAgent } from "@/agents/soapAgent";
-import { runRiskAgent } from "@/agents/riskAgent";
-import { runBillingAgent } from "@/agents/billingAgent";
+import { riskIQAgent } from "@/agents/riskIQAgent";
+import { billingIQAgent } from "@/agents/billingIQAgent";
+import { careCoordAgent } from "@/agents/careCoordAgent";
 import { runComplianceAgent } from "@/agents/complianceAgent";
 import { eligibilityTool } from "../agents/eligibilityAgent";
 import { schedulingTool } from "../agents/schedulingAgent";
@@ -45,31 +46,40 @@ export const soapTool = tool(
 );
 
 export const riskTool = tool(
-  async ({ transcript, assessment, entities }) => {
-    return await runRiskAgent(transcript, assessment, entities);
+  async ({ session }) => {
+    return await riskIQAgent.evaluate(session);
   },
   {
-    name: "assess_clinical_risk",
-    description: "Evaluates the clinical severity and calculates a risk score based on the transcript and SOAP assessment.",
+    name: "assess_clinical_risk_and_compliance",
+    description: "Evaluates the clinical severity, calculates a risk score, and generates compliance alerts based on the session transcript and NLP extraction.",
     schema: z.object({
-      transcript: z.string(),
-      assessment: z.string(),
-      entities: z.any().optional().describe("Entities extracted by the NLP tool.")
+      session: z.any().describe("The iScribe session object containing transcript, assessment, and metadata.")
     })
   }
 );
 
 export const billingTool = tool(
-  async ({ soapNode, icdCodes, specialty }) => {
-    return await runBillingAgent(soapNode, (icdCodes ?? []) as any, specialty);
+  async ({ session }) => {
+    return await billingIQAgent.run(session);
   },
   {
-    name: "generate_billing_codes",
-    description: "Generates appropriate CPT billing codes based on the SOAP note and extracted ICD codes.",
+    name: "generate_billing_codes_and_audit",
+    description: "Generates appropriate CPT billing codes, performs a coding audit, and checks claim readiness based on the session.",
     schema: z.object({
-      soapNode: z.any().describe("The generated SOAP note structure."),
-      icdCodes: z.array(z.string()).optional(),
-      specialty: z.string().optional()
+      session: z.any().describe("The iScribe session object.")
+    })
+  }
+);
+
+export const careCoordTool = tool(
+  async ({ session }) => {
+    return await careCoordAgent.plan(session);
+  },
+  {
+    name: "predict_care_coordination",
+    description: "Predicts patient follow-up intervals, no-show risks, and care gaps based on the clinical session.",
+    schema: z.object({
+      session: z.any().describe("The iScribe session object.")
     })
   }
 );
@@ -96,4 +106,4 @@ import { woundCareTool } from "../agents/woundCareAgent";
 import { radiologySupportTool } from "../agents/radiologySupportAgent";
 
 // Array of all available tools for the Orchestrator to bind
-export const allClinicalTools = [nlpTool, soapTool, riskTool, billingTool, complianceTool, eligibilityTool, schedulingTool, retrieveGuidelinesTool, woundCareTool, radiologySupportTool];
+export const allClinicalTools = [nlpTool, soapTool, riskTool, billingTool, complianceTool, careCoordTool, eligibilityTool, schedulingTool, retrieveGuidelinesTool, woundCareTool, radiologySupportTool];
