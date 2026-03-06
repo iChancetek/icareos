@@ -1,141 +1,185 @@
-/**
- * RiskIQ Agent
- * iCareOS Clinical Guardrails Agent
- *
- * Wraps and extends the existing riskAgent and complianceAgent
- * to provide unified guardrails monitoring and alert management
- * across all iCareOS modules.
- */
+'use server';
 
-import type { IScribe } from "@/types";
+import { OpenAIService } from '@/services/openaiService';
+import { DEFAULT_AI_LABEL } from '@/services/constants';
+import type { AgentMeta } from '@/types/agents';
 
-export type AlertSeverity = "info" | "warning" | "critical";
-export type AlertModule = "MediScribe" | "WoundIQ" | "RadiologyIQ" | "BillingIQ" | "iSkylar" | "CareCoordIQ" | "iCareOS Core";
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-export interface RiskAlert {
-    id: string;
-    sessionId: string;
-    patientName: string;
+export type AlertSeverity = 'critical' | 'high' | 'medium' | 'low';
+
+export interface RiskIQAlert {
+    alertId: string;
+    module: string;
     severity: AlertSeverity;
+    title: string;
     message: string;
-    module: AlertModule;
-    timestamp: string;
-    resolved: boolean;
     requiresClinicianAction: boolean;
+    suggestedAction: string;
+    timestamp: string;
 }
 
-export interface ComplianceStatus {
+export interface RiskIQComplianceStatus {
     hipaaCompliant: boolean;
-    auditTrailComplete: boolean;
     clinicianSignOffRequired: boolean;
-    flags: string[];
+    auditFlags: string[];
+    riskScore: number;        // 0–100
+    complianceScore: number;  // 0–100
 }
 
 export interface RiskIQResult {
     sessionId: string;
-    alerts: RiskAlert[];
-    complianceStatus: ComplianceStatus;
-    overallRiskBucket: "safe" | "monitor" | "alert" | "critical";
-    recommendedAction: string;
-    agentVersion: string;
+    alerts: RiskIQAlert[];
+    overallRiskLevel: AlertSeverity;
+    complianceStatus: RiskIQComplianceStatus;
+    clinicalSummary: string;
+    meta: AgentMeta;
 }
 
-export class RiskIQAgent {
-    private readonly agentVersion = "RiskIQ-1.0 · iCareOS";
+// ─── Schema ───────────────────────────────────────────────────────────────────
 
-    /**
-     * Evaluate a session for clinical risk and compliance.
-     */
-    async evaluate(session: IScribe): Promise<RiskIQResult> {
-        const alerts: RiskAlert[] = [];
-        const complianceFlags: string[] = [];
-        let overallRiskBucket: RiskIQResult["overallRiskBucket"] = "safe";
-        let recommendedAction = "No action required.";
+const RISKIQ_SCHEMA = {
+    type: "object",
+    properties: {
+        overallRiskLevel: { type: "string", enum: ["critical", "high", "medium", "low"] },
+        riskScore: { type: "number" },
+        complianceScore: { type: "number" },
+        hipaaCompliant: { type: "boolean" },
+        clinicianSignOffRequired: { type: "boolean" },
+        clinicalSummary: { type: "string" },
+        auditFlags: { type: "array", items: { type: "string" } },
+        alerts: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    severity: { type: "string", enum: ["critical", "high", "medium", "low"] },
+                    title: { type: "string" },
+                    message: { type: "string" },
+                    requiresClinicianAction: { type: "boolean" },
+                    suggestedAction: { type: "string" },
+                },
+                required: ["severity", "title", "message", "requiresClinicianAction", "suggestedAction"],
+                additionalProperties: false,
+            },
+        },
+        confidence: { type: "number" },
+    },
+    required: ["overallRiskLevel", "riskScore", "complianceScore", "hipaaCompliant",
+        "clinicianSignOffRequired", "clinicalSummary", "auditFlags", "alerts", "confidence"],
+    additionalProperties: false,
+};
 
-        // ── Risk Alerts ───────────────────────────────────────────────────────
-        if (session.riskLevel === "critical") {
-            alerts.push({
-                id: `alert-${session.id}-critical`,
-                sessionId: session.id,
-                patientName: session.patientName,
-                severity: "critical",
-                message: `Critical risk level identified for patient ${session.patientName}. Immediate clinician review required.`,
-                module: "MediScribe",
-                timestamp: new Date().toISOString(),
-                resolved: false,
-                requiresClinicianAction: true,
+interface RiskIQStructuredOutput {
+    overallRiskLevel: AlertSeverity;
+    riskScore: number;
+    complianceScore: number;
+    hipaaCompliant: boolean;
+    clinicianSignOffRequired: boolean;
+    clinicalSummary: string;
+    auditFlags: string[];
+    alerts: Array<{
+        severity: AlertSeverity;
+        title: string;
+        message: string;
+        requiresClinicianAction: boolean;
+        suggestedAction: string;
+    }>;
+    confidence: number;
+}
+
+// ─── RiskIQ Agent ─────────────────────────────────────────────────────────────
+
+class RiskIQAgentClass {
+    async evaluate(session: any): Promise<RiskIQResult> {
+        const start = Date.now();
+
+        const systemPrompt = `You are RiskIQ, an elite clinical risk intelligence agent operating within the iCareOS platform.
+Your mission is to perform a comprehensive multi-dimensional risk assessment on a clinical session, covering:
+
+1. PATIENT SAFETY RISK — drug interactions, fall risk, sepsis indicators, suicide/self-harm risk, acute deterioration markers
+2. CLINICAL RISK FACTORS — comorbidities, abnormal vitals, urgent lab indicators, unresolved high-acuity complaints
+3. COMPLIANCE RISK — documentation gaps that create liability, unsigned orders, missing consents
+4. HIPAA RISK — any PHI exposure, consent violations, or improper data handling indicators
+5. BILLING RISK — upcoding risk, unbundling, or documentation that does not support codes assigned
+6. READMISSION RISK — indicators that the patient is likely to return within 30 days
+
+For each risk alert you generate:
+- Be specific and actionable (not generic)
+- Cite the exact clinical finding that triggered the alert
+- Provide a clear, implementable suggested action for the clinician
+
+Risk score (0–100): 0=no risk, 100=imminent critical risk
+Compliance score (0–100): 100=fully compliant
+clinicianSignOffRequired = true if riskLevel is high or critical, or compliance is below 80.
+confidence = your estimated accuracy of this risk assessment (0.0–1.0).
+
+This is a production healthcare environment. Be thorough, precise, and clinical.`;
+
+        const sessionSummary = typeof session === 'string'
+            ? session
+            : JSON.stringify({
+                riskLevel: session.riskLevel,
+                transcript: session.transcript?.substring(0, 2000),
+                summary: session.summary?.substring(0, 1000),
+                icdCodes: session.icdCodes,
+                riskFactors: session.riskFactors,
+                specialty: session.specialty,
             });
-            overallRiskBucket = "critical";
-            recommendedAction = "Escalate to attending physician immediately. Review clinical notes and vital signs.";
-        } else if (session.riskLevel === "high") {
-            alerts.push({
-                id: `alert-${session.id}-high`,
-                sessionId: session.id,
-                patientName: session.patientName,
-                severity: "warning",
-                message: `High risk patient: ${session.patientName}. Schedule follow-up within 7 days.`,
-                module: "MediScribe",
-                timestamp: new Date().toISOString(),
-                resolved: false,
-                requiresClinicianAction: true,
-            });
-            overallRiskBucket = "alert";
-            recommendedAction = "Schedule 7-day follow-up. Flag for CareCoordIQ tracking.";
-        } else if (session.riskLevel === "medium") {
-            overallRiskBucket = "monitor";
-            recommendedAction = "Monitor. Schedule 14-day follow-up via CareCoordIQ.";
+
+        const userPrompt = `Perform a full RiskIQ assessment on the following clinical session:\n\n${sessionSummary}`;
+
+        try {
+            const output = await OpenAIService.generateStructured<RiskIQStructuredOutput>(
+                userPrompt, systemPrompt, RISKIQ_SCHEMA, "riskiq_assessment"
+            );
+
+            const latency_ms = Date.now() - start;
+            const { confidence, riskScore, complianceScore, hipaaCompliant,
+                clinicianSignOffRequired, clinicalSummary, auditFlags,
+                overallRiskLevel, alerts } = output;
+
+            const sessionId = `riskiq_${Date.now()}`;
+            const ts = new Date().toISOString();
+
+            const meta: AgentMeta = {
+                agentName: 'RiskIQ',
+                modelVersion: DEFAULT_AI_LABEL,
+                confidence,
+                latency_ms,
+                requiresHumanReview: clinicianSignOffRequired || overallRiskLevel === 'critical',
+                reviewNote: overallRiskLevel === 'critical'
+                    ? 'CRITICAL risk level — immediate clinician escalation required'
+                    : clinicianSignOffRequired ? 'Clinician sign-off required before session is finalized' : undefined,
+            };
+
+            return {
+                sessionId,
+                overallRiskLevel,
+                clinicalSummary,
+                alerts: alerts.map((a, i) => ({
+                    alertId: `${sessionId}_alert_${i}`,
+                    module: 'RiskIQ',
+                    timestamp: ts,
+                    ...a,
+                })),
+                complianceStatus: {
+                    hipaaCompliant,
+                    clinicianSignOffRequired,
+                    auditFlags,
+                    riskScore,
+                    complianceScore,
+                },
+                meta,
+            };
+        } catch (error: any) {
+            throw new Error(`RiskIQ evaluation failed: ${error.message}`);
         }
-
-        // ── Human Review Flag ─────────────────────────────────────────────────
-        if (session.requiresHumanReview) {
-            alerts.push({
-                id: `alert-${session.id}-review`,
-                sessionId: session.id,
-                patientName: session.patientName,
-                severity: "warning",
-                message: `AI confidence below threshold — clinician sign-off required before finalizing notes.`,
-                module: "MediScribe",
-                timestamp: new Date().toISOString(),
-                resolved: false,
-                requiresClinicianAction: true,
-            });
-            complianceFlags.push("AI output pending clinician sign-off.");
-        }
-
-        // ── Compliance Status ─────────────────────────────────────────────────
-        const complianceStatus: ComplianceStatus = {
-            hipaaCompliant: true,
-            auditTrailComplete: !!session.agentSessionId,
-            clinicianSignOffRequired: session.requiresHumanReview ?? false,
-            flags: complianceFlags,
-        };
-
-        if (!complianceStatus.auditTrailComplete) {
-            complianceFlags.push("Agent session ID missing — audit trail incomplete.");
-        }
-
-        return {
-            sessionId: session.id,
-            alerts,
-            complianceStatus,
-            overallRiskBucket,
-            recommendedAction,
-            agentVersion: this.agentVersion,
-        };
     }
 
-    /**
-     * Batch evaluate multiple sessions and return aggregated alerts.
-     */
-    async monitor(sessions: IScribe[]): Promise<{ alerts: RiskAlert[]; criticalCount: number; complianceScore: number }> {
-        const results = await Promise.all(sessions.map(s => this.evaluate(s)));
-        const allAlerts = results.flatMap(r => r.alerts);
-        const criticalCount = allAlerts.filter(a => a.severity === "critical").length;
-        const compliantSessions = results.filter(r => r.complianceStatus.hipaaCompliant && !r.complianceStatus.clinicianSignOffRequired).length;
-        const complianceScore = sessions.length ? Math.round((compliantSessions / sessions.length) * 100) : 100;
-
-        return { alerts: allAlerts, criticalCount, complianceScore };
+    async monitorBatch(sessions: any[]): Promise<RiskIQResult[]> {
+        return Promise.all(sessions.map(s => this.evaluate(s)));
     }
 }
 
-export const riskIQAgent = new RiskIQAgent();
+export const riskIQAgent = new RiskIQAgentClass();

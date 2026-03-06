@@ -9,6 +9,7 @@ import { Mic, StopCircle, Save, Loader2, AlertTriangle, CheckCircle2, Languages,
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
 import { processAudioSession } from '@/services/agentService';
+import type { PipelineUpdate, PipelineStepName } from '@/agents/orchestratorAgent';
 import { translateText } from '@/actions/ai/translate-text-flow';
 import { sendDataToHubSpot } from '@/services/hubspotService';
 import type { IScribe } from '@/types';
@@ -179,24 +180,37 @@ export default function NewIScribePage() {
 
     setRecordingState('processing');
     setProgress(5);
-    setCurrentStepMessage('Initialising clinical intelligence agents...');
+    setCurrentStepMessage('Initialising iCareOS clinical intelligence agents...');
 
-    // Animate pipeline steps
-    const runPipelineAnimation = async () => {
-      const delays = [0, 800, 1800, 2600, 3400, 4200];
-      for (let i = 0; i < 6; i++) {
-        await new Promise(r => setTimeout(r, i === 0 ? delays[0] : delays[i] - delays[i - 1]));
-        updatePipeline(i, { status: 'running' });
-        setProgress(5 + i * 10);
-      }
+    // Real-time pipeline update handler — driven by actual agent completions
+    const STEP_INDEX: Record<PipelineStepName, number> = {
+      'Transcription': 0,
+      'NLP Extraction': 1,
+      'SOAP Generation': 2,
+      'Risk Assessment': 3,
+      'Billing Codes': 4,
+      'Compliance Check': 5,
     };
-    runPipelineAnimation();
+
+    const onPipelineUpdate = (update: PipelineUpdate) => {
+      const idx = STEP_INDEX[update.step];
+      if (idx === undefined) return;
+      updatePipeline(idx, {
+        status: update.status,
+        ...(update.confidence !== undefined ? { confidence: update.confidence } : {}),
+      });
+      const doneCount = pipeline.filter(s => s.status === 'done').length;
+      setProgress(5 + Math.round((doneCount / 6) * 90));
+      if (update.status === 'running') setCurrentStepMessage(`Running ${update.step}...`);
+      if (update.status === 'done') setCurrentStepMessage(`${update.step} complete ✓`);
+      if (update.status === 'error') setCurrentStepMessage(`${update.step} degraded — session continuing...`);
+    };
 
     try {
       const session = await processAudioSession(audioDataUri, {
         specialty: specialty !== 'none' ? specialty : undefined,
         language: targetTranslationLanguage !== 'none' ? targetTranslationLanguage : undefined,
-      });
+      }, onPipelineUpdate);
 
       // Mark all as done
       setPipeline(INITIAL_PIPELINE.map((s, i) => ({

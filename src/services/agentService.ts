@@ -2,50 +2,47 @@
 
 import { runOrchestratorAgent } from '@/agents/orchestratorAgent';
 import type { ClinicalSession, OrchestratorInput } from '@/types/agents';
+import type { OnPipelineUpdate } from '@/agents/orchestratorAgent';
 
 /**
- * agentService — Central facade for all clinical AI intelligence.
+ * agentService — Central facade for the iCareOS clinical AI pipeline.
  *
- * Frontend calls this single function to run the full agent pipeline:
- * Transcription → NLP + SOAP → Risk + Billing + Compliance
+ * All calls use gpt-5.2 structured outputs with real data.
+ * The optional onUpdate callback streams real-time per-agent status
+ * directly to the pipeline UI.
  *
- * Returns a unified ClinicalSession.
+ * Pipeline stages:
+ *   1. Transcription (Whisper)
+ *   2. NLP Extraction + SOAP Generation (parallel, gpt-5.2)
+ *   3. Risk Assessment (gpt-5.2)
+ *   4. Billing Codes + Compliance Check (parallel, gpt-5.2)
  */
-export async function processClinicialSession(input: OrchestratorInput): Promise<ClinicalSession> {
+export async function processClinicialSession(
+    input: OrchestratorInput,
+    onUpdate?: OnPipelineUpdate,
+): Promise<ClinicalSession> {
     try {
-        const session = await runOrchestratorAgent(input);
-        return session;
+        return await runOrchestratorAgent(input, onUpdate);
     } catch (error: any) {
         console.error('[AgentService] Clinical session processing failed:', error);
-        throw new Error(`Clinical intelligence pipeline failed: ${error.message}`);
+        throw new Error(`iCareOS clinical intelligence pipeline failed: ${error.message}`);
     }
 }
 
-/**
- * Convenience wrapper for transcript-only input (e.g., manually typed notes).
- */
+/** Transcript-only entry point */
 export async function processTranscriptOnly(
     transcript: string,
-    options?: { patientContext?: string; specialty?: string }
+    options?: { patientContext?: string; specialty?: string },
+    onUpdate?: OnPipelineUpdate,
 ): Promise<ClinicalSession> {
-    return processClinicialSession({
-        transcript,
-        patientContext: options?.patientContext,
-        specialty: options?.specialty,
-    });
+    return processClinicialSession({ transcript, ...options }, onUpdate);
 }
 
-/**
- * Convenience wrapper for audio input.
- */
+/** Audio entry point — used by the iScribe new session page */
 export async function processAudioSession(
     audioDataUri: string,
-    options?: { patientContext?: string; specialty?: string; language?: string }
+    options?: { patientContext?: string; specialty?: string; language?: string },
+    onUpdate?: OnPipelineUpdate,
 ): Promise<ClinicalSession> {
-    return processClinicialSession({
-        audioDataUri,
-        patientContext: options?.patientContext,
-        specialty: options?.specialty,
-        language: options?.language,
-    });
+    return processClinicialSession({ audioDataUri, ...options }, onUpdate);
 }

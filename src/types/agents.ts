@@ -1,6 +1,7 @@
 /**
- * MediScribe Agent Type Definitions
+ * iCareOS Agent Type Definitions
  * Defines the inputs, outputs, and result structures for the multi-agent clinical intelligence system.
+ * All agents run gpt-5.2 structured output calls with zero mocks.
  */
 
 // ─── Base Agent Types ───────────────────────────────────────────────────────
@@ -114,10 +115,21 @@ export interface ComplianceCheck {
     message: string;
 }
 
+export type HipaaStatus = 'compliant' | 'non_compliant' | 'review_required';
+
 export interface ComplianceResult {
-    passed: boolean;
-    checks: ComplianceCheck[];
-    summary: string;
+    /** Overall compliance pass/fail */
+    isCompliant: boolean;
+    /** Individual compliance check results */
+    checks?: ComplianceCheck[];
+    /** Plain-language compliance flags */
+    flags: string[];
+    /** Actionable recommendations */
+    recommendations: string[];
+    /** HIPAA-specific compliance status */
+    hipaaStatus: HipaaStatus;
+    /** Optional narrative summary */
+    summary?: string;
     meta: AgentMeta;
 }
 
@@ -131,6 +143,8 @@ export interface SessionMeta {
     overallConfidence: number;
     requiresHumanReview: boolean;
     agentsRun: string[];
+    /** Any agents that failed and fell back to degraded mode */
+    errors?: string[];
 }
 
 export interface ClinicalSession {
