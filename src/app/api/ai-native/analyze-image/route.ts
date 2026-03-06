@@ -4,8 +4,6 @@ import { saveCdsAnalysis } from "@/services/cdsService";
 import { OpenAIService } from '@/services/openaiService';
 import { DEFAULT_AI_LABEL } from '@/services/constants';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 // Generic label for privacy
 const MODEL_LABEL = DEFAULT_AI_LABEL;
 const ENGINE_MODEL = "gpt-5.4";
@@ -124,6 +122,8 @@ When analyzing an X-ray or radiographic image, respond ONLY with structured JSON
 
 // ── Route Handler ──────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  // Instantiate inside the handler to bypass Next.js build-time static evaluation
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "dummy-key-for-build" });
   console.log("[CDS ImageAnalysis] POST request received");
   try {
     const formData = await req.formData();
