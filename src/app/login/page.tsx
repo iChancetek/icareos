@@ -109,9 +109,13 @@ export default function LoginPage() {
         <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 70% at 50% 30%, rgba(6,182,212,0.15) 0%, transparent 60%)" }} />
         <div className="relative z-10 flex flex-col items-center text-center gap-6">
           <img src="/icons/icon-192x192.png" alt="iCareOS Logo" className="w-24 h-24 rounded-3xl shadow-2xl" />
-          <div>
-            <h1 className="text-5xl font-black tracking-tight mb-2">Welcome to iCareOS</h1>
-            <p className="text-xs font-semibold tracking-[0.25em] uppercase text-white/40">by ChanceTEK</p>
+          <div className="text-center">
+            <h1 className="text-5xl font-black tracking-tight mb-2">
+              Welcome to iCareOS
+              <span className="block mt-2 text-xl font-semibold tracking-widest uppercase text-white/50">
+                by ChanceTEK
+              </span>
+            </h1>
           </div>
           <p className="text-base text-white/60 max-w-sm leading-relaxed">
             A next-generation AI-native clinical operating system—powered by voice, empathy, and intelligence.
