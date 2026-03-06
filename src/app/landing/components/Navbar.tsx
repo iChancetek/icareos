@@ -42,10 +42,7 @@ export function Navbar() {
                     }`}
             >
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2.5 shrink-0">
-                    <div className="relative h-9 w-9 rounded-xl flex items-center justify-center overflow-hidden shadow-lg border border-white/10 shrink-0">
-                        <Image src="/icons/icon-192x192.png" alt="iCareOS Logo" width={36} height={36} className="object-cover" />
-                    </div>
+                <Link href="/" className="flex items-center shrink-0">
                     <div className="leading-tight">
                         <span className="font-black text-sm text-white tracking-tight">iCareOS</span>
                         <span className="block text-[7px] text-white/35 font-medium tracking-widest uppercase">by ChanceTEK</span>
@@ -68,11 +65,6 @@ export function Navbar() {
                 {/* CTA */}
                 <div className="hidden md:flex items-center gap-3 shrink-0">
                     <ThemeToggle />
-                    <Link href="/login">
-                        <button className="text-sm font-semibold text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-colors px-4 py-2">
-                            Sign In
-                        </button>
-                    </Link>
                     <Link href="/dashboard">
                         <motion.button
                             whileHover={{ scale: 1.04, boxShadow: "0 0 20px rgba(6,182,212,0.4)" }}
@@ -124,11 +116,6 @@ export function Navbar() {
                             </a>
                         ))}
                         <div className="pt-2 border-t border-slate-200 dark:border-white/10 flex gap-2">
-                            <Link href="/login" className="flex-1">
-                                <button className="w-full py-3 rounded-xl text-sm font-semibold text-slate-600 dark:text-white/60 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-transparent dark:hover:text-white transition-colors">
-                                    Sign In
-                                </button>
-                            </Link>
                             <Link href="/dashboard" className="flex-1">
                                 <button className="w-full py-3 rounded-xl text-sm font-bold text-white"
                                     style={{ background: "linear-gradient(135deg, #06b6d4, #8b5cf6)" }}>
