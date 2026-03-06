@@ -223,7 +223,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAuthenticated = !isLoading && !!user;
 
   useEffect(() => {
-    const publicRoutes = ['/login', '/signup', '/', '/learn-more', '/verify-email'];
+    const publicRoutes = ['/login', '/signup', '/', '/learn-more', '/verify-email', '/contact', '/landing'];
     const isPublicRoute = publicRoutes.includes(pathname);
     const isAdminRoute = pathname.startsWith('/dashboard/admin');
 

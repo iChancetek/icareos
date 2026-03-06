@@ -104,11 +104,13 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-1 items-center justify-center p-8 text-white relative shadow-inner">
-        <h1 className="text-5xl font-bold mb-4">
-          Welcome to iCareOS <span className="text-xl text-white/60 font-medium tracking-tight block mt-2">by ChanceTEK</span>
-        </h1>
-        <p className="text-lg mb-8 max-w-md">
+      <div className="hidden lg:flex flex-1 flex-col items-center justify-center p-8 text-white relative shadow-inner gap-6">
+        <img src="/icons/icon-192x192.png" alt="iCareOS Logo" className="w-20 h-20 rounded-2xl shadow-2xl mb-2" />
+        <div className="text-center">
+          <h1 className="text-5xl font-black tracking-tight mb-1">Welcome to iCareOS</h1>
+          <p className="text-sm font-medium tracking-widest uppercase text-white/50 mb-6">by ChanceTEK</p>
+        </div>
+        <p className="text-lg text-white/70 max-w-md text-center leading-relaxed">
           A modern AI companion for healthcare professionals—powered by voice, empathy, and innovation.
         </p>
       </div>
