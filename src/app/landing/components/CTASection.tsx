@@ -101,6 +101,16 @@ export function CTASection() {
                                 Request Clinical Demo
                             </motion.button>
                         </Link>
+
+                        <Link href="/login">
+                            <motion.button
+                                whileHover={{ scale: 1.04, borderColor: "rgba(6,182,212,0.5)" }}
+                                whileTap={{ scale: 0.97 }}
+                                className="px-10 py-5 rounded-2xl font-bold text-base tracking-wide border border-slate-200 dark:border-white/15 bg-slate-50 dark:bg-transparent text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 hover:dark:bg-white/10 shadow-sm dark:shadow-none transition-all"
+                            >
+                                Sign In
+                            </motion.button>
+                        </Link>
                     </div>
 
                     {/* Trust indicators */}

@@ -194,6 +194,16 @@ export function Hero() {
                             Request a Demo
                         </motion.button>
                     </Link>
+
+                    <Link href="/login">
+                        <motion.button
+                            whileHover={{ scale: 1.04 }}
+                            whileTap={{ scale: 0.97 }}
+                            className="px-8 py-4 rounded-2xl font-bold text-sm tracking-wide border border-slate-200 dark:border-white/15 bg-slate-50 dark:bg-transparent text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 hover:dark:bg-white/5 shadow-sm dark:shadow-none transition-colors"
+                        >
+                            Sign In
+                        </motion.button>
+                    </Link>
                 </motion.div>
 
                 {/* Scroll indicator */}
