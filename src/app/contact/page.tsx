@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from "../landing/components/Navbar";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { AINetworkCanvas } from "../landing/components/AINetworkCanvas";
+import Image from "next/image";
 
 const formSchema = z.object({
     name: z.string().min(2, "Name is required"),
@@ -249,8 +250,8 @@ export default function ContactPage() {
                                             type="submit"
                                             disabled={!isValid || isSubmitting}
                                             className={`w-full relative py-4 rounded-xl font-bold text-sm tracking-wide text-white overflow-hidden transition-all ${isValid
-                                                    ? "shadow-lg"
-                                                    : "opacity-60 cursor-not-allowed grayscale"
+                                                ? "shadow-lg"
+                                                : "opacity-60 cursor-not-allowed grayscale"
                                                 }`}
                                             style={{
                                                 background: "linear-gradient(135deg, #06b6d4, #8b5cf6)",
@@ -293,11 +294,8 @@ export default function ContactPage() {
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
                         <div className="flex items-center gap-3">
-                            <div
-                                className="h-10 w-10 rounded-xl flex items-center justify-center shadow-lg dark:shadow-none"
-                                style={{ background: "linear-gradient(135deg, #06b6d4, #8b5cf6)" }}
-                            >
-                                <span className="text-white font-black text-sm">iC</span>
+                            <div className="h-11 w-11 rounded-xl flex items-center justify-center overflow-hidden shadow-lg border border-white/10 shrink-0">
+                                <Image src="/icons/icon-192x192.png" alt="iCareOS Logo" width={44} height={44} className="object-cover" />
                             </div>
                             <div>
                                 <div className="font-black text-slate-900 dark:text-white tracking-tight">iCareOS</div>

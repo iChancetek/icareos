@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -42,11 +43,8 @@ export function Navbar() {
             >
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2.5 shrink-0">
-                    <div className="relative h-8 w-8 rounded-lg flex items-center justify-center"
-                        style={{ background: "linear-gradient(135deg, #06b6d4, #8b5cf6)" }}>
-                        <span className="text-white font-black text-xs">iC</span>
-                        <div className="absolute inset-0 rounded-lg animate-pulse opacity-40"
-                            style={{ background: "linear-gradient(135deg, #06b6d4, #8b5cf6)" }} />
+                    <div className="relative h-9 w-9 rounded-xl flex items-center justify-center overflow-hidden shadow-lg border border-white/10 shrink-0">
+                        <Image src="/icons/icon-192x192.png" alt="iCareOS Logo" width={36} height={36} className="object-cover" />
                     </div>
                     <div className="leading-tight">
                         <span className="font-black text-sm text-white tracking-tight">iCareOS</span>

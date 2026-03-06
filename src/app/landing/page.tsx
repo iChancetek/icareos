@@ -9,6 +9,7 @@ import { CTASection } from "./components/CTASection";
 import { RAGAssistant } from "@/components/rag/RAGAssistant";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function LandingPage() {
   return (
@@ -35,11 +36,8 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div
-                className="h-10 w-10 rounded-xl flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, #06b6d4, #8b5cf6)" }}
-              >
-                <span className="text-white font-black text-sm">iC</span>
+              <div className="h-11 w-11 rounded-xl flex items-center justify-center overflow-hidden shadow-lg border border-white/10 shrink-0">
+                <Image src="/icons/icon-192x192.png" alt="iCareOS Logo" width={44} height={44} className="object-cover" />
               </div>
               <div>
                 <div className="font-black text-white tracking-tight">iCareOS</div>

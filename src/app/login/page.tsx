@@ -105,7 +105,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
       <div className="hidden lg:flex flex-1 items-center justify-center p-8 text-white relative shadow-inner">
-        <h1 className="text-5xl font-bold mb-4">Welcome to iCareOS</h1>
+        <h1 className="text-5xl font-bold mb-4">
+          Welcome to iCareOS <span className="text-xl text-white/60 font-medium tracking-tight block mt-2">by ChanceTEK</span>
+        </h1>
         <p className="text-lg mb-8 max-w-md">
           A modern AI companion for healthcare professionals—powered by voice, empathy, and innovation.
         </p>
