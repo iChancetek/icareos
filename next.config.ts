@@ -41,6 +41,7 @@ if (process.env.FIREBASE_WEBAPP_CONFIG) {
 }
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   env: {
     ...firebaseEnv,
   },
