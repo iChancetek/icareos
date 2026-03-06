@@ -1,87 +1,83 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ShieldCheck, Lock, Server } from "lucide-react";
+import { useRef } from "react";
+import { motion, useInView } from "framer-motion";
+
+const ITEMS = [
+    { icon: "🔒", title: "HIPAA-Ready Architecture", desc: "All PHI handling follows HIPAA Security Rule requirements. Zero data leaves the pipeline unencrypted." },
+    { icon: "🛡️", title: "SOC 2 Aligned Controls", desc: "Access controls, audit logging, and incident response built into every agent layer." },
+    { icon: "📋", title: "Full Audit Trail", desc: "Every agent action, session, and data write is timestamped and cryptographically logged." },
+    { icon: "🏥", title: "Clinical-Grade Reliability", desc: "99.9% uptime SLA. Each agent has a graceful fallback — one failure never disrupts care." },
+    { icon: "🌐", title: "Multi-Site Enterprise", desc: "Built for health systems and enterprise deployments across multiple facilities." },
+    { icon: "⚡", title: "Sub-200ms Agent Response", desc: "GPT-5.2 structured output with parallel agent execution. Clinical speed, AI accuracy." },
+];
 
 export function SecuritySection() {
-    return (
-        <section className="py-24 bg-primary/5 relative overflow-hidden">
-            {/* Glow Effects */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-1/2 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
+    const titleRef = useRef<HTMLDivElement>(null);
+    const titleInView = useInView(titleRef, { once: true, amount: 0.4 });
 
-            <div className="container px-6 mx-auto text-center relative z-10">
+    return (
+        <section
+            id="security"
+            className="relative py-32 overflow-hidden"
+            style={{ background: "linear-gradient(180deg, #06091a 0%, #050810 100%)" }}
+        >
+            {/* Border top */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[1px] pointer-events-none"
+                style={{ background: "linear-gradient(90deg, transparent, rgba(16,185,129,0.4), transparent)" }} />
+
+            <div className="max-w-7xl mx-auto px-6">
                 <motion.div
+                    ref={titleRef}
                     initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
-                    className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-background border border-border shadow-xl mb-8"
+                    animate={titleInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.8 }}
+                    className="text-center mb-20"
                 >
-                    <ShieldCheck className="w-10 h-10 text-primary" />
+                    <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] uppercase font-bold text-emerald-400/70 mb-6">
+                        <span className="h-px w-8 bg-emerald-400/40" />
+                        Enterprise Security
+                        <span className="h-px w-8 bg-emerald-400/40" />
+                    </span>
+                    <h2 className="text-4xl sm:text-6xl font-black text-white mb-6 leading-tight">
+                        Built for Healthcare.
+                        <br />
+                        <span
+                            style={{
+                                background: "linear-gradient(135deg, #10b981, #06b6d4)",
+                                WebkitBackgroundClip: "text",
+                                WebkitTextFillColor: "transparent",
+                                backgroundClip: "text",
+                            }}
+                        >
+                            Secured for Trust.
+                        </span>
+                    </h2>
+                    <p className="text-lg text-white/40 max-w-xl mx-auto">
+                        Every layer of iCareOS is designed with clinical security and compliance as the foundation, not an afterthought.
+                    </p>
                 </motion.div>
 
-                <motion.h2
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.1 }}
-                    className="text-3xl md:text-5xl font-bold mb-6"
-                >
-                    Fort Knox for Health Data
-                </motion.h2>
-
-                <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
-                    className="text-lg text-muted-foreground max-w-2xl mx-auto mb-16"
-                >
-                    We take privacy as seriously as you take patient care. MediScribe is built from the ground up with military-grade encryption and strict compliance protocols.
-                </motion.p>
-
-                <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.5, delay: 0.3 }}
-                        className="p-6 rounded-2xl bg-background border border-border/50 shadow-sm flex flex-col items-center gap-4 group"
-                    >
-                        <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
-                            <ShieldCheck className="w-6 h-6" />
-                        </div>
-                        <h3 className="text-xl font-bold">HIPAA Compliant</h3>
-                        <p className="text-sm text-muted-foreground">Rigorous adherence to all health data privacy and security regulations.</p>
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.5, delay: 0.4 }}
-                        className="p-6 rounded-2xl bg-background border border-border/50 shadow-sm flex flex-col items-center gap-4 group"
-                    >
-                        <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform">
-                            <Lock className="w-6 h-6" />
-                        </div>
-                        <h3 className="text-xl font-bold">End-to-End Encryption</h3>
-                        <p className="text-sm text-muted-foreground">Data is encrypted in transit and at rest using AES-256 bit encryption.</p>
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.5, delay: 0.5 }}
-                        className="p-6 rounded-2xl bg-background border border-border/50 shadow-sm flex flex-col items-center gap-4 group"
-                    >
-                        <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
-                            <Server className="w-6 h-6" />
-                        </div>
-                        <h3 className="text-xl font-bold">Secure Cloud Architecture</h3>
-                        <p className="text-sm text-muted-foreground">Housed in enterprise-grade server environments with isolated tenants.</p>
-                    </motion.div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {ITEMS.map((item, i) => {
+                        const ref = useRef<HTMLDivElement>(null);
+                        const inView = useInView(ref, { once: true, amount: 0.3 });
+                        return (
+                            <motion.div
+                                key={item.title}
+                                ref={ref}
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={inView ? { opacity: 1, y: 0 } : {}}
+                                transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                                whileHover={{ borderColor: "rgba(16,185,129,0.35)", boxShadow: "0 0 24px rgba(16,185,129,0.12)" }}
+                                className="p-6 rounded-2xl border border-white/7 bg-white/[0.02] transition-all duration-300"
+                            >
+                                <div className="text-3xl mb-4">{item.icon}</div>
+                                <h3 className="text-base font-bold text-white mb-2">{item.title}</h3>
+                                <p className="text-sm text-white/40 leading-relaxed">{item.desc}</p>
+                            </motion.div>
+                        );
+                    })}
                 </div>
             </div>
         </section>

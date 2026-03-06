@@ -1,65 +1,122 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useInView } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 export function CTASection() {
+    const ref = useRef<HTMLDivElement>(null);
+    const inView = useInView(ref, { once: true, amount: 0.4 });
+
     return (
-        <section className="relative py-32 overflow-hidden border-t border-border/50">
-            {/* Dynamic Background */}
-            <div className="absolute inset-0 bg-background z-0" />
-            <motion.div
-                animate={{
-                    background: [
-                        "radial-gradient(circle at 0% 0%, rgba(var(--primary), 0.15) 0%, transparent 50%)",
-                        "radial-gradient(circle at 100% 100%, rgba(var(--primary), 0.15) 0%, transparent 50%)",
-                        "radial-gradient(circle at 0% 0%, rgba(var(--primary), 0.15) 0%, transparent 50%)",
-                    ]
+        <section
+            className="relative py-40 overflow-hidden"
+            style={{ background: "#050810" }}
+        >
+            {/* Background glow burst */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div
+                    className="w-[800px] h-[400px] rounded-full opacity-15 blur-[100px]"
+                    style={{ background: "radial-gradient(ellipse, #06b6d4 0%, #8b5cf6 50%, #ec4899 100%)" }}
+                />
+            </div>
+
+            {/* Animated grid pulse */}
+            <div
+                className="absolute inset-0 opacity-[0.025]"
+                style={{
+                    backgroundImage: `linear-gradient(rgba(6,182,212,1) 1px, transparent 1px), linear-gradient(90deg, rgba(6,182,212,1) 1px, transparent 1px)`,
+                    backgroundSize: "60px 60px",
                 }}
-                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 z-0 opacity-50"
             />
 
-            <div className="container px-6 mx-auto relative z-10 text-center">
+            <div className="max-w-5xl mx-auto px-6 relative z-10">
                 <motion.div
-                    initial={{ opacity: 0, y: 50 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8 }}
-                    className="max-w-3xl mx-auto"
+                    ref={ref}
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={inView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                    className="text-center"
                 >
-                    <h2 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
-                        Reclaim Your Time. <br className="hidden md:block" />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Focus on Patients.</span>
+                    {/* Badge */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={inView ? { opacity: 1, scale: 1 } : {}}
+                        transition={{ delay: 0.1 }}
+                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/5 text-cyan-400 text-xs font-semibold tracking-widest uppercase mb-10"
+                    >
+                        <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                        icareos.tech — Now Available
+                    </motion.div>
+
+                    <h2 className="text-5xl sm:text-7xl font-black text-white leading-none mb-6">
+                        The Future of
+                        <br />
+                        <span
+                            style={{
+                                background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 50%, #ec4899 100%)",
+                                WebkitBackgroundClip: "text",
+                                WebkitTextFillColor: "transparent",
+                                backgroundClip: "text",
+                            }}
+                        >
+                            Clinical AI
+                        </span>
+                        <br />
+                        Is Here.
                     </h2>
-                    <p className="text-xl text-muted-foreground mb-10 leading-relaxed max-w-2xl mx-auto">
-                        Experience the future of clinical care. iCareOS brings together 9 agentic AI modules into one platform — from documentation to billing to care coordination.
+
+                    <p className="text-lg text-white/40 max-w-xl mx-auto mb-14 leading-relaxed">
+                        Join the clinicians and health systems already running iCareOS.
+                        8 AI agents. One unified platform. Zero compromise on quality.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Link href="/signup" passHref>
-                            <Button size="lg" className="group h-14 px-8 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:shadow-[0_0_30px_rgba(var(--primary),0.5)] transition-all duration-300 w-full sm:w-auto">
-                                Start Free Trial
-                                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                            </Button>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <Link href="/dashboard">
+                            <motion.button
+                                whileHover={{ scale: 1.05, boxShadow: "0 0 50px rgba(6,182,212,0.5)" }}
+                                whileTap={{ scale: 0.97 }}
+                                className="relative px-10 py-5 rounded-2xl font-bold text-base tracking-wide text-white overflow-hidden"
+                                style={{ background: "linear-gradient(135deg, #06b6d4, #8b5cf6, #ec4899)" }}
+                            >
+                                Start Your iCareOS Session →
+                                {/* Shimmer */}
+                                <motion.div
+                                    className="absolute inset-0"
+                                    animate={{ backgroundPosition: ["200% 0", "-200% 0"] }}
+                                    transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+                                    style={{
+                                        background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%)",
+                                        backgroundSize: "200% 100%",
+                                    }}
+                                />
+                            </motion.button>
                         </Link>
-                        <Link href="mailto:Demo@icareos.tech" passHref>
-                            <Button size="lg" variant="outline" className="h-14 px-8 text-lg font-semibold rounded-full border-border hover:bg-muted/50 transition-all duration-300 backdrop-blur-sm w-full sm:w-auto">
-                                Request Demo
-                            </Button>
-                        </Link>
+
+                        <a href="mailto:Demo@MediScribe.us">
+                            <motion.button
+                                whileHover={{ scale: 1.04, borderColor: "rgba(6,182,212,0.5)", color: "white" }}
+                                whileTap={{ scale: 0.97 }}
+                                className="px-10 py-5 rounded-2xl font-bold text-base tracking-wide border border-white/15 bg-white/5 text-white/60 transition-all"
+                            >
+                                Request Clinical Demo
+                            </motion.button>
+                        </a>
                     </div>
 
-                    <div className="mt-8 flex justify-center">
-                        <Link href="/learn-more" passHref>
-                            <Button variant="link" className="text-primary font-bold tracking-tight hover:no-underline px-0 h-auto group">
-                                Explore iCareOS Platform
-                                <span className="ml-2 w-8 h-px bg-primary transform origin-left group-hover:scale-x-150 transition-transform" />
-                            </Button>
-                        </Link>
-                    </div>
+                    {/* Trust indicators */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={inView ? { opacity: 1 } : {}}
+                        transition={{ delay: 0.5 }}
+                        className="mt-16 flex flex-wrap justify-center gap-8 text-xs text-white/25 font-medium uppercase tracking-widest"
+                    >
+                        {["SOC 2 Ready", "HIPAA Compliant Architecture", "Enterprise SLA", "99.9% Uptime"].map(s => (
+                            <span key={s} className="flex items-center gap-2">
+                                <span className="h-1 w-1 rounded-full bg-cyan-500/50" />{s}
+                            </span>
+                        ))}
+                    </motion.div>
                 </motion.div>
             </div>
         </section>
