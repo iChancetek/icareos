@@ -11,6 +11,50 @@ on:
       - main
 
 jobs:
+  wait-for-cloud-build:
+    name: Phase 0 - Wait for Cloud Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+          
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Wait for Cloud Build to Complete
+        run: |
+          echo "Checking Cloud Build status for commit ${{ github.sha }}..."
+          
+          # We'll poll up to 60 times, waiting 15 seconds each time (15 mins total max)
+          for i in {1..60}; do
+            # Find the most recent build triggered by this commit 
+            # We filter by tags that typically match the commit SHA when triggering from GitHub
+            BUILD_INFO=$(gcloud builds list --project="icareos" --filter="substitutions.COMMIT_SHA=${{ github.sha }}" --limit=1 --format="json")
+            
+            # Extract the status. If no build found, it might simply not have started yet.
+            STATUS=$(echo "$BUILD_INFO" | jq -r '.[0].status')
+            BUILD_ID=$(echo "$BUILD_INFO" | jq -r '.[0].id')
+            
+            if [[ "$STATUS" == "SUCCESS" ]]; then
+              echo "✅ Cloud Build $BUILD_ID completed successfully!"
+              exit 0
+            elif [[ "$STATUS" == "FAILURE" || "$STATUS" == "INTERNAL_ERROR" || "$STATUS" == "TIMEOUT" || "$STATUS" == "CANCELLED" ]]; then
+              echo "❌ Cloud Build $BUILD_ID failed with status: $STATUS"
+              exit 1
+            elif [[ "$STATUS" == "WORKING" || "$STATUS" == "QUEUED" || "$STATUS" == "PENDING" ]]; then
+              echo "⏳ Cloud Build $BUILD_ID is currently: $STATUS. Waiting 15s... ($i/60)"
+              sleep 15
+            else
+              echo "⚠️ Could not find a Cloud Build for commit ${{ github.sha }} yet, or unexpected status '$STATUS'. Waiting 15s... ($i/60)"
+              sleep 15
+            fi
+          done
+          
+          echo "❌ Timed out waiting for Cloud Build to finish."
+          exit 1
+
   cloudrun-build:
     name: Phase 1 - Build Validation
     runs-on: ubuntu-latest
@@ -89,7 +133,7 @@ jobs:
 
   docker-build:
     name: Phase 3a - Build Temp Docker Image
-    needs: selenium-tests
+    needs: [selenium-tests, wait-for-cloud-build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
