@@ -97,7 +97,7 @@ function complianceFallback(err: string): ComplianceResult {
 function fallbackMeta(agentName: string, errorMessage: string): AgentMeta {
     return {
         agentName,
-        modelVersion: 'gpt-5.2 (degraded)',
+        modelVersion: 'gpt-5.4 (degraded)',
         confidence: 0,
         latency_ms: 0,
         requiresHumanReview: true,

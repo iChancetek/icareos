@@ -141,7 +141,7 @@ If the system flags escalation, explicitly tell the user a physician will review
 // ── Orchestrator Node ────────────────────────────────────────────────────
 export async function orchestratorNode(state: typeof OrchestratorStateAnnotation.State) {
     const model = new ChatOpenAI({
-        modelName: "gpt-5.2",
+        modelName: "gpt-5.4",
         temperature: 0.1,
         maxCompletionTokens: 1000,
     }).bindTools(allClinicalTools);

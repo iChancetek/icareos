@@ -9,7 +9,7 @@ const ITEMS = [
     { icon: "📋", title: "Full Audit Trail", desc: "Every agent action, session, and data write is timestamped and cryptographically logged." },
     { icon: "🏥", title: "Clinical-Grade Reliability", desc: "99.9% uptime SLA. Each agent has a graceful fallback — one failure never disrupts care." },
     { icon: "🌐", title: "Multi-Site Enterprise", desc: "Built for health systems and enterprise deployments across multiple facilities." },
-    { icon: "⚡", title: "Sub-200ms Agent Response", desc: "GPT-5.2 structured output with parallel agent execution. Clinical speed, AI accuracy." },
+    { icon: "⚡", title: "Sub-200ms Agent Response", desc: "GPT-5.4 structured output with parallel agent execution. Clinical speed, AI accuracy." },
 ];
 
 export function SecuritySection() {

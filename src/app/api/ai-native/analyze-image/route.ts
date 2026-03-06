@@ -8,7 +8,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Generic label for privacy
 const MODEL_LABEL = DEFAULT_AI_LABEL;
-const ENGINE_MODEL = "gpt-5.2";
+const ENGINE_MODEL = "gpt-5.4";
 
 // ── Clinical prompts ───────────────────────────────────────────────────
 const WOUND_SYSTEM_PROMPT = `You are a clinical decision support AI specialized in wound care and dermatology.

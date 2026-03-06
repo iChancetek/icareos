@@ -434,7 +434,7 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
             formData.append("context", context);
             if (user?.uid) formData.append("userId", user.uid);
 
-            console.log("[CdsImageUpload] Sending request to AI API (GPT-5.3 Codex)...");
+            console.log("[CdsImageUpload] Sending request to AI API (GPT-5.4 Codex)...");
             const res = await fetch("/api/ai-native/analyze-image", {
                 method: "POST",
                 body: formData,

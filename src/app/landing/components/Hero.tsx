@@ -7,7 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-const BADGE_ITEMS = ["GPT-5.2 Powered", "HIPAA-Ready", "Real-Time Agents", "8 AI Modules"];
+const BADGE_ITEMS = ["GPT-5.4 Powered", "HIPAA-Ready", "Real-Time Agents", "8 AI Modules"];
 
 export function Hero() {
     const heroRef = useRef<HTMLDivElement>(null);

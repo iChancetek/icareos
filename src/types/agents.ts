@@ -1,7 +1,7 @@
 /**
  * iCareOS Agent Type Definitions
  * Defines the inputs, outputs, and result structures for the multi-agent clinical intelligence system.
- * All agents run gpt-5.2 structured output calls with zero mocks.
+ * All agents run gpt-5.4 structured output calls with zero mocks.
  */
 
 // ─── Base Agent Types ───────────────────────────────────────────────────────
