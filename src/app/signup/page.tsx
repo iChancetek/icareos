@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, Loader2, Stethoscope } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Stethoscope, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, type FormEvent } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -112,13 +112,21 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-1 items-center justify-center p-8 text-white relative">
-        <h1 className="text-5xl font-bold mb-4">Welcome to iCareOS</h1>
-        <p className="text-lg mb-8 max-w-md">
+      <div className="hidden lg:flex flex-1 flex-col items-center justify-center p-8 text-white relative gap-6">
+        <img src="/icons/icon-192x192.png" alt="iCareOS Logo" className="w-20 h-20 rounded-2xl shadow-2xl mb-2" />
+        <div className="text-center">
+          <h1 className="text-5xl font-black tracking-tight mb-1">Welcome to iCareOS</h1>
+          <p className="text-sm font-medium tracking-widest uppercase text-white/50 mb-6">by ChanceTEK</p>
+        </div>
+        <p className="text-lg text-white/70 max-w-md text-center leading-relaxed">
           A modern AI companion for healthcare professionals—powered by voice, empathy, and innovation.
         </p>
       </div>
-      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background relative">
+        <Link href="/landing" className="absolute top-6 left-6 flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          Back to home
+        </Link>
         <div className="w-full max-w-md space-y-8">
           <div>
             <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-foreground">

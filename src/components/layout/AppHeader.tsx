@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Activity, UserCircle, LogOut, Settings, ShieldCheck, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BackButton } from '@/components/BackButton';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -37,6 +38,9 @@ export default function AppHeader() {
       "sticky top-0 z-40 flex h-14 items-center gap-4 border-b px-4 backdrop-blur-xl transition-all duration-200 md:px-6",
       scrolled ? "border-border/60 bg-background/95 shadow-sm" : "border-transparent bg-background/70"
     )}>
+      {/* Back button */}
+      <BackButton className="shrink-0" />
+
       {/* Brand — mobile only */}
       <Link href="/dashboard/iscribe" className="flex items-center gap-2 md:hidden">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">

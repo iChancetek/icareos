@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from '@/hooks/useAuth';
+import { BackButton } from '@/components/BackButton';
 import { Button } from '@/components/ui/button';
 import { Mail, RefreshCw, LogOut, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
@@ -55,7 +56,10 @@ export default function VerifyEmailPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 relative">
+            <div className="absolute top-6 left-6">
+                <BackButton />
+            </div>
             <div className="max-w-md w-full space-y-8 p-8 bg-card rounded-xl shadow-lg border border-border text-center">
                 <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-6">
                     <Mail className="w-8 h-8 text-blue-600 dark:text-blue-400" />
