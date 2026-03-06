@@ -85,6 +85,7 @@ export default function AppSidebar() {
     { href: '/dashboard/carecoordiq', label: 'CareCoordIQ', icon: HeartPulse, matchStartsWith: true, color: '#EC4899', badge: 'New' },
     { label: 'Translator', icon: Languages, action: () => setIsVoiceTranslatorOpen(true), color: '#0D9488' },
     { href: '/dashboard/admin', label: 'Admin', icon: ShieldAlert, adminOnly: true, color: '#64748B' },
+    { href: '/dashboard/admin/governance', label: 'Governance', icon: Activity, adminOnly: true, color: '#06b6d4', badge: 'New' },
   ];
 
   const isActive = (item: NavItem) => {
