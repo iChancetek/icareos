@@ -92,13 +92,13 @@ export function CTASection() {
                             </motion.button>
                         </Link>
 
-                        <Link href="/contact">
+                        <Link href="/learn-more">
                             <motion.button
                                 whileHover={{ scale: 1.04, borderColor: "rgba(6,182,212,0.5)" }}
                                 whileTap={{ scale: 0.97 }}
                                 className="px-10 py-5 rounded-2xl font-bold text-base tracking-wide border border-slate-200 dark:border-white/15 bg-white dark:bg-white/5 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:dark:border-cyan-500/50 shadow-sm dark:shadow-none transition-all"
                             >
-                                Request Clinical Demo
+                                Learn More
                             </motion.button>
                         </Link>
 

@@ -9,6 +9,7 @@ import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, type FormEvent } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { AINetworkCanvas } from '@/app/landing/components/AINetworkCanvas';
 
 const GoogleIcon = () => (
   <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
@@ -104,20 +105,35 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-1 flex-col items-center justify-center p-12 text-white relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a0a3e 50%, #050810 100%)" }}>
-        {/* Background glow */}
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 70% at 50% 30%, rgba(6,182,212,0.15) 0%, transparent 60%)" }} />
+      <div className="hidden lg:flex flex-1 flex-col items-center justify-center p-12 bg-slate-50 dark:bg-[#050810] text-slate-900 dark:text-foreground relative overflow-hidden">
+        {/* Animated Background from Landing Page */}
+        <div className="absolute inset-0 z-0 opacity-40 dark:opacity-100 pointer-events-none">
+          <AINetworkCanvas />
+        </div>
+        {/* Vignette overlay */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#f8fafc_90%)] dark:bg-[radial-gradient(ellipse_at_center,transparent_0%,#050810_90%)] pointer-events-none z-0" />
+
         <div className="relative z-10 flex flex-col items-center text-center gap-6">
-          <img src="/icons/icon-192x192.png" alt="iCareOS Logo" className="w-24 h-24 rounded-3xl shadow-2xl" />
+          <img src="/icons/icon-192x192.png" alt="iCareOS Logo" className="w-24 h-24 rounded-3xl shadow-2xl mb-2" />
           <div className="text-center">
-            <h1 className="text-5xl font-black tracking-tight mb-2">
-              Welcome to iCareOS
-              <span className="block mt-2 text-xl font-semibold tracking-widest uppercase text-white/50">
-                by ChanceTEK
+            <h1 className="text-5xl sm:text-6xl font-black tracking-tight leading-tight mb-2">
+              Welcome to <br />
+              <span
+                style={{
+                  background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 50%, #ec4899 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                iCareOS
               </span>
             </h1>
+            <p className="mt-4 text-xs font-semibold tracking-[0.25em] uppercase text-slate-500 dark:text-white/50">
+              by ChanceTEK
+            </p>
           </div>
-          <p className="text-base text-white/60 max-w-sm leading-relaxed">
+          <p className="text-base text-slate-500 dark:text-white/60 max-w-sm leading-relaxed">
             A next-generation AI-native clinical operating system—powered by voice, empathy, and intelligence.
           </p>
         </div>

@@ -19,7 +19,7 @@ export function Hero() {
     return (
         <section
             ref={heroRef}
-            className="relative min-h-screen flex items-center overflow-hidden bg-slate-50 dark:bg-[#050810]"
+            className="relative min-h-[100dvh] flex items-center justify-center py-20 overflow-x-hidden bg-slate-50 dark:bg-[#050810]"
         >
             {/* Top gradient glow (light vs dark) */}
             <div
@@ -50,7 +50,7 @@ export function Hero() {
 
             {/* Content */}
             <motion.div
-                className="relative z-10 w-full max-w-7xl mx-auto px-6 flex flex-col items-center text-center pt-20"
+                className="relative z-10 w-full max-w-7xl mx-auto px-6 flex flex-col items-center text-center pt-8 md:pt-16 pb-24"
                 style={{ y: contentY, opacity }}
             >
                 {/* Status badge */}
@@ -185,13 +185,13 @@ export function Hero() {
                         </motion.button>
                     </Link>
 
-                    <Link href="/contact">
+                    <Link href="/learn-more">
                         <motion.button
                             whileHover={{ scale: 1.04 }}
                             whileTap={{ scale: 0.97 }}
                             className="px-8 py-4 rounded-2xl font-bold text-sm tracking-wide border border-slate-200 dark:border-white/15 bg-white dark:bg-white/5 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none transition-colors"
                         >
-                            Request a Demo
+                            Learn More
                         </motion.button>
                     </Link>
 

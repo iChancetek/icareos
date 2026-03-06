@@ -83,7 +83,7 @@ export default function LearnMorePage() {
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-4xl md:text-6xl font-black tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/60">
-              The Engine Behind <span className="text-primary">MediScribe.</span>
+              The Engine Behind <span className="text-primary">iCareOS.</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               Explore the advanced neural architecture and agentic orchestration system that powers the future of clinical documentation.
@@ -164,7 +164,7 @@ export default function LearnMorePage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
               <Link href="/signup">
                 <Button size="lg" className="h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
-                  Join MediScribe
+                  Join iCareOS
                 </Button>
               </Link>
               <Link href="/">
@@ -180,7 +180,7 @@ export default function LearnMorePage() {
       <footer className="py-12 bg-background border-t border-border/50 text-center">
         <div className="container px-6 mx-auto">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} MediScribe. All Rights Reserved. | ChanceTEK LLC
+            © {new Date().getFullYear()} iCareOS by ChanceTEK. All Rights Reserved. | icareos.tech
           </p>
         </div>
       </footer>
