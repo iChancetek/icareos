@@ -27,6 +27,7 @@ jobs:
           project_id: 'icareos'
           workload_identity_provider: 'projects/351749451441/locations/global/workloadIdentityPools/github/providers/github-actions'
           service_account: 'github-actions-ci@icareos.iam.gserviceaccount.com'
+          audience: '//iam.googleapis.com/projects/351749451441/locations/global/workloadIdentityPools/github/providers/github-actions'
           
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -65,6 +66,7 @@ jobs:
 
   cloudrun-build:
     name: Phase 1 - Build Validation
+    needs: wait-for-cloud-build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
