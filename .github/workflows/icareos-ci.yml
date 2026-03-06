@@ -14,11 +14,16 @@ jobs:
   wait-for-cloud-build:
     name: Phase 0 - Wait for Cloud Build
     runs-on: ubuntu-latest
+    permissions:
+      id-token: 'write' # Required for requesting the OIDC token
+      contents: 'read'
     steps:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+          project_id: 'icareos'
+          workload_identity_provider: 'projects/351749451441/locations/global/workloadIdentityPools/github/providers/github-actions'
+          service_account: 'github-actions-ci@icareos.iam.gserviceaccount.com'
           
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
