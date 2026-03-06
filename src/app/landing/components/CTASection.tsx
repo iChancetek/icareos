@@ -92,7 +92,7 @@ export function CTASection() {
                             </motion.button>
                         </Link>
 
-                        <a href="mailto:Demo@MediScribe.us">
+                        <Link href="/contact">
                             <motion.button
                                 whileHover={{ scale: 1.04, borderColor: "rgba(6,182,212,0.5)" }}
                                 whileTap={{ scale: 0.97 }}
@@ -100,7 +100,7 @@ export function CTASection() {
                             >
                                 Request Clinical Demo
                             </motion.button>
-                        </a>
+                        </Link>
                     </div>
 
                     {/* Trust indicators */}

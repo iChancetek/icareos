@@ -6,10 +6,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV_LINKS = [
-    { label: "Platform", href: "#platform" },
-    { label: "Modules", href: "#modules" },
-    { label: "Security", href: "#security" },
-    { label: "Contact", href: "mailto:Demo@MediScribe.us" },
+    { label: "Platform", href: "/#platform" },
+    { label: "Modules", href: "/#modules" },
+    { label: "Security", href: "/#security" },
+    { label: "Contact", href: "/contact" },
 ];
 
 export function Navbar() {
@@ -36,8 +36,8 @@ export function Navbar() {
                 // Using classes for light/dark rather than style obj where possible
                 data-scrolled={scrolled}
                 className={`rounded-2xl px-6 py-3 flex items-center gap-6 transition-all duration-500 ${scrolled
-                        ? "bg-white/80 dark:bg-[#050810]/85 border border-slate-200 dark:border-white/10 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
-                        : "bg-white/40 dark:bg-[#050810]/40 border border-slate-100 dark:border-white/5"
+                    ? "bg-white/80 dark:bg-[#050810]/85 border border-slate-200 dark:border-white/10 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+                    : "bg-white/40 dark:bg-[#050810]/40 border border-slate-100 dark:border-white/5"
                     }`}
             >
                 {/* Logo */}

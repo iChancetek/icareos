@@ -156,7 +156,7 @@ export function Hero() {
                         </motion.button>
                     </Link>
 
-                    <a href="mailto:Demo@MediScribe.us">
+                    <Link href="/contact">
                         <motion.button
                             whileHover={{ scale: 1.04 }}
                             whileTap={{ scale: 0.97 }}
@@ -164,7 +164,7 @@ export function Hero() {
                         >
                             Request a Demo
                         </motion.button>
-                    </a>
+                    </Link>
                 </motion.div>
 
                 {/* Scroll indicator */}

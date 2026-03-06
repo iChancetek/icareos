@@ -50,7 +50,7 @@ export default function LandingPage() {
             {/* Links */}
             <div className="flex flex-wrap justify-center gap-8 text-sm text-white/35">
               <a href="https://icareos.tech" className="hover:text-white transition-colors">icareos.tech</a>
-              <a href="mailto:Demo@MediScribe.us" className="hover:text-white transition-colors">Request Demo</a>
+              <Link href="/contact" className="hover:text-white transition-colors">Contact</Link>
               <Link href="/dashboard" className="hover:text-white transition-colors">Launch Platform</Link>
               <Link href="/login" className="hover:text-white transition-colors">Sign In</Link>
             </div>
