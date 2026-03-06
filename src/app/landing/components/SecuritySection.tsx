@@ -19,8 +19,7 @@ export function SecuritySection() {
     return (
         <section
             id="security"
-            className="relative py-32 overflow-hidden"
-            style={{ background: "linear-gradient(180deg, #06091a 0%, #050810 100%)" }}
+            className="relative py-32 overflow-hidden bg-slate-50 dark:bg-gradient-to-b dark:from-[#06091a] dark:to-[#050810]"
         >
             {/* Border top */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[1px] pointer-events-none"
@@ -34,12 +33,12 @@ export function SecuritySection() {
                     transition={{ duration: 0.8 }}
                     className="text-center mb-20"
                 >
-                    <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] uppercase font-bold text-emerald-400/70 mb-6">
-                        <span className="h-px w-8 bg-emerald-400/40" />
+                    <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] uppercase font-bold text-emerald-600 dark:text-emerald-400/70 mb-6">
+                        <span className="h-px w-8 bg-emerald-600/40 dark:bg-emerald-400/40" />
                         Enterprise Security
-                        <span className="h-px w-8 bg-emerald-400/40" />
+                        <span className="h-px w-8 bg-emerald-600/40 dark:bg-emerald-400/40" />
                     </span>
-                    <h2 className="text-4xl sm:text-6xl font-black text-white mb-6 leading-tight">
+                    <h2 className="text-4xl sm:text-6xl font-black text-slate-900 dark:text-white mb-6 leading-tight">
                         Built for Healthcare.
                         <br />
                         <span
@@ -53,7 +52,7 @@ export function SecuritySection() {
                             Secured for Trust.
                         </span>
                     </h2>
-                    <p className="text-lg text-white/40 max-w-xl mx-auto">
+                    <p className="text-lg text-slate-500 dark:text-white/40 max-w-xl mx-auto">
                         Every layer of iCareOS is designed with clinical security and compliance as the foundation, not an afterthought.
                     </p>
                 </motion.div>
@@ -70,11 +69,11 @@ export function SecuritySection() {
                                 animate={inView ? { opacity: 1, y: 0 } : {}}
                                 transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
                                 whileHover={{ borderColor: "rgba(16,185,129,0.35)", boxShadow: "0 0 24px rgba(16,185,129,0.12)" }}
-                                className="p-6 rounded-2xl border border-white/7 bg-white/[0.02] transition-all duration-300"
+                                className="p-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-sm dark:shadow-none transition-all duration-300"
                             >
-                                <div className="text-3xl mb-4">{item.icon}</div>
-                                <h3 className="text-base font-bold text-white mb-2">{item.title}</h3>
-                                <p className="text-sm text-white/40 leading-relaxed">{item.desc}</p>
+                                <div className="text-3xl mb-4 drop-shadow-sm dark:drop-shadow-none">{item.icon}</div>
+                                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">{item.title}</h3>
+                                <p className="text-sm text-slate-600 dark:text-white/40 leading-relaxed">{item.desc}</p>
                             </motion.div>
                         );
                     })}

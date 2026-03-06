@@ -43,7 +43,7 @@ export default function LandingPage() {
               </div>
               <div>
                 <div className="font-black text-white tracking-tight">iCareOS</div>
-                <div className="text-[10px] text-white/30 font-medium tracking-widest uppercase">by ChanceTEK</div>
+                <div className="text-[8px] text-white/30 font-medium tracking-widest uppercase">by ChanceTEK</div>
               </div>
             </div>
 

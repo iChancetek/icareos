@@ -104,9 +104,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col items-start justify-center bg-blue-50 p-12 text-gray-800">
-        <h1 className="text-5xl font-bold mb-4">Welcome to MediScribe</h1>
-        <p className="text-lg text-gray-600 max-w-md">
+      <div className="hidden lg:flex flex-1 items-center justify-center p-8 text-white relative shadow-inner">
+        <h1 className="text-5xl font-bold mb-4">Welcome to iCareOS</h1>
+        <p className="text-lg mb-8 max-w-md">
           A modern AI companion for healthcare professionals—powered by voice, empathy, and innovation.
         </p>
       </div>

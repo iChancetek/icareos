@@ -10,20 +10,19 @@ export function CTASection() {
 
     return (
         <section
-            className="relative py-40 overflow-hidden"
-            style={{ background: "#050810" }}
+            className="relative py-40 overflow-hidden bg-slate-50 dark:bg-[#050810]"
         >
             {/* Background glow burst */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div
-                    className="w-[800px] h-[400px] rounded-full opacity-15 blur-[100px]"
+                    className="w-[800px] h-[400px] rounded-full opacity-10 dark:opacity-15 blur-[100px]"
                     style={{ background: "radial-gradient(ellipse, #06b6d4 0%, #8b5cf6 50%, #ec4899 100%)" }}
                 />
             </div>
 
             {/* Animated grid pulse */}
             <div
-                className="absolute inset-0 opacity-[0.025]"
+                className="absolute inset-0 opacity-10 dark:opacity-[0.025]"
                 style={{
                     backgroundImage: `linear-gradient(rgba(6,182,212,1) 1px, transparent 1px), linear-gradient(90deg, rgba(6,182,212,1) 1px, transparent 1px)`,
                     backgroundSize: "60px 60px",
@@ -43,13 +42,13 @@ export function CTASection() {
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={inView ? { opacity: 1, scale: 1 } : {}}
                         transition={{ delay: 0.1 }}
-                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/5 text-cyan-400 text-xs font-semibold tracking-widest uppercase mb-10"
+                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/5 text-cyan-600 dark:text-cyan-400 text-xs font-semibold tracking-widest uppercase mb-10 shadow-sm dark:shadow-none"
                     >
-                        <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 dark:bg-cyan-400 animate-pulse" />
                         icareos.tech — Now Available
                     </motion.div>
 
-                    <h2 className="text-5xl sm:text-7xl font-black text-white leading-none mb-6">
+                    <h2 className="text-5xl sm:text-7xl font-black text-slate-900 dark:text-white leading-none mb-6">
                         The Future of
                         <br />
                         <span
@@ -66,7 +65,7 @@ export function CTASection() {
                         Is Here.
                     </h2>
 
-                    <p className="text-lg text-white/40 max-w-xl mx-auto mb-14 leading-relaxed">
+                    <p className="text-lg text-slate-500 dark:text-white/40 max-w-xl mx-auto mb-14 leading-relaxed">
                         Join the clinicians and health systems already running iCareOS.
                         8 AI agents. One unified platform. Zero compromise on quality.
                     </p>
@@ -76,7 +75,7 @@ export function CTASection() {
                             <motion.button
                                 whileHover={{ scale: 1.05, boxShadow: "0 0 50px rgba(6,182,212,0.5)" }}
                                 whileTap={{ scale: 0.97 }}
-                                className="relative px-10 py-5 rounded-2xl font-bold text-base tracking-wide text-white overflow-hidden"
+                                className="relative px-10 py-5 rounded-2xl font-bold text-base tracking-wide text-white overflow-hidden shadow-xl dark:shadow-none"
                                 style={{ background: "linear-gradient(135deg, #06b6d4, #8b5cf6, #ec4899)" }}
                             >
                                 Start Your iCareOS Session →
@@ -95,9 +94,9 @@ export function CTASection() {
 
                         <a href="mailto:Demo@MediScribe.us">
                             <motion.button
-                                whileHover={{ scale: 1.04, borderColor: "rgba(6,182,212,0.5)", color: "white" }}
+                                whileHover={{ scale: 1.04, borderColor: "rgba(6,182,212,0.5)" }}
                                 whileTap={{ scale: 0.97 }}
-                                className="px-10 py-5 rounded-2xl font-bold text-base tracking-wide border border-white/15 bg-white/5 text-white/60 transition-all"
+                                className="px-10 py-5 rounded-2xl font-bold text-base tracking-wide border border-slate-200 dark:border-white/15 bg-white dark:bg-white/5 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:dark:border-cyan-500/50 shadow-sm dark:shadow-none transition-all"
                             >
                                 Request Clinical Demo
                             </motion.button>
@@ -109,7 +108,7 @@ export function CTASection() {
                         initial={{ opacity: 0 }}
                         animate={inView ? { opacity: 1 } : {}}
                         transition={{ delay: 0.5 }}
-                        className="mt-16 flex flex-wrap justify-center gap-8 text-xs text-white/25 font-medium uppercase tracking-widest"
+                        className="mt-16 flex flex-wrap justify-center gap-8 text-xs text-slate-400 dark:text-white/25 font-medium uppercase tracking-widest"
                     >
                         {["SOC 2 Ready", "HIPAA Compliant Architecture", "Enterprise SLA", "99.9% Uptime"].map(s => (
                             <span key={s} className="flex items-center gap-2">

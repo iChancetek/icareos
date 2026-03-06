@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import Link from "next/link";
 
 const STATS = [
     { value: "6x", label: "Faster Documentation" },
@@ -50,7 +49,7 @@ function StatCard({ stat, index }: { stat: typeof STATS[0]; index: number }) {
             className="text-center"
         >
             <div
-                className="text-5xl sm:text-6xl font-black mb-2"
+                className="text-5xl sm:text-6xl font-black mb-2 drop-shadow-sm dark:drop-shadow-none"
                 style={{
                     background: "linear-gradient(135deg, #06b6d4, #8b5cf6)",
                     WebkitBackgroundClip: "text",
@@ -60,7 +59,7 @@ function StatCard({ stat, index }: { stat: typeof STATS[0]; index: number }) {
             >
                 {stat.value}
             </div>
-            <div className="text-sm text-white/40 font-medium uppercase tracking-widest">{stat.label}</div>
+            <div className="text-sm text-slate-500 dark:text-white/40 font-medium uppercase tracking-widest">{stat.label}</div>
         </motion.div>
     );
 }
@@ -72,12 +71,11 @@ export function PlatformSection() {
     return (
         <section
             id="platform"
-            className="relative py-32 overflow-hidden"
-            style={{ background: "#050810" }}
+            className="relative py-32 overflow-hidden bg-white dark:bg-[#050810]"
         >
             {/* Top glow */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[1px] pointer-events-none"
-                style={{ background: "linear-gradient(90deg, transparent, rgba(6,182,212,0.5), transparent)" }} />
+                style={{ background: "linear-gradient(90deg, transparent, rgba(6,182,212,0.3), transparent)" }} />
 
             <div className="max-w-7xl mx-auto px-6">
                 {/* Stats row */}
@@ -93,12 +91,12 @@ export function PlatformSection() {
                     transition={{ duration: 0.8 }}
                     className="text-center mb-20"
                 >
-                    <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] uppercase font-bold text-violet-400/70 mb-6">
-                        <span className="h-px w-8 bg-violet-400/40" />
+                    <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] uppercase font-bold text-violet-600 dark:text-violet-400/70 mb-6">
+                        <span className="h-px w-8 bg-violet-600/40 dark:bg-violet-400/40" />
                         How iCareOS Works
-                        <span className="h-px w-8 bg-violet-400/40" />
+                        <span className="h-px w-8 bg-violet-600/40 dark:bg-violet-400/40" />
                     </span>
-                    <h2 className="text-4xl sm:text-6xl font-black text-white leading-tight">
+                    <h2 className="text-4xl sm:text-6xl font-black text-slate-900 dark:text-white leading-tight">
                         From Voice to Complete
                         <br />
                         <span
@@ -118,7 +116,7 @@ export function PlatformSection() {
                 <div className="relative">
                     {/* Connecting line */}
                     <div className="absolute top-10 left-0 right-0 h-px hidden lg:block pointer-events-none"
-                        style={{ background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.3) 20%, rgba(6,182,212,0.3) 80%, transparent)" }} />
+                        style={{ background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.2) 20%, rgba(6,182,212,0.2) 80%, transparent)" }} />
 
                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
                         {STEPS.map((step, i) => {
@@ -135,15 +133,15 @@ export function PlatformSection() {
                                 >
                                     {/* Node dot */}
                                     <div className="relative w-20 h-20 mb-6 mx-auto lg:mx-0">
-                                        <div className="absolute inset-0 rounded-full opacity-20 blur-lg animate-pulse"
+                                        <div className="absolute inset-0 rounded-full opacity-10 dark:opacity-20 blur-lg animate-pulse"
                                             style={{ background: step.color }} />
-                                        <div className="relative h-full w-full rounded-full flex items-center justify-center border"
-                                            style={{ background: `${step.color}15`, borderColor: `${step.color}40` }}>
+                                        <div className="relative h-full w-full rounded-full flex items-center justify-center border bg-white dark:bg-black/20 shadow-sm dark:shadow-none"
+                                            style={{ borderColor: `${step.color}40` }}>
                                             <span className="font-black text-lg" style={{ color: step.color }}>{step.number}</span>
                                         </div>
                                     </div>
-                                    <h3 className="text-lg font-bold text-white mb-3">{step.title}</h3>
-                                    <p className="text-sm text-white/40 leading-relaxed">{step.description}</p>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">{step.title}</h3>
+                                    <p className="text-sm text-slate-600 dark:text-white/40 leading-relaxed">{step.description}</p>
                                 </motion.div>
                             );
                         })}

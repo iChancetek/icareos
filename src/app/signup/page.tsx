@@ -66,8 +66,9 @@ export default function SignUpPage() {
       const success = await signup(email, password, combinedDisplayName, username);
       if (success) {
         toast({
-          title: "Signup Successful",
-          description: "Welcome to MediScribe! You are now being redirected.",
+          title: "Account Created Successfully",
+          description: "Welcome to iCareOS! You are now being redirected.",
+          variant: "default",
         });
       }
     } catch (error: any) {
@@ -111,10 +112,9 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col items-center justify-center p-12 text-center bg-blue-50 text-gray-800">
-        <Stethoscope className="h-16 w-16 text-blue-600 mb-6" />
-        <h1 className="text-5xl font-bold mb-4">Welcome to MediScribe</h1>
-        <p className="text-lg text-gray-600 max-w-md">
+      <div className="hidden lg:flex flex-1 items-center justify-center p-8 text-white relative">
+        <h1 className="text-5xl font-bold mb-4">Welcome to iCareOS</h1>
+        <p className="text-lg mb-8 max-w-md">
           A modern AI companion for healthcare professionals—powered by voice, empathy, and innovation.
         </p>
       </div>

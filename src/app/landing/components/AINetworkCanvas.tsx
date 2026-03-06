@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTheme } from "next-themes";
 
 interface Node {
     id: string;
@@ -109,6 +110,13 @@ export function AINetworkCanvas() {
     const rafRef = useRef<number>(0);
     const timeRef = useRef(0);
 
+    const { theme } = useTheme();
+    const isDarkRef = useRef(true);
+
+    useEffect(() => {
+        isDarkRef.current = theme !== "light";
+    }, [theme]);
+
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -165,10 +173,11 @@ export function AINetworkCanvas() {
             const pulse = Math.sin(t * 0.8 + node.pulsePhase) * 0.3 + 0.7;
             const scale = hovered ? 1.15 : 1;
             const r = node.radius * scale;
+            const isDark = isDarkRef.current;
 
             // Outer glow
             const grad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, r * 2.2);
-            grad.addColorStop(0, node.glowColor.replace(")", `, ${pulse * 0.6})`).replace("rgba", "rgba"));
+            grad.addColorStop(0, node.glowColor.replace(")", `, ${pulse * (isDark ? 0.6 : 0.35)})`).replace("rgba", "rgba"));
             grad.addColorStop(1, "transparent");
             ctx.beginPath();
             ctx.arc(node.x, node.y, r * 2.2, 0, Math.PI * 2);
@@ -179,21 +188,21 @@ export function AINetworkCanvas() {
             ctx.beginPath();
             ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
             const coreGrad = ctx.createRadialGradient(node.x - r * 0.3, node.y - r * 0.3, 0, node.x, node.y, r);
-            coreGrad.addColorStop(0, node.color + "ff");
-            coreGrad.addColorStop(1, node.color + "88");
+            coreGrad.addColorStop(0, node.color + (isDark ? "ff" : "ee"));
+            coreGrad.addColorStop(1, node.color + (isDark ? "88" : "cc"));
             ctx.fillStyle = coreGrad;
             ctx.fill();
 
             // Ring
             ctx.beginPath();
             ctx.arc(node.x, node.y, r + 4, 0, Math.PI * 2);
-            ctx.strokeStyle = node.color + Math.round(pulse * 140).toString(16).padStart(2, "0");
+            ctx.strokeStyle = node.color + Math.round(pulse * (isDark ? 140 : 200)).toString(16).padStart(2, "0");
             ctx.lineWidth = 1.5;
             ctx.stroke();
 
             // Label
             ctx.font = `bold ${hovered ? 11 : 10}px Inter, sans-serif`;
-            ctx.fillStyle = "#ffffff";
+            ctx.fillStyle = isDark ? "#ffffff" : "#0f172a";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(node.label, node.x, node.y);
@@ -206,7 +215,11 @@ export function AINetworkCanvas() {
             t: number,
             highlight: boolean
         ) => {
-            const alpha = highlight ? 0.45 : 0.12;
+            const isDark = isDarkRef.current;
+            const baseAlpha = isDark ? 0.12 : 0.25;
+            const hlAlpha = isDark ? 0.45 : 0.6;
+            const alpha = highlight ? hlAlpha : baseAlpha;
+
             const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
             grad.addColorStop(0, a.color + Math.round(alpha * 255).toString(16).padStart(2, "0"));
             grad.addColorStop(1, b.color + Math.round(alpha * 255).toString(16).padStart(2, "0"));
@@ -225,13 +238,14 @@ export function AINetworkCanvas() {
             const from = nodes.find(n => n.id === p.fromNode);
             const to = nodes.find(n => n.id === p.toNode);
             if (!from || !to) return;
+            const isDark = isDarkRef.current;
 
             const x = from.x + (to.x - from.x) * p.progress;
             const y = from.y + (to.y - from.y) * p.progress;
 
             // Trailing glow
             const trail = ctx.createRadialGradient(x, y, 0, x, y, p.size * 4);
-            trail.addColorStop(0, p.color + "cc");
+            trail.addColorStop(0, p.color + (isDark ? "cc" : "aa"));
             trail.addColorStop(1, "transparent");
             ctx.beginPath();
             ctx.arc(x, y, p.size * 4, 0, Math.PI * 2);
@@ -241,7 +255,7 @@ export function AINetworkCanvas() {
             // Core dot
             ctx.beginPath();
             ctx.arc(x, y, p.size, 0, Math.PI * 2);
-            ctx.fillStyle = "#ffffff";
+            ctx.fillStyle = isDark ? "#ffffff" : p.color;
             ctx.fill();
         };
 
