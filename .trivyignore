@@ -1,0 +1,8 @@
+# Ignore unresolved @ducanh2912/next-pwa sub-dependency vulnerabilities
+CVE-2023-45853
+CVE-2024-39338
+CVE-2024-39338
+CVE-2024-28849
+CVE-2024-28849
+CVE-2024-33871
+CVE-2024-33871

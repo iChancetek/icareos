@@ -129,6 +129,8 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+          trivyignores: '.trivyignore'
+
 
   push-image:
     name: Phase 4 - Docker Build & Push
