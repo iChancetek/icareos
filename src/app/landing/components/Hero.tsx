@@ -4,6 +4,8 @@ import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { AINetworkCanvas } from "./AINetworkCanvas";
 import Link from "next/link";
+import Image from "next/image";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const BADGE_ITEMS = ["GPT-5.2 Powered", "HIPAA-Ready", "Real-Time Agents", "8 AI Modules"];
 
@@ -77,6 +79,33 @@ export function Hero() {
                             {b}
                         </span>
                     ))}
+                </motion.div>
+
+                {/* Theme Toggle */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.35 }}
+                    className="mb-4"
+                >
+                    <ThemeToggle />
+                </motion.div>
+
+                {/* Official iCareOS Logo */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.8, delay: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                    className="mb-8"
+                >
+                    <Image
+                        src="/icons/icon-192x192.png"
+                        alt="iCareOS Official Logo"
+                        width={96}
+                        height={96}
+                        className="rounded-3xl shadow-2xl"
+                        style={{ boxShadow: "0 0 40px rgba(6,182,212,0.4), 0 0 80px rgba(139,92,246,0.2)" }}
+                    />
                 </motion.div>
 
                 {/* Headline */}

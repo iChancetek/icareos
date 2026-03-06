@@ -104,15 +104,19 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-1 flex-col items-center justify-center p-8 text-white relative shadow-inner gap-6">
-        <img src="/icons/icon-192x192.png" alt="iCareOS Logo" className="w-20 h-20 rounded-2xl shadow-2xl mb-2" />
-        <div className="text-center">
-          <h1 className="text-5xl font-black tracking-tight mb-1">Welcome to iCareOS</h1>
-          <p className="text-sm font-medium tracking-widest uppercase text-white/50 mb-6">by ChanceTEK</p>
+      <div className="hidden lg:flex flex-1 flex-col items-center justify-center p-12 text-white relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a0a3e 50%, #050810 100%)" }}>
+        {/* Background glow */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 70% at 50% 30%, rgba(6,182,212,0.15) 0%, transparent 60%)" }} />
+        <div className="relative z-10 flex flex-col items-center text-center gap-6">
+          <img src="/icons/icon-192x192.png" alt="iCareOS Logo" className="w-24 h-24 rounded-3xl shadow-2xl" />
+          <div>
+            <h1 className="text-5xl font-black tracking-tight mb-2">Welcome to iCareOS</h1>
+            <p className="text-xs font-semibold tracking-[0.25em] uppercase text-white/40">by ChanceTEK</p>
+          </div>
+          <p className="text-base text-white/60 max-w-sm leading-relaxed">
+            A next-generation AI-native clinical operating system—powered by voice, empathy, and intelligence.
+          </p>
         </div>
-        <p className="text-lg text-white/70 max-w-md text-center leading-relaxed">
-          A modern AI companion for healthcare professionals—powered by voice, empathy, and innovation.
-        </p>
       </div>
       <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background relative">
         <Link href="/landing" className="absolute top-6 left-6 flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
