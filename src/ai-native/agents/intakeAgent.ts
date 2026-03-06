@@ -4,7 +4,7 @@ import { StateGraph, Annotation, messagesStateReducer } from "@langchain/langgra
 import { ChatOpenAI } from "@langchain/openai";
 import { BaseMessage } from "@langchain/core/messages";
 import { isSystemMessage } from "@langchain/core/messages";
-import { ENGINE_MODEL } from "@/services/openaiService";
+import { ENGINE_MODEL } from "@/services/constants";
 
 // The state type for the intake flow
 export const IntakeStateAnnotation = Annotation.Root({

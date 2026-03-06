@@ -1,6 +1,7 @@
 'use server';
 
-import { OpenAIService, DEFAULT_AI_LABEL } from '@/services/openaiService';
+import { OpenAIService } from '@/services/openaiService';
+import { DEFAULT_AI_LABEL } from '@/services/constants';
 import type { SOAPResult, SOAPNote, AgentMeta } from '@/types/agents';
 
 const SOAP_SCHEMA = {

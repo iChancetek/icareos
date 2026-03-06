@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { saveCdsAnalysis } from "@/services/cdsService";
-import { DEFAULT_AI_LABEL } from "@/services/openaiService";
+import { OpenAIService } from '@/services/openaiService';
+import { DEFAULT_AI_LABEL } from '@/services/constants';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 

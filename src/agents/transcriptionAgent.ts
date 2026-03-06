@@ -1,6 +1,7 @@
 'use server';
 
-import { OpenAIService, DEFAULT_AI_LABEL } from '@/services/openaiService';
+import { OpenAIService } from '@/services/openaiService';
+import { DEFAULT_AI_LABEL } from '@/services/constants';
 import { transcribeAudio } from '@/actions/ai/transcribe-audio';
 import type { TranscriptionResult, AgentMeta } from '@/types/agents';
 
