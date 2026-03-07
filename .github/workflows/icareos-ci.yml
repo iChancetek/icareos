@@ -205,6 +205,8 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           trivyignores: '.trivyignore'
+          scanners: 'vuln'
+          hide-progress: true
 
 
   push-image:
