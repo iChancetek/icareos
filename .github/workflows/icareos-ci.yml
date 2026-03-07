@@ -229,7 +229,7 @@ jobs:
 
       - name: Tag and Push Image
         run: |
-          COMMIT_HASH=$(git rev-parse --short HEAD)
+          COMMIT_HASH=$(echo "${{ github.sha }}" | cut -c1-7)
           docker tag icareos-temp ichancetek/icareos-platform:latest
           docker tag icareos-temp ichancetek/icareos-platform:v-ci-$COMMIT_HASH
           docker push ichancetek/icareos-platform:latest
