@@ -38,27 +38,39 @@ jobs:
           
           # We'll poll up to 60 times, waiting 15 seconds each time (15 mins total max)
           for i in {1..60}; do
-            # Find the most recent build triggered by this commit 
-            # We filter by tags that typically match the commit SHA when triggering from GitHub
-            BUILD_INFO=$(gcloud builds list --project="icareos" --filter="substitutions.COMMIT_SHA=${{ github.sha }}" --limit=1 --format="json")
+            # Fetch the most recent builds as JSON
+            BUILDS_JSON=$(gcloud builds list --project="icareos" --limit=5 --format="json" 2>/dev/null)
             
-            # Extract the status. If no build found, it might simply not have started yet.
-            STATUS=$(echo "$BUILD_INFO" | jq -r '.[0].status')
-            BUILD_ID=$(echo "$BUILD_INFO" | jq -r '.[0].id')
+            # Use jq to find a build matching the commit SHA in various possible fields
+            BUILD_ID=$(echo "$BUILDS_JSON" | jq -r --arg SHA "${{ github.sha }}" '
+              .[] | select(
+                (.substitutions.COMMIT_SHA == $SHA) or 
+                (.source.repoSource.commitSha == $SHA) or 
+                (.sourceProvenance.resolvedRepoSource.commitSha == $SHA)
+              ) | .id
+            ' | head -n 1)
             
-            if [[ "$STATUS" == "SUCCESS" ]]; then
-              echo "✅ Cloud Build $BUILD_ID completed successfully!"
-              exit 0
-            elif [[ "$STATUS" == "FAILURE" || "$STATUS" == "INTERNAL_ERROR" || "$STATUS" == "TIMEOUT" || "$STATUS" == "CANCELLED" ]]; then
-              echo "❌ Cloud Build $BUILD_ID failed with status: $STATUS"
-              exit 1
-            elif [[ "$STATUS" == "WORKING" || "$STATUS" == "QUEUED" || "$STATUS" == "PENDING" ]]; then
-              echo "⏳ Cloud Build $BUILD_ID is currently: $STATUS. Waiting 15s... ($i/60)"
-              sleep 15
-            else
-              echo "⚠️ Could not find a Cloud Build for commit ${{ github.sha }} yet, or unexpected status '$STATUS'. Waiting 15s... ($i/60)"
-              sleep 15
+            if [[ -n "$BUILD_ID" ]]; then
+              STATUS=$(echo "$BUILDS_JSON" | jq -r --arg ID "$BUILD_ID" '.[] | select(.id == $ID) | .status')
+              
+              if [[ "$STATUS" == "SUCCESS" ]]; then
+                echo "✅ Cloud Build $BUILD_ID completed successfully!"
+                exit 0
+              elif [[ "$STATUS" == "FAILURE" || "$STATUS" == "INTERNAL_ERROR" || "$STATUS" == "TIMEOUT" || "$STATUS" == "CANCELLED" ]]; then
+                echo "❌ Cloud Build $BUILD_ID failed with status: $STATUS"
+                exit 1
+              elif [[ "$STATUS" == "WORKING" || "$STATUS" == "QUEUED" || "$STATUS" == "PENDING" ]]; then
+                echo "⏳ Cloud Build $BUILD_ID is currently: $STATUS. Waiting 15s... ($i/60)"
+                sleep 15
+                continue
+              fi
             fi
+
+            echo "⚠️ Could not find a Cloud Build for commit ${{ github.sha }} yet."
+            echo "For debugging, here is the most recent build found in the project:"
+            echo "$BUILDS_JSON" | jq -c '.[0] | {id: .id, status: .status, substitutions: .substitutions, source: .source, sourceProvenance: .sourceProvenance}' || true
+            echo "Waiting 15s... ($i/60)"
+            sleep 15
           done
           
           echo "❌ Timed out waiting for Cloud Build to finish."
