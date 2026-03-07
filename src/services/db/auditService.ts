@@ -38,6 +38,7 @@ export type AuditModule =
     | 'BillingIQ'
     | 'RiskIQ'
     | 'CareCoordIQ'
+    | 'DataIQ'
     | 'Auth'
     | 'Admin'
     | 'CI/CD'

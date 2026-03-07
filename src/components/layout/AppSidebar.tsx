@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Bot, Languages, BarChart2,
   ShieldAlert, Activity, PanelLeft, PanelLeftClose, ScanLine,
-  CreditCard, HeartPulse, ShieldCheck,
+  CreditCard, HeartPulse, ShieldCheck, Brain,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -83,6 +83,7 @@ export default function AppSidebar() {
     { href: '/dashboard/billingiq', label: 'BillingIQ', icon: CreditCard, matchStartsWith: true, color: '#F59E0B', badge: 'New' },
     { href: '/dashboard/riskiq', label: 'RiskIQ', icon: ShieldCheck, matchStartsWith: true, color: '#EF4444', badge: 'New' },
     { href: '/dashboard/carecoordiq', label: 'CareCoordIQ', icon: HeartPulse, matchStartsWith: true, color: '#EC4899', badge: 'New' },
+    { href: '/dashboard/dataiq', label: 'DataIQ', icon: Brain, matchStartsWith: true, color: '#A855F7', badge: 'New' },
     { label: 'Translator', icon: Languages, action: () => setIsVoiceTranslatorOpen(true), color: '#0D9488' },
     { href: '/dashboard/admin', label: 'Admin', icon: ShieldAlert, adminOnly: true, color: '#64748B' },
     { href: '/dashboard/admin/governance', label: 'Governance', icon: Activity, adminOnly: true, color: '#06b6d4', badge: 'New' },
