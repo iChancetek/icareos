@@ -38,8 +38,13 @@ jobs:
           
           # We'll poll up to 60 times, waiting 15 seconds each time (15 mins total max)
           for i in {1..60}; do
-            # Fetch the most recent builds as JSON
-            BUILDS_JSON=$(gcloud builds list --project="icareos" --limit=5 --format="json" 2>/dev/null)
+            # Fetch the most recent builds from global, us-east4, and us-central1 since Firebase App Hosting uses regional builds
+            BUILDS_GLOBAL=$(gcloud builds list --project="icareos" --region="global" --limit=5 --format="json" 2>/dev/null || echo "[]")
+            BUILDS_EAST4=$(gcloud builds list --project="icareos" --region="us-east4" --limit=5 --format="json" 2>/dev/null || echo "[]")
+            BUILDS_CENTRAL1=$(gcloud builds list --project="icareos" --region="us-central1" --limit=5 --format="json" 2>/dev/null || echo "[]")
+            
+            # Combine the results into a single JSON array
+            BUILDS_JSON=$(echo "$BUILDS_GLOBAL $BUILDS_EAST4 $BUILDS_CENTRAL1" | jq -s 'add | sort_by(.createTime) | reverse')
             
             # Use jq to find a build matching the commit SHA in various possible fields
             BUILD_ID=$(echo "$BUILDS_JSON" | jq -r --arg SHA "${{ github.sha }}" '
