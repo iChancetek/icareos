@@ -51,7 +51,8 @@ jobs:
               .[] | select(
                 (.substitutions.COMMIT_SHA == $SHA) or 
                 (.source.repoSource.commitSha == $SHA) or 
-                (.sourceProvenance.resolvedRepoSource.commitSha == $SHA)
+                (.sourceProvenance.resolvedRepoSource.commitSha == $SHA) or
+                (.source.developerConnectConfig.revision == $SHA)
               ) | .id
             ' | head -n 1)
             
