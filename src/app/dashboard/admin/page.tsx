@@ -15,34 +15,34 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+    DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -67,15 +67,15 @@ function AdminDashboard() {
     const [allUsers, setAllUsers] = useState<User[]>([]);
     const [allIScribes, setAllIScribes] = useState<AdminIScribe[]>([]);
     const [isLoadingData, setIsLoadingData] = useState(true);
-    
+
     // State for the Create User Dialog
     const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = useState(false);
     const [newUserForm, setNewUserForm] = useState({
-      fullName: '',
-      username: '',
-      email: '',
-      role: 'user',
-      password: ''
+        fullName: '',
+        username: '',
+        email: '',
+        role: 'user',
+        password: ''
     });
 
     // State for the Delete User Dialog
@@ -100,13 +100,13 @@ function AdminDashboard() {
                 ...c,
                 userName: userMap.get(c.userId) || 'Unknown User'
             }));
-            
+
             setAllUsers(users);
             setAllIScribes(iscribesWithUserNames);
 
         } catch (error) {
             console.error("Error fetching admin data:", error);
-             toast({
+            toast({
                 title: "Error Fetching Data",
                 description: "Could not retrieve administrator data from the server.",
                 variant: "destructive"
@@ -135,7 +135,7 @@ function AdminDashboard() {
             accountStatus: targetUser.accountStatus || 'active',
         });
     };
-    
+
     const handleSaveUserEdit = async () => {
         if (!userToEdit) return;
         setIsSavingEdit(true);
@@ -165,7 +165,7 @@ function AdminDashboard() {
         }
         setIsSavingEdit(false);
     };
-    
+
     const handleCreateUserSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         // Placeholder for actual user creation logic
@@ -180,7 +180,7 @@ function AdminDashboard() {
         // Reset form after submission
         setNewUserForm({ fullName: '', username: '', email: '', role: 'user', password: '' });
     };
-    
+
     const handlePasswordReset = (targetUser: User) => {
         console.log("Admin Panel: Attempting to reset password for user:", targetUser.email);
         toast({
@@ -194,7 +194,7 @@ function AdminDashboard() {
     const handleDeleteUser = async () => {
         if (!userToDelete) return;
         setIsDeletingUser(true);
-        
+
         const result = await deleteUserByAdmin(userToDelete.uid);
 
         if (result.success) {
@@ -223,7 +223,7 @@ function AdminDashboard() {
             </div>
         );
     }
-    
+
     if (user?.role !== 'admin') {
         return null; // Redirect is happening
     }
@@ -245,7 +245,7 @@ function AdminDashboard() {
                         <div className="text-2xl font-bold">{allUsers.length}</div>
                     </CardContent>
                 </Card>
-                 <Card className="bg-card/80">
+                <Card className="bg-card/80">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total iScribes</CardTitle>
                         <FileText className="h-4 w-4 text-muted-foreground" />
@@ -279,25 +279,25 @@ function AdminDashboard() {
                                 <div className="grid gap-4 py-4">
                                     <div className="grid grid-cols-4 items-center gap-4">
                                         <Label htmlFor="fullName" className="text-right">Full Name</Label>
-                                        <Input id="fullName" value={newUserForm.fullName} onChange={(e) => setNewUserForm({...newUserForm, fullName: e.target.value})} className="col-span-3" required />
+                                        <Input id="fullName" value={newUserForm.fullName} onChange={(e) => setNewUserForm({ ...newUserForm, fullName: e.target.value })} className="col-span-3" required />
                                     </div>
                                     <div className="grid grid-cols-4 items-center gap-4">
                                         <Label htmlFor="username" className="text-right">Username</Label>
-                                        <Input id="username" value={newUserForm.username} onChange={(e) => setNewUserForm({...newUserForm, username: e.target.value})} className="col-span-3" required />
+                                        <Input id="username" value={newUserForm.username} onChange={(e) => setNewUserForm({ ...newUserForm, username: e.target.value })} className="col-span-3" required />
                                     </div>
                                     <div className="grid grid-cols-4 items-center gap-4">
                                         <Label htmlFor="email" className="text-right">Email</Label>
-                                        <Input id="email" type="email" value={newUserForm.email} onChange={(e) => setNewUserForm({...newUserForm, email: e.target.value})} className="col-span-3" required />
+                                        <Input id="email" type="email" value={newUserForm.email} onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })} className="col-span-3" required />
                                     </div>
-                                     <div className="grid grid-cols-4 items-center gap-4">
+                                    <div className="grid grid-cols-4 items-center gap-4">
                                         <Label htmlFor="password" className="text-right">Password</Label>
-                                        <Input id="password" type="password" value={newUserForm.password} onChange={(e) => setNewUserForm({...newUserForm, password: e.target.value})} className="col-span-3" placeholder="Temporary password" required />
+                                        <Input id="password" type="password" value={newUserForm.password} onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })} className="col-span-3" placeholder="Temporary password" required />
                                     </div>
                                     <div className="grid grid-cols-4 items-center gap-4">
                                         <Label htmlFor="role" className="text-right">Role</Label>
-                                         <Select
+                                        <Select
                                             value={newUserForm.role}
-                                            onValueChange={(value) => setNewUserForm({...newUserForm, role: value as 'user' | 'admin'})}
+                                            onValueChange={(value) => setNewUserForm({ ...newUserForm, role: value as 'user' | 'admin' })}
                                         >
                                             <SelectTrigger className="col-span-3">
                                                 <SelectValue placeholder="Select a role" />
@@ -349,7 +349,7 @@ function AdminDashboard() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                     <Badge variant={u.accountStatus === 'active' ? 'default' : 'outline'} className="capitalize">
+                                                    <Badge variant={u.accountStatus === 'active' ? 'default' : 'outline'} className="capitalize">
                                                         {u.accountStatus || 'active'}
                                                     </Badge>
                                                 </TableCell>
@@ -358,7 +358,7 @@ function AdminDashboard() {
                                                 <TableCell>
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
-                                                            <Button aria-haspopup="true" size="icon" variant="ghost" disabled={user?.uid === u.uid || u.role === 'admin'}>
+                                                            <Button aria-haspopup="true" size="icon" variant="ghost" disabled={user?.uid === u.uid}>
                                                                 <MoreHorizontal className="h-4 w-4" />
                                                                 <span className="sr-only">Toggle menu</span>
                                                             </Button>
@@ -369,7 +369,7 @@ function AdminDashboard() {
                                                                 <Edit className="mr-2 h-4 w-4" /> Edit User
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem onClick={() => handlePasswordReset(u)}>
-                                                                 <KeyRound className="mr-2 h-4 w-4" /> Reset Password
+                                                                <KeyRound className="mr-2 h-4 w-4" /> Reset Password
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
                                                             <DropdownMenuItem className="text-destructive" onClick={() => setUserToDelete(u)}>
@@ -387,13 +387,13 @@ function AdminDashboard() {
                     </Card>
                 </TabsContent>
                 <TabsContent value="iscribes">
-                     <Card className="bg-card/80">
+                    <Card className="bg-card/80">
                         <CardHeader>
                             <CardTitle>All iScribes</CardTitle>
                             <CardDescription>Directory of all recorded iscribes.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                             <ScrollArea className="h-[50vh]">
+                            <ScrollArea className="h-[50vh]">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -409,9 +409,9 @@ function AdminDashboard() {
                                                 <TableCell className="font-medium">{c.patientName}</TableCell>
                                                 <TableCell>{c.userName}</TableCell>
                                                 <TableCell>{format(new Date(c.date), 'PPP p')}</TableCell>
-                                                 <TableCell>
+                                                <TableCell>
                                                     <Badge className="capitalize">{c.status}</Badge>
-                                                 </TableCell>
+                                                </TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -426,7 +426,7 @@ function AdminDashboard() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the account for 
+                            This action cannot be undone. This will permanently delete the account for
                             <span className="font-bold"> {userToDelete?.displayName}</span> and all associated data. This action is irreversible.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -452,21 +452,21 @@ function AdminDashboard() {
                             <Label className="text-right">Email</Label>
                             <Input value={userToEdit?.email || ''} readOnly className="col-span-3 bg-muted/50" />
                         </div>
-                         <div className="grid grid-cols-4 items-center gap-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="displayName-edit" className="text-right">Display Name</Label>
-                             <Input 
+                            <Input
                                 id="displayName-edit"
                                 value={editUserForm.displayName}
-                                onChange={(e) => setEditUserForm(prev => ({...prev, displayName: e.target.value}))}
+                                onChange={(e) => setEditUserForm(prev => ({ ...prev, displayName: e.target.value }))}
                                 className="col-span-3"
                             />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="username-edit" className="text-right">Username</Label>
-                             <Input 
+                            <Input
                                 id="username-edit"
                                 value={editUserForm.username}
-                                onChange={(e) => setEditUserForm(prev => ({...prev, username: e.target.value}))}
+                                onChange={(e) => setEditUserForm(prev => ({ ...prev, username: e.target.value }))}
                                 className="col-span-3"
                             />
                         </div>
@@ -485,7 +485,7 @@ function AdminDashboard() {
                                 </SelectContent>
                             </Select>
                         </div>
-                         <div className="grid grid-cols-4 items-center gap-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="status-edit" className="text-right">Status</Label>
                             <Select
                                 value={editUserForm.accountStatus}
@@ -536,7 +536,7 @@ export default function AdminPage() {
     if (user.role !== 'admin') {
         router.replace('/dashboard/iscribes');
         return (
-             <div className="flex h-screen w-full items-center justify-center">
+            <div className="flex h-screen w-full items-center justify-center">
                 <p>You are not authorized to view this page. Redirecting...</p>
                 <Loader2 className="ml-4 h-8 w-8 animate-spin text-primary" />
             </div>
