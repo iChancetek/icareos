@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { AINetworkCanvas } from "./AINetworkCanvas";
 import Link from "next/link";
 import Image from "next/image";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Volume2, VolumeX } from "lucide-react";
 
 const BADGE_ITEMS = ["GPT-5.4 Powered", "HIPAA-Ready", "Real-Time Agents", "8 AI Modules"];
@@ -111,15 +110,7 @@ export function Hero() {
                     ))}
                 </motion.div>
 
-                {/* Theme Toggle */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.6, delay: 0.35 }}
-                    className="mb-4"
-                >
-                    <ThemeToggle />
-                </motion.div>
+
 
 
 
