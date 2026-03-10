@@ -122,7 +122,7 @@ export default function IScribesPage() {
             <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
             <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">Neural Clinical AI</span>
           </div>
-          <h1 className="text-3xl font-black tracking-tight gradient-text">iScribe Sessions</h1>
+          <h1 className="text-3xl font-black tracking-tight gradient-text">MediScribe Sessions</h1>
           <p className="text-sm text-muted-foreground">
             AI-powered SOAP documentation · 6-agent pipeline · MediScribe AI
           </p>
