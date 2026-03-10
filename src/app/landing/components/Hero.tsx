@@ -1,16 +1,18 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { AINetworkCanvas } from "./AINetworkCanvas";
 import Link from "next/link";
 import Image from "next/image";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Volume2, VolumeX } from "lucide-react";
 
 const BADGE_ITEMS = ["GPT-5.4 Powered", "HIPAA-Ready", "Real-Time Agents", "8 AI Modules"];
 
 export function Hero() {
     const heroRef = useRef<HTMLDivElement>(null);
+    const [isMuted, setIsMuted] = useState(true);
     const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
     const canvasY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
     const contentY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
@@ -33,17 +35,41 @@ export function Hero() {
 
             {/* Animated grid */}
             <div
-                className="absolute inset-0 opacity-10 dark:opacity-[0.04]"
+                className="absolute inset-0 opacity-[0.05] dark:opacity-[0.02]"
                 style={{
                     backgroundImage: `linear-gradient(rgba(6,182,212,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(6,182,212,0.8) 1px, transparent 1px)`,
                     backgroundSize: "60px 60px",
                 }}
             />
 
+            {/* Video Background */}
+            <motion.div className="absolute inset-0 overflow-hidden" style={{ y: canvasY }}>
+                <video
+                    autoPlay
+                    loop
+                    muted={isMuted}
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover opacity-30 dark:opacity-20 pointer-events-none"
+                >
+                    <source src="/videos/iCareOS.mp4" type="video/mp4" />
+                </video>
+            </motion.div>
+
             {/* AI Network Canvas — full hero background */}
-            <motion.div className="absolute inset-0" style={{ y: canvasY }}>
+            <motion.div className="absolute inset-0 opacity-50 dark:opacity-40" style={{ y: canvasY }}>
                 <AINetworkCanvas />
             </motion.div>
+
+            {/* Audio Toggle */}
+            <div className="absolute bottom-8 right-8 z-50">
+                <button
+                    onClick={() => setIsMuted(!isMuted)}
+                    className="flex items-center justify-center p-3 rounded-full bg-white/20 dark:bg-black/40 text-slate-800 dark:text-white hover:bg-white/40 dark:hover:bg-black/60 backdrop-blur-md transition-all border border-slate-300/50 dark:border-white/10 shadow-lg"
+                    aria-label={isMuted ? "Unmute background video" : "Mute background video"}
+                >
+                    {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                </button>
+            </div>
 
             {/* Cinematic vignette edges */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,#f8fafc_100%)] dark:bg-[radial-gradient(ellipse_at_center,transparent_40%,#050810_100%)] pointer-events-none" />
