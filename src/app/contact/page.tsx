@@ -114,10 +114,10 @@ export default function ContactPage() {
                                     Direct Email
                                 </p>
                                 <a
-                                    href="mailto:chancellor@ichancetek.com"
+                                    href="mailto:icareos@ichancetek.com"
                                     className="text-lg text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 transition-colors font-medium break-all"
                                 >
-                                    chancellor@ichancetek.com
+                                    icareos@ichancetek.com
                                 </a>
                             </div>
                             <p className="text-sm text-slate-500 dark:text-white/40">
@@ -177,7 +177,7 @@ export default function ContactPage() {
                                                 <div>
                                                     <p className="text-sm font-bold text-red-800 dark:text-red-400">Unable to send message</p>
                                                     <p className="text-sm text-red-600 dark:text-red-300">
-                                                        Please try again or contact us directly at chancellor@ichancetek.com
+                                                        Please try again or contact us directly at icareos@ichancetek.com
                                                     </p>
                                                 </div>
                                             </div>

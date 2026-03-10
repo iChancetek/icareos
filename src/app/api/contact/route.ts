@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
         // Send email using Resend
         const data = await resend.emails.send({
             from: "iCareOS Platform <onboarding@resend.dev>", // Resend test domain or verified domain
-            to: "chancellor@ichancetek.com",
+            to: "icareos@ichancetek.com",
             replyTo: email,
             subject: `New Contact Request: ${subject}`,
             html: `

@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 /**
  * One-time admin bootstrap page.
- * Visit /bootstrap-admin while logged in as chancellor@ichancetek.com.
+ * Visit /bootstrap-admin while logged in as icareos@ichancetek.com.
  * After clicking the button, log out and log back in.
  * 
  * This page is intentionally NOT linked in the nav and should be removed

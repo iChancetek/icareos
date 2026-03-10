@@ -22,7 +22,7 @@ interface AuditLog {
     details?: string;
 }
 
-const ADMIN_EMAIL = 'chancellor@ichancetek.com';
+const ADMIN_EMAIL = 'icareos@ichancetek.com';
 
 const SEVERITY_COLORS: Record<string, string> = {
     INFO: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',

@@ -1,6 +1,6 @@
 /**
  * One-time admin role grant script.
- * Run with: node scripts/grant-admin.mjs chancellor@ichancetek.com
+ * Run with: node scripts/grant-admin.mjs icareos@ichancetek.com
  *
  * Requires GOOGLE_APPLICATION_CREDENTIALS or Firebase Admin SDK to be configured.
  * Uses the Firebase Admin SDK via the firebase-admin package.

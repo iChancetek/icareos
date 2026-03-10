@@ -168,7 +168,7 @@ export function Hero() {
                     transition={{ duration: 0.8, delay: 0.75 }}
                     className="flex flex-col sm:flex-row gap-4 items-center"
                 >
-                    <Link href="/dashboard">
+                    <Link href="/login">
                         <motion.button
                             whileHover={{ scale: 1.04, boxShadow: "0 0 32px rgba(6,182,212,0.5)" }}
                             whileTap={{ scale: 0.97 }}
