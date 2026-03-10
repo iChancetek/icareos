@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import { AINetworkCanvas } from "./AINetworkCanvas";
 import Link from "next/link";
 import Image from "next/image";
@@ -13,6 +15,8 @@ const BADGE_ITEMS = ["GPT-5.4 Powered", "HIPAA-Ready", "Real-Time Agents", "8 AI
 export function Hero() {
     const heroRef = useRef<HTMLDivElement>(null);
     const [isMuted, setIsMuted] = useState(true);
+    const router = useRouter();
+    const { isAuthenticated, user } = useAuth();
     const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
     const canvasY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
     const contentY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
@@ -168,33 +172,26 @@ export function Hero() {
                     transition={{ duration: 0.8, delay: 0.75 }}
                     className="flex flex-col sm:flex-row gap-4 items-center"
                 >
-                    <Link href="/login">
-                        <motion.button
-                            whileHover={{ scale: 1.04, boxShadow: "0 0 32px rgba(6,182,212,0.5)" }}
-                            whileTap={{ scale: 0.97 }}
-                            className="group relative px-8 py-4 rounded-2xl font-bold text-sm tracking-wide overflow-hidden text-white shadow-xl dark:shadow-none"
-                            style={{ background: "linear-gradient(135deg, #06b6d4, #8b5cf6)" }}
-                        >
-                            <span className="relative z-10 flex items-center gap-2">
-                                Start Your iCareOS Session
-                                <motion.span
-                                    animate={{ x: [0, 4, 0] }}
-                                    transition={{ repeat: Infinity, duration: 1.5 }}
-                                >
-                                    →
-                                </motion.span>
-                            </span>
-                            {/* Shimmer */}
-                            <motion.div
-                                className="absolute inset-0 -translate-x-full"
-                                animate={{ translateX: ["−100%", "200%"] }}
-                                transition={{ repeat: Infinity, duration: 2.5, ease: "linear", repeatDelay: 1 }}
-                                style={{
-                                    background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)",
-                                }}
-                            />
-                        </motion.button>
-                    </Link>
+                    <motion.button
+                        onClick={() => router.push(isAuthenticated ? '/dashboard/iscribe' : '/login')}
+                        whileHover={{ scale: 1.04, boxShadow: "0 0 32px rgba(6,182,212,0.5)" }}
+                        whileTap={{ scale: 0.97 }}
+                        className="group relative px-8 py-4 rounded-2xl font-bold text-sm tracking-wide overflow-hidden text-white shadow-xl dark:shadow-none"
+                        style={{ background: "linear-gradient(135deg, #06b6d4, #8b5cf6)" }}
+                    >
+                        <span className="relative z-10 flex items-center gap-2">
+                            {isAuthenticated ? `Welcome back, ${user?.displayName?.split(' ')[0] || 'Doc'} →` : 'Start Your iCareOS Session →'}
+                        </span>
+                        {/* Shimmer */}
+                        <motion.div
+                            className="absolute inset-0 -translate-x-full"
+                            animate={{ translateX: ["−100%", "200%"] }}
+                            transition={{ repeat: Infinity, duration: 2.5, ease: "linear", repeatDelay: 1 }}
+                            style={{
+                                background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)",
+                            }}
+                        />
+                    </motion.button>
 
                     <Link href="/learn-more">
                         <motion.button
@@ -206,15 +203,17 @@ export function Hero() {
                         </motion.button>
                     </Link>
 
-                    <Link href="/login">
-                        <motion.button
-                            whileHover={{ scale: 1.04 }}
-                            whileTap={{ scale: 0.97 }}
-                            className="px-8 py-4 rounded-2xl font-bold text-sm tracking-wide border border-slate-200 dark:border-white/15 bg-slate-50 dark:bg-transparent text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 hover:dark:bg-white/5 shadow-sm dark:shadow-none transition-colors"
-                        >
-                            Sign In
-                        </motion.button>
-                    </Link>
+                    {!isAuthenticated && (
+                        <Link href="/login">
+                            <motion.button
+                                whileHover={{ scale: 1.04 }}
+                                whileTap={{ scale: 0.97 }}
+                                className="px-8 py-4 rounded-2xl font-bold text-sm tracking-wide border border-slate-200 dark:border-white/15 bg-slate-50 dark:bg-transparent text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 hover:dark:bg-white/5 shadow-sm dark:shadow-none transition-colors"
+                            >
+                                Sign In
+                            </motion.button>
+                        </Link>
+                    )}
                 </motion.div>
 
                 {/* Scroll indicator */}

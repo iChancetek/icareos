@@ -3,6 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -16,6 +18,8 @@ const NAV_LINKS = [
 export function Navbar() {
     const [scrolled, setScrolled] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const router = useRouter();
+    const { isAuthenticated, user } = useAuth();
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 40);
@@ -68,16 +72,15 @@ export function Navbar() {
                 {/* CTA */}
                 <div className="hidden md:flex items-center gap-3 shrink-0 ml-auto">
                     <ThemeToggle />
-                    <Link href="/dashboard">
-                        <motion.button
-                            whileHover={{ scale: 1.04, boxShadow: "0 0 20px rgba(6,182,212,0.4)" }}
-                            whileTap={{ scale: 0.97 }}
-                            className="px-5 py-2 rounded-xl text-sm font-bold text-white"
-                            style={{ background: "linear-gradient(135deg, #06b6d4, #8b5cf6)" }}
-                        >
-                            Launch Platform →
-                        </motion.button>
-                    </Link>
+                    <motion.button
+                        onClick={() => router.push(isAuthenticated ? '/dashboard/iscribe' : '/dashboard')}
+                        whileHover={{ scale: 1.04, boxShadow: "0 0 20px rgba(6,182,212,0.4)" }}
+                        whileTap={{ scale: 0.97 }}
+                        className="px-5 py-2 rounded-xl text-sm font-bold text-white flex items-center gap-2"
+                        style={{ background: "linear-gradient(135deg, #06b6d4, #8b5cf6)" }}
+                    >
+                        {isAuthenticated ? `Go to Dashboard →` : 'Launch Platform →'}
+                    </motion.button>
                 </div>
 
                 {/* Mobile hamburger */}
@@ -112,19 +115,23 @@ export function Navbar() {
                     >
                         {NAV_LINKS.map(link => (
                             <a key={link.label} href={link.href}
-                                className="block px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/5 transition-all"
+                                className="block px-4 py-3 rounded-xl text-sm font-semibold text-slate-800 hover:text-slate-900 hover:bg-slate-100 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/5 transition-all"
                                 onClick={() => setMobileOpen(false)}
                             >
                                 {link.label}
                             </a>
                         ))}
                         <div className="pt-2 border-t border-slate-200 dark:border-white/10 flex gap-2">
-                            <Link href="/dashboard" className="flex-1">
-                                <button className="w-full py-3 rounded-xl text-sm font-bold text-white"
-                                    style={{ background: "linear-gradient(135deg, #06b6d4, #8b5cf6)" }}>
-                                    Launch →
-                                </button>
-                            </Link>
+                            <button
+                                onClick={() => {
+                                    setMobileOpen(false);
+                                    router.push(isAuthenticated ? '/dashboard/iscribe' : '/dashboard')
+                                }}
+                                className="w-full py-3 rounded-xl text-sm font-bold text-white flex justify-center items-center gap-2"
+                                style={{ background: "linear-gradient(135deg, #06b6d4, #8b5cf6)" }}
+                            >
+                                {isAuthenticated ? 'Go to Dashboard →' : 'Launch →'}
+                            </button>
                         </div>
                     </motion.div>
                 )}
