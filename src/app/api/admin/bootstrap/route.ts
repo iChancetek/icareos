@@ -1,12 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+
+// Initialize Firebase Admin once
+if (!getApps().length) {
+    let credential;
+
+    // If we have a service account JSON string in env, use it (recommended for prod)
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        credential = cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT));
+    }
+    // Fallback to project ID for local dev (requires GOOGLE_APPLICATION_CREDENTIALS or gcloud auth)
+    else if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
+        credential = { projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID };
+    }
+
+    initializeApp({ credential });
+}
+
+const db = getFirestore();
 
 /**
  * POST /api/admin/bootstrap
- *
- * Grants admin role to a user by UID using the Firestore REST API.
- * Avoids the client-side Firebase SDK which cannot connect from server context.
- *
- * Body: { uid: string, secret: string }
+ * Grants admin role to a user using Firebase Admin SDK
  */
 export async function POST(req: NextRequest) {
     try {
@@ -21,36 +37,16 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'uid is required.' }, { status: 400 });
         }
 
-        const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-        const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+        const userDocRef = db.collection('users').doc(uid);
+        const snap = await userDocRef.get();
 
-        if (!projectId || !apiKey) {
-            return NextResponse.json({ error: 'Firebase configuration missing.' }, { status: 500 });
+        if (snap.exists) {
+            await userDocRef.update({ role: 'admin' });
+        } else {
+            return NextResponse.json({ error: `User document for ${uid} not found. Please log in normally first.` }, { status: 404 });
         }
 
-        // Use Firestore REST API to patch the user document's role field
-        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=role&key=${apiKey}`;
-
-        const firestoreRes = await fetch(firestoreUrl, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                fields: {
-                    role: { stringValue: 'admin' },
-                },
-            }),
-        });
-
-        if (!firestoreRes.ok) {
-            const errBody = await firestoreRes.text();
-            console.error('[Bootstrap API] Firestore REST error:', errBody);
-            return NextResponse.json(
-                { error: `Firestore update failed: ${firestoreRes.status}` },
-                { status: 500 }
-            );
-        }
-
-        return NextResponse.json({ success: true, message: `User ${uid} is now an admin.` });
+        return NextResponse.json({ success: true, message: `User ${uid} successfully granted admin role.` });
     } catch (error: any) {
         console.error('[Bootstrap API] Error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
