@@ -11,9 +11,8 @@ import { Loader2 } from 'lucide-react';
 import { textToSpeech } from '@/actions/ai/text-to-speech';
 import { useToast } from '@/hooks/use-toast';
 
-
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, firebaseUser } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -21,11 +20,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const audioPlayerRef = useRef<HTMLAudioElement>(null);
   const [greetingPlayed, setGreetingPlayed] = useState(false);
 
+  // Only redirect to login if Firebase confirms there is truly no logged-in user.
+  // `isLoading` alone is unreliable — it can stay true for 1-2s on cold start.
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !firebaseUser) {
       router.replace('/login');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [firebaseUser, isLoading, router]);
 
   // AI Voice Greeting Generation — deferred so the page renders first
   useEffect(() => {
@@ -68,7 +69,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }, [greetingAudio, greetingPlayed, handleFirstInteraction]);
 
 
-  if (isLoading) {
+  // Show a minimal spinner ONLY on true cold start (no firebase user at all yet)
+  if (isLoading && !firebaseUser) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -76,7 +78,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!isAuthenticated) return null;
+  // If firebase user is gone and loading is done, we're logged out (redirect handled above)
+  if (!isLoading && !firebaseUser) return null;
 
   return (
     <div className="flex min-h-screen w-full">
