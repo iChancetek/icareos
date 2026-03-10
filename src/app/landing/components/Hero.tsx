@@ -161,7 +161,7 @@ export function Hero() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.75 }}
-                    className="flex flex-col sm:flex-row gap-4 items-center"
+                    className="flex flex-col sm:flex-row gap-4 items-center mb-16"
                 >
                     <motion.button
                         onClick={() => router.push(isAuthenticated ? '/dashboard/iscribe' : '/login')}
