@@ -246,7 +246,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [isAuthenticated, isLoading, pathname, router, user, firebaseUser]);
 
   const login = async (emailIn: string, passwordIn: string): Promise<boolean> => {
-    setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, emailIn, passwordIn);
       // onAuthStateChanged will handle the rest
@@ -257,13 +256,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         console.error("Firebase Login Error Code:", error.code, "Message:", error.message);
       }
-      setIsLoading(false);
       return false;
     }
   };
 
   const signup = async (emailIn: string, passwordIn: string, displayNameIn: string, usernameIn: string): Promise<boolean> => {
-    setIsLoading(true);
     try {
       // Store user info before creating account, so onAuthStateChanged can use it.
       setNewUserInfo({ displayName: displayNameIn, username: usernameIn });
@@ -275,13 +272,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return true;
     } catch (error: any) {
       setNewUserInfo(null); // Clear temp info on failure
-      setIsLoading(false);
       throw error; // Let the caller handle the error message to display a toast
     }
   };
 
   const signInWithGoogle = async (): Promise<boolean> => {
-    setIsLoading(true);
     try {
       const provider = new GoogleAuthProvider();
       provider.addScope('profile');
@@ -297,7 +292,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         console.log("Google Sign-In popup closed by user.");
       }
-      setIsLoading(false);
       return false;
     }
   };

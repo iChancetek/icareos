@@ -27,7 +27,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, isLoading, router]);
 
-  // AI Voice Greeting Generation
+  // AI Voice Greeting Generation — deferred so the page renders first
   useEffect(() => {
     const generateGreeting = async () => {
       if (user?.displayName && sessionStorage.getItem('greetingGenerated') !== 'true') {
@@ -46,7 +46,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     };
 
     if (isAuthenticated && !isLoading) {
-      generateGreeting();
+      // Defer 2 seconds so the page fully paints before firing the OpenAI request
+      const timer = setTimeout(() => generateGreeting(), 2000);
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, isLoading, user, toast]);
 
