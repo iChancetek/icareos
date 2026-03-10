@@ -120,7 +120,7 @@ export default function IScribesPage() {
     <div className="container mx-auto px-4 md:px-6 py-8 space-y-8 max-w-5xl">
 
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">AI-Native Clinical Features</p>
+        <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-3">AI-Native Clinical Features</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {AI_FEATURES.map((f, i) => (
             <Link href={f.href} key={f.title}>
