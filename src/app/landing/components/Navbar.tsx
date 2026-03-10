@@ -42,15 +42,18 @@ export function Navbar() {
                     }`}
             >
                 {/* Logo */}
-                <Link href="/" className="flex items-center shrink-0">
-                    <div className="leading-tight">
-                        <span className="font-black text-sm text-white tracking-tight">iCareOS</span>
-                        <span className="block text-[7px] text-white/35 font-medium tracking-widest uppercase">by ChanceTEK</span>
+                <Link href="/" className="flex items-center gap-3 shrink-0">
+                    <div className="h-9 w-9 rounded-xl flex items-center justify-center overflow-hidden shadow-lg border border-slate-200 dark:border-white/10 shrink-0">
+                        <Image src="/icons/icon-192x192.png" alt="iCareOS Logo" width={36} height={36} className="object-cover" />
+                    </div>
+                    <div className="leading-tight hidden sm:block">
+                        <span className="font-black text-sm text-slate-900 dark:text-white tracking-tight">iCareOS</span>
+                        <span className="block text-[7px] text-slate-500 dark:text-white/50 font-medium tracking-widest uppercase">by ChanceTEK</span>
                     </div>
                 </Link>
 
                 {/* Desktop nav */}
-                <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
+                <nav className="hidden md:flex items-center gap-1 ml-6">
                     {NAV_LINKS.map((link) => (
                         <a
                             key={link.label}
@@ -63,7 +66,7 @@ export function Navbar() {
                 </nav>
 
                 {/* CTA */}
-                <div className="hidden md:flex items-center gap-3 shrink-0">
+                <div className="hidden md:flex items-center gap-3 shrink-0 ml-auto">
                     <ThemeToggle />
                     <Link href="/dashboard">
                         <motion.button

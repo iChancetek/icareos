@@ -117,22 +117,7 @@ export function Hero() {
                     <ThemeToggle />
                 </motion.div>
 
-                {/* Official iCareOS Logo */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.8, delay: 0.38, ease: [0.16, 1, 0.3, 1] }}
-                    className="mb-8"
-                >
-                    <Image
-                        src="/icons/icon-192x192.png"
-                        alt="iCareOS Official Logo"
-                        width={96}
-                        height={96}
-                        className="rounded-3xl shadow-2xl"
-                        style={{ boxShadow: "0 0 40px rgba(6,182,212,0.4), 0 0 80px rgba(139,92,246,0.2)" }}
-                    />
-                </motion.div>
+
 
                 {/* Headline */}
                 <motion.h1

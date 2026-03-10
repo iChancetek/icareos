@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -141,9 +142,9 @@ export default function AppSidebar() {
       >
         {/* ── Top: Logo + Pin ─────────────────────────────── */}
         <div className="flex items-center justify-between gap-2 px-[14px] py-4 shrink-0">
-          <Link href="/dashboard/iscribe" className="flex items-center gap-2.5 min-w-0">
-            <div className="relative shrink-0 ios-squircle h-9 w-9 bg-black border border-white/5">
-              <Activity className="h-4.5 w-4.5 text-primary" style={{ filter: 'drop-shadow(0 0 4px #00E5FF)' }} />
+          <Link href="/" className="flex items-center gap-2.5 min-w-0">
+            <div className="relative shrink-0 h-9 w-9 rounded-xl flex items-center justify-center overflow-hidden shadow-lg border border-white/10">
+              <Image src="/icons/icon-192x192.png" alt="iCareOS Logo" width={36} height={36} className="object-cover" />
               <div className="ios-gloss" />
             </div>
             <AnimatePresence>
