@@ -49,6 +49,15 @@ function KPICard({ icon: Icon, label, value, sub, color, delay }: {
 // AI Feature cards shown at the top of the dashboard
 const AI_FEATURES = [
   {
+    href: "/dashboard/iscribe/new",
+    title: "MediScribe AI",
+    desc: "Voice-powered SOAP documentation. Record a consultation and the 6-agent pipeline generates notes, risk scores, and billing codes in seconds.",
+    icon: Mic,
+    color: "from-cyan-500/15 to-blue-500/5 border-cyan-500/25",
+    iconColor: "bg-cyan-500/10 border-cyan-500/20 text-cyan-400",
+    badge: "SOAP AI",
+  },
+  {
     href: "/dashboard/cds",
     title: "Wound Care AI",
     desc: "Upload wound photos for AI-powered classification, severity grading, and care recommendations.",
@@ -110,37 +119,6 @@ export default function IScribesPage() {
   return (
     <div className="container mx-auto px-4 md:px-6 py-8 space-y-8 max-w-5xl">
 
-      {/* ── Hero header ───────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5"
-      >
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">Neural Clinical AI</span>
-          </div>
-          <h1 className="text-3xl font-black tracking-tight gradient-text">MediScribe Sessions</h1>
-          <p className="text-sm text-muted-foreground">
-            AI-powered SOAP documentation · 6-agent pipeline · MediScribe AI
-          </p>
-        </div>
-
-        <Link href="/dashboard/iscribe/new">
-          <motion.button
-            whileHover={{ scale: 1.04, y: -1 }}
-            whileTap={{ scale: 0.97 }}
-            className="btn-neural flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold"
-          >
-            <Mic className="h-4 w-4" />
-            New Session
-          </motion.button>
-        </Link>
-      </motion.div>
-
-      {/* ── AI-Native Feature Cards ─────────────────────────── */}
       <div>
         <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">AI-Native Clinical Features</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
