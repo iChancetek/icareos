@@ -50,7 +50,7 @@ const nextConfig: NextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
-  },
+  } as any,
   images: {
     remotePatterns: [
       {

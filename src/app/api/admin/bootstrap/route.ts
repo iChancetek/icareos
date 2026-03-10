@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 /**
  * POST /api/admin/bootstrap
  *
- * One-time endpoint to grant admin role to a specific user by UID.
- * Protected by a BOOTSTRAP_SECRET env variable so it cannot be abused.
+ * Grants admin role to a user by UID using the Firestore REST API.
+ * Avoids the client-side Firebase SDK which cannot connect from server context.
  *
  * Body: { uid: string, secret: string }
  */
@@ -23,20 +21,33 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'uid is required.' }, { status: 400 });
         }
 
-        const userDocRef = doc(db, 'users', uid);
-        const snap = await getDoc(userDocRef);
+        const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+        const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
-        if (snap.exists()) {
-            await updateDoc(userDocRef, { role: 'admin' });
-        } else {
-            // Create minimal profile if user hasn't logged in yet
-            await setDoc(userDocRef, {
-                uid,
-                role: 'admin',
-                accountStatus: 'active',
-                createdAt: serverTimestamp(),
-                lastLogin: serverTimestamp(),
-            });
+        if (!projectId || !apiKey) {
+            return NextResponse.json({ error: 'Firebase configuration missing.' }, { status: 500 });
+        }
+
+        // Use Firestore REST API to patch the user document's role field
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=role&key=${apiKey}`;
+
+        const firestoreRes = await fetch(firestoreUrl, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fields: {
+                    role: { stringValue: 'admin' },
+                },
+            }),
+        });
+
+        if (!firestoreRes.ok) {
+            const errBody = await firestoreRes.text();
+            console.error('[Bootstrap API] Firestore REST error:', errBody);
+            return NextResponse.json(
+                { error: `Firestore update failed: ${firestoreRes.status}` },
+                { status: 500 }
+            );
         }
 
         return NextResponse.json({ success: true, message: `User ${uid} is now an admin.` });

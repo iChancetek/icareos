@@ -40,7 +40,7 @@ export function Navbar() {
                 }}
                 // Using classes for light/dark rather than style obj where possible
                 data-scrolled={scrolled}
-                className={`rounded-2xl px-6 py-3 flex items-center gap-6 transition-all duration-500 ${scrolled
+                className={`w-full rounded-2xl px-4 md:px-6 py-3 flex items-center gap-4 md:gap-6 transition-all duration-500 ${scrolled
                     ? "bg-white/80 dark:bg-[#050810]/85 border border-slate-200 dark:border-white/10 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
                     : "bg-white/40 dark:bg-[#050810]/40 border border-slate-100 dark:border-white/5"
                     }`}
@@ -50,7 +50,7 @@ export function Navbar() {
                     <div className="h-9 w-9 rounded-xl flex items-center justify-center overflow-hidden shadow-lg border border-slate-200 dark:border-white/10 shrink-0">
                         <Image src="/icons/icon-192x192.png" alt="iCareOS Logo" width={36} height={36} className="object-cover" />
                     </div>
-                    <div className="leading-tight hidden sm:block">
+                    <div className="leading-tight">
                         <span className="font-black text-sm text-slate-900 dark:text-white tracking-tight">iCareOS</span>
                         <span className="block text-[7px] text-slate-500 dark:text-white/50 font-medium tracking-widest uppercase">by ChanceTEK</span>
                     </div>
