@@ -48,9 +48,9 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  } as any,
+  experimental: {
+    turbopack: {},
+  },
   images: {
     remotePatterns: [
       {
