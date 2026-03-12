@@ -1,5 +1,3 @@
-'use server';
-
 import { OpenAIService } from '@/services/openaiService';
 import { DEFAULT_AI_LABEL } from '@/services/constants';
 import type { RiskResult, RiskFactor, RiskLevel, AgentMeta } from '@/types/agents';

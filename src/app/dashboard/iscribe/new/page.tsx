@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Mic, StopCircle, Save, Loader2, AlertTriangle, CheckCircle2, Languages, ArrowLeft, BrainCircuit } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
-import { processAudioSession } from '@/services/agentService';
 import type { PipelineUpdate, PipelineStepName } from '@/agents/orchestratorAgent';
 import { translateText } from '@/actions/ai/translate-text-flow';
 import { sendDataToHubSpot } from '@/services/hubspotService';
@@ -182,7 +181,6 @@ export default function NewIScribePage() {
     setProgress(5);
     setCurrentStepMessage('Initialising iCareOS clinical intelligence agents...');
 
-    // Real-time pipeline update handler — driven by actual agent completions
     const STEP_INDEX: Record<PipelineStepName, number> = {
       'Transcription': 0,
       'NLP Extraction': 1,
@@ -192,27 +190,81 @@ export default function NewIScribePage() {
       'Compliance Check': 5,
     };
 
-    const onPipelineUpdate = (update: PipelineUpdate) => {
+    // Applies a pipeline update event to local UI state
+    const applyPipelineUpdate = (update: PipelineUpdate) => {
       const idx = STEP_INDEX[update.step];
       if (idx === undefined) return;
       updatePipeline(idx, {
         status: update.status,
         ...(update.confidence !== undefined ? { confidence: update.confidence } : {}),
       });
-      const doneCount = pipeline.filter(s => s.status === 'done').length;
-      setProgress(5 + Math.round((doneCount / 6) * 90));
       if (update.status === 'running') setCurrentStepMessage(`Running ${update.step}...`);
       if (update.status === 'done') setCurrentStepMessage(`${update.step} complete ✓`);
       if (update.status === 'error') setCurrentStepMessage(`${update.step} degraded — session continuing...`);
     };
 
     try {
-      const session = await processAudioSession(audioDataUri, {
-        specialty: specialty !== 'none' ? specialty : undefined,
-        language: targetTranslationLanguage !== 'none' ? targetTranslationLanguage : undefined,
-      }, onPipelineUpdate);
+      // ─ POST to the SSE API Route — fully serializable, no Server Action boundary
+      const res = await fetch('/api/iscribe/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audioDataUri,
+          specialty: specialty !== 'none' ? specialty : undefined,
+          language: targetTranslationLanguage !== 'none' ? targetTranslationLanguage : undefined,
+        }),
+      });
 
-      // Mark all as done
+      if (!res.ok || !res.body) {
+        const errText = await res.text().catch(() => 'Network error');
+        throw new Error(`Pipeline request failed (${res.status}): ${errText}`);
+      }
+
+      // ─ Read SSE stream synchronously until 'complete' or 'error'
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let session: any = null;
+      let doneCount = 0;
+
+      outer: while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // SSE messages are separated by double newline
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop() ?? '';
+
+        for (const part of parts) {
+          const eventLine = part.match(/^event: (\S+)/m);
+          // Extract data field without 's' flag (ES2017 target)
+          const dataPrefix = 'data: ';
+          const dataStart = part.indexOf(dataPrefix);
+          if (!eventLine || dataStart === -1) continue;
+          const dataRaw = part.slice(dataStart + dataPrefix.length).split('\n')[0].trim();
+
+          const eventName = eventLine[1];
+          const payload = JSON.parse(dataRaw);
+
+          if (eventName === 'pipeline_update') {
+            applyPipelineUpdate(payload as PipelineUpdate);
+            if ((payload as PipelineUpdate).status === 'done') {
+              doneCount++;
+              setProgress(5 + Math.round((doneCount / 6) * 70));
+            }
+          } else if (eventName === 'complete') {
+            session = payload;
+            break outer;
+          } else if (eventName === 'error') {
+            throw new Error(payload.message ?? 'Pipeline error');
+          }
+        }
+      }
+
+      if (!session) throw new Error('Pipeline completed without returning a session.');
+
+      // Mark all pipeline steps as done with their final confidence scores
       setPipeline(INITIAL_PIPELINE.map((s, i) => ({
         ...s,
         status: 'done',
@@ -262,20 +314,20 @@ export default function NewIScribePage() {
       };
 
       const newId = await saveIScribe(iScribeToSave);
-      if (!newId) throw new Error("Failed to save record.");
+      if (!newId) throw new Error('Failed to save record.');
 
       sendDataToHubSpot({ ...iScribeToSave, id: newId, userId: user.uid }, audioDataUri).catch(() => { });
       setProgress(100);
       setRecordingState('success');
       setCurrentStepMessage('Session complete!');
-      toast({ title: "Session Complete", description: `Confidence: ${Math.round((session.meta.overallConfidence ?? 0) * 100)}%` });
+      toast({ title: 'Session Complete', description: `Confidence: ${Math.round((session.meta.overallConfidence ?? 0) * 100)}%` });
       setTimeout(() => router.push(`/dashboard/iscribe/${newId}`), 1500);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = err instanceof Error ? err.message : 'Unknown error';
       setRecordingState('error');
       setCurrentStepMessage(`Error: ${msg}`);
       setPipeline(p => p.map(s => s.status === 'running' ? { ...s, status: 'error' } : s));
-      toast({ title: "Processing Error", description: msg, variant: "destructive", duration: 7000 });
+      toast({ title: 'Processing Error', description: msg, variant: 'destructive', duration: 7000 });
     }
   };
 

@@ -1,5 +1,3 @@
-'use server';
-
 import { runOrchestratorAgent } from '@/agents/orchestratorAgent';
 import type { ClinicalSession, OrchestratorInput } from '@/types/agents';
 import type { OnPipelineUpdate } from '@/agents/orchestratorAgent';

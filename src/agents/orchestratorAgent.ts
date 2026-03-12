@@ -1,5 +1,3 @@
-'use server';
-
 import { runTranscriptionAgent } from './transcriptionAgent';
 import { runNLPAgent } from './nlpAgent';
 import { runSOAPAgent } from './soapAgent';
