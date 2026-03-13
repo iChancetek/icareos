@@ -2,7 +2,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, initializeFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, Firestore, enableMultiTabIndexedDbPersistence, CACHE_SIZE_UNLIMITED } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 
 // Your web app's Firebase configuration
@@ -47,8 +47,22 @@ const auth = getAuth(app);
 let db: Firestore;
 try {
   // Only apply long polling on the client-side in production to prevent SSR hanging
-  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'development') {
-    db = initializeFirestore(app, { experimentalForceLongPolling: true }) as Firestore;
+  if (typeof window !== 'undefined') {
+    db = initializeFirestore(app, {
+      experimentalForceLongPolling: true,
+      localCache: undefined, // Force explicit persistence call below for v9 compat
+    }) as Firestore;
+
+    // Enable multi-tab persistence for smooth PWA-like behavior and instant loads
+    enableMultiTabIndexedDbPersistence(db).catch((err) => {
+      if (err.code === 'failed-precondition') {
+        // Multiple tabs open, persistence can only be enabled in one tab at a time.
+        console.warn('Firestore persistence failed-precondition: Multiple tabs open');
+      } else if (err.code === 'unimplemented') {
+        // The current browser does not support all of the features required to enable persistence
+        console.warn('Firestore persistence unimplemented: Browser not supported');
+      }
+    });
   } else {
     db = getFirestore(app);
   }

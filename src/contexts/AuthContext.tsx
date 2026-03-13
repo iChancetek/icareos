@@ -146,7 +146,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         // Step 2: Load the full Firestore profile in the background (non-blocking)
         const userDocRef = doc(db, 'users', fbUser.uid);
+        const startTime = Date.now();
         getDoc(userDocRef).then(async (userDoc) => {
+          const latency = Date.now() - startTime;
+          console.log(`[AuthContext] Profile load took ${latency}ms (Source: ${userDoc.metadata.fromCache ? 'Cache' : 'Network'})`);
           if (userDoc.exists()) {
             const userData = userDoc.data();
             if (userData.accountStatus === 'disabled') {
@@ -205,7 +208,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               });
           }
         }).catch((err) => {
-          console.error("[AuthContext] Firestore getDoc failed (non-blocking):", err);
+          if (err.message?.includes('offline')) {
+            console.warn("[AuthContext] Firestore is in offline mode. Using cached/minimal profile until connection is established.");
+          } else {
+            console.error("[AuthContext] Firestore getDoc failed (non-blocking):", err);
+          }
           // Keep the user logged in via Firebase Auth; just won't have Firestore enrichment
         });
 
