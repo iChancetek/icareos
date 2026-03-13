@@ -48,9 +48,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  experimental: {
-    turbopack: {},
-  },
+  turbopack: {},
   images: {
     remotePatterns: [
       {
