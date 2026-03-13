@@ -79,7 +79,7 @@ export async function saveCdsAnalysis(
         // Wrap addDoc in a timeout to prevent hanging UI
         const savePromise = addDoc(collection(db, CDS_COLLECTION), record);
         const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Firestore write timed out (30s)")), 30000)
+            setTimeout(() => reject(new Error("Firestore write timed out (15s)")), 15000)
         );
 
         const docRef = await Promise.race([savePromise, timeoutPromise]) as any;
@@ -166,12 +166,21 @@ export async function updateCdsClinicianReview(
     notes?: string
 ): Promise<boolean> {
     try {
-        await updateDoc(doc(db, CDS_COLLECTION, id), {
+        console.log(`[cdsService] Updating clinician review for ${id}...`);
+
+        const updatePromise = updateDoc(doc(db, CDS_COLLECTION, id), {
             clinicianStatus: status,
             clinicianNotes: notes || null,
             clinicianUserId,
             clinicianSignedAt: serverTimestamp(),
         });
+
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Firestore update timed out (15s)")), 15000)
+        );
+
+        await Promise.race([updatePromise, timeoutPromise]);
+        console.log(`[cdsService] Update successful for ${id}`);
         return true;
     } catch (err) {
         console.error("[cdsService] updateCdsClinicianReview failed:", err);

@@ -51,23 +51,8 @@ if (!firebaseConfig.apiKey) {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 
-let db: Firestore;
-try {
-  // Only apply long polling on the client-side in production to prevent SSR hanging
-  if (typeof window !== 'undefined') {
-    db = initializeFirestore(app, {
-      experimentalForceLongPolling: true,
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager(),
-      }),
-    }) as Firestore;
-  } else {
-    db = getFirestore(app);
-  }
-} catch (e) {
-  // Fallback if initializeFirestore is called twice somehow
-  db = getFirestore(app);
-}
+// Use basic getFirestore for maximum compatibility while debugging hangs
+const db = getFirestore(app);
 
 const functions = getFunctions(app);
 

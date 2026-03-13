@@ -46,15 +46,26 @@ function HistoryCard({ record, onReviewUpdate }: { record: CdsImageRecord; onRev
     const [reviewMode, setReviewMode] = useState(false);
     const [notes, setNotes] = useState(record.clinicianNotes || "");
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const { user } = useAuth();
 
     const handleSignOff = async (status: "approved" | "modified" | "overridden") => {
         if (!user) return;
         setSaving(true);
-        await updateCdsClinicianReview(record.id, user.uid, status, notes);
-        setSaving(false);
-        setReviewMode(false);
-        onReviewUpdate();
+        setError(null);
+        try {
+            const success = await updateCdsClinicianReview(record.id, user.uid, status, notes);
+            if (success) {
+                setReviewMode(false);
+                onReviewUpdate();
+            } else {
+                setError("Update failed - connectivity issue or timeout.");
+            }
+        } catch (err: any) {
+            setError(`Error: ${err.message || "Failed to update"}`);
+        } finally {
+            setSaving(false);
+        }
     };
 
     const assessment = record.analysis?.differentialAssessment || record.analysis?.probableInterpretation;
@@ -207,6 +218,11 @@ function HistoryCard({ record, onReviewUpdate }: { record: CdsImageRecord; onRev
 
                                 {reviewMode && (
                                     <div className="space-y-2">
+                                        {error && (
+                                            <div className="rounded-lg border border-red-500/25 bg-red-500/5 px-3 py-1.5 text-[10px] text-red-400">
+                                                {error}
+                                            </div>
+                                        )}
                                         <textarea
                                             value={notes}
                                             onChange={(e) => setNotes(e.target.value)}
@@ -227,14 +243,14 @@ function HistoryCard({ record, onReviewUpdate }: { record: CdsImageRecord; onRev
                                                 onClick={() => handleSignOff("modified")}
                                                 className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/20 transition-colors disabled:opacity-50"
                                             >
-                                                Modify
+                                                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} Modify
                                             </button>
                                             <button
                                                 disabled={saving}
                                                 onClick={() => handleSignOff("overridden")}
                                                 className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-orange-500/30 bg-orange-500/10 py-2 text-xs font-bold text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-50"
                                             >
-                                                Override
+                                                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} Override
                                             </button>
                                         </div>
                                         <button onClick={() => setReviewMode(false)} className="w-full text-xs text-muted-foreground hover:text-foreground py-1">Cancel</button>
