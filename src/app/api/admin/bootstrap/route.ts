@@ -2,23 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Initialize Firebase Admin once
-if (!getApps().length) {
+export const dynamic = 'force-dynamic';
+
+function getAdminApp() {
+    if (getApps().length > 0) return getApps()[0];
+
     let credential;
 
-    // If we have a service account JSON string in env, use it (recommended for prod)
+    // 1. Preferred: Service Account JSON string
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         credential = cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT));
     }
-    // Fallback to project ID for local dev (requires GOOGLE_APPLICATION_CREDENTIALS or gcloud auth)
-    else if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
-        credential = { projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID };
+    // 2. Fallback: Individual variables (standard for Firebase App Hosting)
+    else if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID) {
+        credential = cert({
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        });
     }
 
-    initializeApp({ credential });
+    return initializeApp({ credential });
 }
-
-const db = getFirestore();
 
 /**
  * POST /api/admin/bootstrap
@@ -26,6 +31,8 @@ const db = getFirestore();
  */
 export async function POST(req: NextRequest) {
     try {
+        getAdminApp();
+        const db = getFirestore();
         const { uid, secret } = await req.json();
 
         const bootstrapSecret = process.env.BOOTSTRAP_SECRET;
