@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Upload, Camera, ScanLine, RotateCcw, Loader2, Microscope, CheckCircle2, AlertTriangle, TriangleAlert, Save, ShieldCheck } from "lucide-react";
+import { Upload, Camera, ScanLine, RotateCcw, Loader2, Microscope, CheckCircle2, AlertTriangle, TriangleAlert, Save, ShieldCheck, Activity } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { saveCdsAnalysis } from "@/services/cdsService";
