@@ -74,7 +74,16 @@ export async function saveCdsAnalysis(
             clinicianSignedAt: null,
         };
 
-        const docRef = await addDoc(collection(db, CDS_COLLECTION), record);
+        console.log(`[cdsService] Attempting to save record for user ${userId}...`);
+
+        // Wrap addDoc in a timeout to prevent hanging UI
+        const savePromise = addDoc(collection(db, CDS_COLLECTION), record);
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Firestore write timed out (30s)")), 30000)
+        );
+
+        const docRef = await Promise.race([savePromise, timeoutPromise]) as any;
+        console.log(`[cdsService] Save successful! Document ID: ${docRef.id}`);
         return docRef.id;
     } catch (err) {
         console.error("[cdsService] saveCdsAnalysis failed:", err);

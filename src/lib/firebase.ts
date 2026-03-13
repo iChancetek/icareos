@@ -2,7 +2,14 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, initializeFirestore, Firestore, enableMultiTabIndexedDbPersistence, CACHE_SIZE_UNLIMITED } from 'firebase/firestore';
+import {
+  getFirestore,
+  initializeFirestore,
+  Firestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  CACHE_SIZE_UNLIMITED
+} from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 
 // Your web app's Firebase configuration
@@ -50,19 +57,10 @@ try {
   if (typeof window !== 'undefined') {
     db = initializeFirestore(app, {
       experimentalForceLongPolling: true,
-      localCache: undefined, // Force explicit persistence call below for v9 compat
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
     }) as Firestore;
-
-    // Enable multi-tab persistence for smooth PWA-like behavior and instant loads
-    enableMultiTabIndexedDbPersistence(db).catch((err) => {
-      if (err.code === 'failed-precondition') {
-        // Multiple tabs open, persistence can only be enabled in one tab at a time.
-        console.warn('Firestore persistence failed-precondition: Multiple tabs open');
-      } else if (err.code === 'unimplemented') {
-        // The current browser does not support all of the features required to enable persistence
-        console.warn('Firestore persistence unimplemented: Browser not supported');
-      }
-    });
   } else {
     db = getFirestore(app);
   }

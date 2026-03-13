@@ -352,6 +352,7 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [result, setResult] = useState<AnalysisResult | null>(null);
+    const [compressedDataUri, setCompressedDataUri] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -375,7 +376,7 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
         if (dropped) handleFileSelect(dropped);
     }, [handleFileSelect]);
 
-    const compressImage = async (file: File): Promise<Blob> => {
+    const compressImage = async (file: File): Promise<{ blob: Blob, dataUri: string }> => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -386,7 +387,7 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
                     const canvas = document.createElement("canvas");
                     let width = img.width;
                     let height = img.height;
-                    const maxDim = 1200; // Optimal for vision analysis without being too large
+                    const maxDim = 1200;
 
                     if (width > height) {
                         if (width > maxDim) {
@@ -404,13 +405,15 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
                     canvas.height = height;
                     const ctx = canvas.getContext("2d");
                     ctx?.drawImage(img, 0, 0, width, height);
+
+                    const dataUri = canvas.toDataURL("image/jpeg", 0.85);
                     canvas.toBlob(
                         (blob) => {
-                            if (blob) resolve(blob);
+                            if (blob) resolve({ blob, dataUri });
                             else reject(new Error("Compression failed"));
                         },
                         "image/jpeg",
-                        0.85 // High quality but significantly smaller
+                        0.85
                     );
                 };
             };
@@ -427,7 +430,9 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
 
         try {
             console.log("[CdsImageUpload] Starting analysis workflow...");
-            const compressedBlob = await compressImage(file);
+            const { blob: compressedBlob, dataUri } = await compressImage(file);
+            setCompressedDataUri(dataUri);
+
             const formData = new FormData();
             formData.append("image", compressedBlob, file.name || "image.jpg");
             formData.append("type", type);
@@ -462,25 +467,40 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
     const handleSaveToHistory = async () => {
         if (!result || !user || isSaving) return;
         setIsSaving(true);
+        setError(null);
+
         try {
+            console.log("[CdsImageUpload] Explicitly saving to Firestore archive...");
+
+            // Re-compress if Data URI is somehow missing (safety fallback)
+            let actualDataUri = compressedDataUri;
+            if (!actualDataUri && file) {
+                const res = await compressImage(file);
+                actualDataUri = res.dataUri;
+                setCompressedDataUri(actualDataUri);
+            }
+
             const id = await saveCdsAnalysis(
                 user.uid,
-                previewUrl!, // Use the data URI from compression/upload
+                actualDataUri || previewUrl!,
                 file?.name || "clinical-image",
                 type,
                 context,
                 result,
                 patientName
             );
+
             if (id) {
+                console.log("[CdsImageUpload] Save successful, ID:", id);
                 setSaveSuccess(true);
                 if (onAnalysisComplete) onAnalysisComplete();
             } else {
-                setError("Failed to save to history. Please try again.");
+                console.error("[CdsImageUpload] saveCdsAnalysis returned null");
+                setError("Failed to save to history. The record might be too large or there's a connectivity issue.");
             }
         } catch (err: any) {
             console.error("[CdsImageUpload] Manual save error:", err);
-            setError("Error saving to clinical archive.");
+            setError(`Error saving to clinical archive: ${err.message || 'Unknown error'}`);
         } finally {
             setIsSaving(false);
         }
