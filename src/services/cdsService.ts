@@ -87,11 +87,10 @@ export async function getUserCdsHistory(userId: string): Promise<CdsImageRecord[
     try {
         const q = query(
             collection(db, CDS_COLLECTION),
-            where("userId", "==", userId),
-            orderBy("uploadedAt", "desc")
+            where("userId", "==", userId)
         );
         const snap = await getDocs(q);
-        return snap.docs.map(d => {
+        const records = snap.docs.map(d => {
             const data = d.data();
             return {
                 ...data,
@@ -100,6 +99,9 @@ export async function getUserCdsHistory(userId: string): Promise<CdsImageRecord[
                 clinicianSignedAt: (data.clinicianSignedAt as Timestamp)?.toDate?.() ?? undefined,
             } as CdsImageRecord;
         });
+
+        // Sort client-side to avoid missing index errors
+        return records.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
     } catch (err) {
         console.error("[cdsService] getUserCdsHistory failed:", err);
         return [];
