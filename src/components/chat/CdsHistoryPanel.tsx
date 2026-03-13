@@ -83,10 +83,12 @@ function HistoryCard({ record, onReviewUpdate }: { record: CdsImageRecord; onRev
                     )}
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold truncate">{record.primaryFinding}</span>
+                        <span className="text-sm font-bold text-primary truncate">
+                            {record.patientName || "Unknown Patient"}
+                        </span>
+                        <span className="text-xs text-foreground/80 truncate opacity-70">— {record.primaryFinding}</span>
                         {record.escalationRequired && (
                             <span className="text-[9px] font-bold uppercase tracking-wider text-red-400 bg-red-500/10 border border-red-500/25 rounded-full px-1.5 py-0.5">Escalated</span>
                         )}
@@ -139,6 +141,7 @@ function HistoryCard({ record, onReviewUpdate }: { record: CdsImageRecord; onRev
                                     <div>
                                         <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Audit Metadata</p>
                                         <div className="space-y-1 text-xs text-muted-foreground">
+                                            <div className="flex justify-between"><span>Patient</span><span className="font-bold text-foreground/80">{record.patientName || "Unknown Patient"}</span></div>
                                             <div className="flex justify-between"><span>Model</span><span className="font-mono text-foreground/70">{record.modelVersion}</span></div>
                                             <div className="flex justify-between"><span>Uploaded</span><span>{format(record.uploadedAt, "PPP p")}</span></div>
                                             <div className="flex justify-between"><span>Image Type</span><span className="capitalize">{record.imageType}</span></div>

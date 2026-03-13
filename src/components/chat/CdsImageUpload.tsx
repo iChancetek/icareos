@@ -349,6 +349,7 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [type, setType] = useState<ImageType>("wound");
     const [context, setContext] = useState("");
+    const [patientName, setPatientName] = useState("");
     const [consentGiven, setConsentGiven] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -432,6 +433,7 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
             formData.append("image", compressedBlob, file.name || "image.jpg");
             formData.append("type", type);
             formData.append("context", context);
+            formData.append("patientName", patientName);
             if (user?.uid) formData.append("userId", user.uid);
 
             console.log("[CdsImageUpload] Sending request to AI API (GPT-5.4 Codex)...");
@@ -464,6 +466,7 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
         setError(null);
         setConsentGiven(false);
         setContext("");
+        setPatientName("");
     };
 
     return (
@@ -555,6 +558,20 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
                                         ? "e.g., Diabetic patient, wound on left heel, 3 days old"
                                         : "e.g., Patient fell from 6ft, wrist pain, 45yo male"
                                     }
+                                    className="w-full text-sm rounded-xl border border-border/40 bg-background/50 px-3 py-2 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
+                                />
+                            </div>
+
+                            {/* Patient Name */}
+                            <div>
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">
+                                    Patient Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={patientName}
+                                    onChange={(e) => setPatientName(e.target.value)}
+                                    placeholder="e.g., John Doe"
                                     className="w-full text-sm rounded-xl border border-border/40 bg-background/50 px-3 py-2 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
                                 />
                             </div>

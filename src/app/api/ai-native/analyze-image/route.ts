@@ -130,6 +130,7 @@ export async function POST(req: NextRequest) {
     const imageFile = formData.get("image") as File | null;
     const imageType = (formData.get("type") as string) || "wound";
     const context = formData.get("context") as string || "";
+    const patientName = formData.get("patientName") as string || "";
     const userId = formData.get("userId") as string || "anonymous";
 
     console.log(`[CDS ImageAnalysis] Type: ${imageType}, Context: ${context.substring(0, 20)}..., User: ${userId}`);
@@ -214,7 +215,8 @@ export async function POST(req: NextRequest) {
         imageFile.name || "clinical-image",
         imageType,
         context,
-        analysis
+        analysis,
+        patientName
       ).then(id => {
         if (id) console.log(`[CDS ImageAnalysis] Background save successful. ID: ${id}`);
         else console.warn("[CDS ImageAnalysis] Background save failed (null ID)");

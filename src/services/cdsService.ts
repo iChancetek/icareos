@@ -17,6 +17,7 @@ export interface CdsImageRecord {
     userId: string;
     imageType: "wound" | "xray" | "dermatology";
     imageName: string;
+    patientName?: string;
     imageDataUri: string;      // base64 stored directly in Firestore (< 1MB per record)
     context?: string;
     analysis: any;             // The full structured AI report
@@ -43,7 +44,8 @@ export async function saveCdsAnalysis(
     imageName: string,
     imageType: string,
     context: string,
-    analysis: any
+    analysis: any,
+    patientName?: string
 ): Promise<string | null> {
     try {
         const assessment = analysis.differentialAssessment || analysis.probableInterpretation;
@@ -56,6 +58,7 @@ export async function saveCdsAnalysis(
             userId,
             imageType,
             imageName,
+            patientName: patientName || "Unknown Patient",
             imageDataUri,
             context: context || "",
             analysis,

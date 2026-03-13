@@ -29,7 +29,17 @@ export const metadata: Metadata = {
   appleWebApp: {
     title: 'iCareOS',
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: 'cover',
+  },
+  formatDetection: {
+    telephone: false,
   },
 };
 
