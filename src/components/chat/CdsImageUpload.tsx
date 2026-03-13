@@ -1,13 +1,10 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import {
-    Upload, AlertTriangle, Loader2, Camera,
-    ScanLine, RotateCcw, Activity,
-    Microscope, TriangleAlert, CheckCircle2, ArrowRight,
-} from "lucide-react";
+import { Upload, Camera, ScanLine, RotateCcw, Loader2, Microscope, CheckCircle2, AlertTriangle, TriangleAlert, Save, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { saveCdsAnalysis } from "@/services/cdsService";
 import { useAuth } from "@/hooks/useAuth";
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -352,6 +349,8 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
     const [patientName, setPatientName] = useState("");
     const [consentGiven, setConsentGiven] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
     const [result, setResult] = useState<AnalysisResult | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -449,6 +448,7 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
 
             const data = await res.json();
             setResult(data.analysis);
+            setSaveSuccess(false);
             // Notify parent to refresh history panel
             if (onAnalysisComplete) onAnalysisComplete();
         } catch (err: any) {
@@ -459,11 +459,40 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
         }
     };
 
+    const handleSaveToHistory = async () => {
+        if (!result || !user || isSaving) return;
+        setIsSaving(true);
+        try {
+            const id = await saveCdsAnalysis(
+                user.uid,
+                previewUrl!, // Use the data URI from compression/upload
+                file?.name || "clinical-image",
+                type,
+                context,
+                result,
+                patientName
+            );
+            if (id) {
+                setSaveSuccess(true);
+                if (onAnalysisComplete) onAnalysisComplete();
+            } else {
+                setError("Failed to save to history. Please try again.");
+            }
+        } catch (err: any) {
+            console.error("[CdsImageUpload] Manual save error:", err);
+            setError("Error saving to clinical archive.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const reset = () => {
         setFile(null);
         setPreviewUrl(null);
         setResult(null);
         setError(null);
+        setIsSaving(false);
+        setSaveSuccess(false);
         setConsentGiven(false);
         setContext("");
         setPatientName("");
@@ -666,11 +695,64 @@ export default function CdsImageUpload({ onAnalysisComplete }: CdsImageUploadPro
 
                         <WoundReport r={result} />
 
+                        {/* Save to History UI */}
+                        <div className="mt-6 pt-6 border-t border-border/40 space-y-4">
+                            {!saveSuccess ? (
+                                <>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                                                Confirm Patient Name
+                                            </label>
+                                            <span className="text-[10px] text-primary font-bold">REQUIRED FOR ARCHIVE</span>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={patientName}
+                                            onChange={(e) => setPatientName(e.target.value)}
+                                            placeholder="Enter patient name..."
+                                            className="w-full text-sm rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
+                                        />
+                                    </div>
+
+                                    <button
+                                        onClick={handleSaveToHistory}
+                                        disabled={isSaving || !patientName.trim()}
+                                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-50"
+                                    >
+                                        {isSaving ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                Archiving...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="h-4 w-4" />
+                                                Save to Patient Clinical History
+                                            </>
+                                        )}
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-4 flex flex-col items-center gap-2 text-center">
+                                    <div className="h-10 w-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                                        <ShieldCheck className="h-6 w-6 text-emerald-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-emerald-400">Successfully Archived</p>
+                                        <p className="text-[11px] text-emerald-500/70 mt-0.5">
+                                            Analysis for <strong>{patientName}</strong> has been saved to the Clinical Imaging Archive.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         <button
                             onClick={reset}
-                            className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl border border-border/40 py-2.5 text-sm font-semibold text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all"
+                            className="mt-6 w-full flex items-center justify-center gap-2 rounded-xl border border-border/40 py-2.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all"
                         >
-                            <RotateCcw className="h-4 w-4" /> Analyze Another Image
+                            <RotateCcw className="h-3.5 w-3.5" /> Analyze Another Image
                         </button>
                     </motion.div>
                 )}

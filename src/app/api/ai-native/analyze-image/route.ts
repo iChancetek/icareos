@@ -205,7 +205,8 @@ export async function POST(req: NextRequest) {
       analysisTimestamp: new Date().toISOString(),
     };
 
-    // ── Persist to Firestore (Non-blocking background task) ─────────
+    // Automatic archival removed to support explicit "Save to History" workflow in UI
+    /*
     if (userId !== "anonymous") {
       console.log(`[CDS ImageAnalysis] Scheduling Firestore archival for user: ${userId}`);
       // Run as a background promise so we don't hold up the AI response
@@ -224,6 +225,7 @@ export async function POST(req: NextRequest) {
         console.error("[CDS ImageAnalysis] Background save error:", e);
       });
     }
+    */
 
     console.log("[CDS ImageAnalysis] Request completed successfully. Returning response.");
     return NextResponse.json({ success: true, analysis });
